@@ -1,150 +1,173 @@
 'use client'
 
-import { useState } from 'react'
-import { Settings as SettingsIcon, Save, TestTube, CheckCircle, XCircle } from 'lucide-react'
+import { useState, useEffect } from 'react'
+import { supabase } from '@/app/lib/supabase'
+import { Save, TestTube, Check, X, Loader2 } from 'lucide-react'
+import FinaleSyncManager from '@/app/components/FinaleSyncManager'
+
+interface Settings {
+  id?: string
+  finale_api_key?: string
+  finale_api_secret?: string
+  finale_account_path?: string
+  google_sheet_id?: string
+  google_sheets_api_key?: string
+  sendgrid_api_key?: string
+  from_email?: string
+  low_stock_threshold: number
+}
 
 export default function SettingsPage() {
+  const [settings, setSettings] = useState<Settings>({
+    low_stock_threshold: 10
+  })
+  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [testing, setTesting] = useState<string | null>(null)
-  
-  // Sample settings state
-  const [settings, setSettings] = useState({
-    finale_api_key: '',
-    finale_api_secret: '',
-    finale_account_path: '',
-    google_sheet_id: '',
-    google_sheets_api_key: '',
-    sendgrid_api_key: '',
-    from_email: '',
-    low_stock_threshold: 10,
-  })
+  const [testResults, setTestResults] = useState<Record<string, 'testing' | 'success' | 'error' | null>>({})
+  const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
 
-  // Sample connection status
-  const [connectionStatus] = useState({
-    finale: false,
-    googleSheets: false,
-    sendgrid: false
-  })
+  // Load settings on mount
+  useEffect(() => {
+    loadSettings()
+  }, [])
 
-  const handleInputChange = (field: string, value: string | number) => {
+  const loadSettings = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('settings')
+        .select('*')
+        .limit(1)
+        .single()
+
+      if (error && error.code !== 'PGRST116') {
+        throw error
+      }
+
+      if (data) {
+        setSettings(data)
+      }
+    } catch (error) {
+      console.error('Error loading settings:', error)
+      setMessage({ type: 'error', text: 'Failed to load settings' })
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const saveSettings = async () => {
+    setSaving(true)
+    setMessage(null)
+
+    try {
+      if (settings.id) {
+        // Update existing settings
+        const { error } = await supabase
+          .from('settings')
+          .update({
+            finale_api_key: settings.finale_api_key,
+            finale_api_secret: settings.finale_api_secret,
+            finale_account_path: settings.finale_account_path,
+            google_sheet_id: settings.google_sheet_id,
+            google_sheets_api_key: settings.google_sheets_api_key,
+            sendgrid_api_key: settings.sendgrid_api_key,
+            from_email: settings.from_email,
+            low_stock_threshold: settings.low_stock_threshold
+          })
+          .eq('id', settings.id)
+
+        if (error) throw error
+      } else {
+        // Insert new settings
+        const { data, error } = await supabase
+          .from('settings')
+          .insert({
+            finale_api_key: settings.finale_api_key,
+            finale_api_secret: settings.finale_api_secret,
+            finale_account_path: settings.finale_account_path,
+            google_sheet_id: settings.google_sheet_id,
+            google_sheets_api_key: settings.google_sheets_api_key,
+            sendgrid_api_key: settings.sendgrid_api_key,
+            from_email: settings.from_email,
+            low_stock_threshold: settings.low_stock_threshold
+          })
+          .select()
+          .single()
+
+        if (error) throw error
+        if (data) setSettings(data)
+      }
+
+      setMessage({ type: 'success', text: 'Settings saved successfully!' })
+    } catch (error) {
+      console.error('Error saving settings:', error)
+      setMessage({ type: 'error', text: 'Failed to save settings' })
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleChange = (field: keyof Settings, value: any) => {
     setSettings(prev => ({
       ...prev,
       [field]: value
     }))
   }
 
-  const saveSettings = async () => {
-    setSaving(true)
-    // Simulate API call
-    setTimeout(() => {
-      setSaving(false)
-      alert('Settings saved successfully!')
-    }, 1000)
+  const testConnection = async (service: string) => {
+    setTestResults(prev => ({ ...prev, [service]: 'testing' }))
+
+    try {
+      // Map service names to their specific endpoints
+      const endpointMap: Record<string, string> = {
+        'finale': '/api/test-finale',
+        'google-sheets': '/api/test-sheets',
+        'sendgrid': '/api/test-sendgrid'
+      }
+
+      const response = await fetch(endpointMap[service] || `/api/test-connection/${service}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings)
+      })
+
+      const result = await response.json()
+      setTestResults(prev => ({ ...prev, [service]: result.success ? 'success' : 'error' }))
+
+      if (!result.success) {
+        setMessage({ type: 'error', text: result.error || `Failed to connect to ${service}` })
+      } else {
+        setMessage({ type: 'success', text: result.message || `${service} connection successful` })
+      }
+    } catch (error) {
+      setTestResults(prev => ({ ...prev, [service]: 'error' }))
+      setMessage({ type: 'error', text: `Failed to test ${service} connection` })
+    }
   }
 
-  const testConnection = async (service: string) => {
-    setTesting(service)
-    // Simulate connection test
-    setTimeout(() => {
-      setTesting(null)
-      alert(`${service} connection test completed!`)
-    }, 2000)
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Settings</h1>
-          <p className="text-gray-600 mt-1">
-            Configure API connections and application preferences
-          </p>
-        </div>
-        <button
-          onClick={saveSettings}
-          disabled={saving}
-          className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-        >
-          <Save className="h-4 w-4 mr-2" />
-          {saving ? 'Saving...' : 'Save Settings'}
-        </button>
-      </div>
+    <div className="max-w-4xl mx-auto">
+      <h1 className="text-2xl font-bold mb-6">Settings</h1>
 
-      {/* Connection Status Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {message && (
+        <div className={`mb-6 p-4 rounded-md ${
+          message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        }`}>
+          {message.text}
+        </div>
+      )}
+
+      <div className="space-y-6">
+        {/* Finale Inventory */}
         <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900">Finale Inventory</h3>
-              <p className="text-sm text-gray-500">Primary inventory source</p>
-            </div>
-            {connectionStatus.finale ? (
-              <CheckCircle className="h-8 w-8 text-green-500" />
-            ) : (
-              <XCircle className="h-8 w-8 text-red-500" />
-            )}
-          </div>
-          <button
-            onClick={() => testConnection('finale')}
-            disabled={testing === 'finale'}
-            className="mt-4 w-full flex items-center justify-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-          >
-            <TestTube className={`h-4 w-4 mr-2 ${testing === 'finale' ? 'animate-spin' : ''}`} />
-            Test Connection
-          </button>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900">Google Sheets</h3>
-              <p className="text-sm text-gray-500">Fallback data source</p>
-            </div>
-            {connectionStatus.googleSheets ? (
-              <CheckCircle className="h-8 w-8 text-green-500" />
-            ) : (
-              <XCircle className="h-8 w-8 text-red-500" />
-            )}
-          </div>
-          <button
-            onClick={() => testConnection('googleSheets')}
-            disabled={testing === 'googleSheets'}
-            className="mt-4 w-full flex items-center justify-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-          >
-            <TestTube className={`h-4 w-4 mr-2 ${testing === 'googleSheets' ? 'animate-spin' : ''}`} />
-            Test Connection
-          </button>
-        </div>
-
-        <div className="bg-white p-6 rounded-lg shadow">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-medium text-gray-900">SendGrid</h3>
-              <p className="text-sm text-gray-500">Email service</p>
-            </div>
-            {connectionStatus.sendgrid ? (
-              <CheckCircle className="h-8 w-8 text-green-500" />
-            ) : (
-              <XCircle className="h-8 w-8 text-red-500" />
-            )}
-          </div>
-          <button
-            onClick={() => testConnection('sendgrid')}
-            disabled={testing === 'sendgrid'}
-            className="mt-4 w-full flex items-center justify-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
-          >
-            <TestTube className={`h-4 w-4 mr-2 ${testing === 'sendgrid' ? 'animate-spin' : ''}`} />
-            Test Connection
-          </button>
-        </div>
-      </div>
-
-      {/* Settings Forms */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Finale Inventory Settings */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Finale Inventory API</h2>
+          <h2 className="text-lg font-semibold mb-4">Finale Inventory</h2>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -152,8 +175,8 @@ export default function SettingsPage() {
               </label>
               <input
                 type="password"
-                value={settings.finale_api_key}
-                onChange={(e) => handleInputChange('finale_api_key', e.target.value)}
+                value={settings.finale_api_key || ''}
+                onChange={(e) => handleChange('finale_api_key', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter your Finale API key"
               />
@@ -164,67 +187,96 @@ export default function SettingsPage() {
               </label>
               <input
                 type="password"
-                value={settings.finale_api_secret}
-                onChange={(e) => handleInputChange('finale_api_secret', e.target.value)}
+                value={settings.finale_api_secret || ''}
+                onChange={(e) => handleChange('finale_api_secret', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter your Finale API secret"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Account Path Component
+                Account Path
               </label>
               <input
                 type="text"
-                value={settings.finale_account_path}
-                onChange={(e) => handleInputChange('finale_account_path', e.target.value)}
+                value={settings.finale_account_path || ''}
+                onChange={(e) => handleChange('finale_account_path', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g., your-company-name"
+                placeholder="e.g., yourcompany.finale.io"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Found in your Finale URL: app.finaleinventory.com/[account-path]/
-              </p>
             </div>
+            <button
+              onClick={() => testConnection('finale')}
+              disabled={testResults.finale === 'testing'}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {testResults.finale === 'testing' ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : testResults.finale === 'success' ? (
+                <Check className="h-4 w-4" />
+              ) : testResults.finale === 'error' ? (
+                <X className="h-4 w-4" />
+              ) : (
+                <TestTube className="h-4 w-4" />
+              )}
+              Test Connection
+            </button>
           </div>
         </div>
 
-        {/* Google Sheets Settings */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Google Sheets (Fallback)</h2>
+        {/* Finale Sync Manager */}
+        <FinaleSyncManager />
+
+        {/* Google Sheets */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h2 className="text-lg font-semibold mb-4">Google Sheets</h2>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Google Sheets API Key
+                Sheet ID
+              </label>
+              <input
+                type="text"
+                value={settings.google_sheet_id || ''}
+                onChange={(e) => handleChange('google_sheet_id', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="Enter your Google Sheet ID"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                API Key
               </label>
               <input
                 type="password"
-                value={settings.google_sheets_api_key}
-                onChange={(e) => handleInputChange('google_sheets_api_key', e.target.value)}
+                value={settings.google_sheets_api_key || ''}
+                onChange={(e) => handleChange('google_sheets_api_key', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter your Google Sheets API key"
               />
             </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Google Sheet ID
-              </label>
-              <input
-                type="text"
-                value={settings.google_sheet_id}
-                onChange={(e) => handleInputChange('google_sheet_id', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Sheet ID from Google Sheets URL"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Found in the URL: docs.google.com/spreadsheets/d/[SHEET_ID]/
-              </p>
-            </div>
+            <button
+              onClick={() => testConnection('google-sheets')}
+              disabled={testResults['google-sheets'] === 'testing'}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {testResults['google-sheets'] === 'testing' ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : testResults['google-sheets'] === 'success' ? (
+                <Check className="h-4 w-4" />
+              ) : testResults['google-sheets'] === 'error' ? (
+                <X className="h-4 w-4" />
+              ) : (
+                <TestTube className="h-4 w-4" />
+              )}
+              Test Connection
+            </button>
           </div>
         </div>
 
         {/* Email Settings */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Email Configuration</h2>
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h2 className="text-lg font-semibold mb-4">Email Settings (SendGrid)</h2>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -232,84 +284,77 @@ export default function SettingsPage() {
               </label>
               <input
                 type="password"
-                value={settings.sendgrid_api_key}
-                onChange={(e) => handleInputChange('sendgrid_api_key', e.target.value)}
+                value={settings.sendgrid_api_key || ''}
+                onChange={(e) => handleChange('sendgrid_api_key', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="Enter your SendGrid API key"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                From Email Address
+                From Email
               </label>
               <input
                 type="email"
-                value={settings.from_email}
-                onChange={(e) => handleInputChange('from_email', e.target.value)}
+                value={settings.from_email || ''}
+                onChange={(e) => handleChange('from_email', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="your-email@company.com"
+                placeholder="noreply@yourdomain.com"
               />
-              <p className="text-xs text-gray-500 mt-1">
-                Must be a verified sender in SendGrid
-              </p>
             </div>
+            <button
+              onClick={() => testConnection('sendgrid')}
+              disabled={testResults.sendgrid === 'testing'}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {testResults.sendgrid === 'testing' ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : testResults.sendgrid === 'success' ? (
+                <Check className="h-4 w-4" />
+              ) : testResults.sendgrid === 'error' ? (
+                <X className="h-4 w-4" />
+              ) : (
+                <TestTube className="h-4 w-4" />
+              )}
+              Test Connection
+            </button>
           </div>
         </div>
 
-        {/* Application Settings */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Application Settings</h2>
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Low Stock Threshold
-              </label>
-              <input
-                type="number"
-                min="0"
-                value={settings.low_stock_threshold}
-                onChange={(e) => handleInputChange('low_stock_threshold', parseInt(e.target.value))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-              <p className="text-xs text-gray-500 mt-1">
-                Items with stock at or below this number will be flagged as low stock
-              </p>
-            </div>
+        {/* General Settings */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h2 className="text-lg font-semibold mb-4">General Settings</h2>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Low Stock Threshold
+            </label>
+            <input
+              type="number"
+              value={settings.low_stock_threshold}
+              onChange={(e) => handleChange('low_stock_threshold', parseInt(e.target.value) || 10)}
+              min="1"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+            <p className="text-sm text-gray-500 mt-1">
+              Items with stock at or below this level will be marked as low stock
+            </p>
           </div>
         </div>
-      </div>
 
-      {/* Setup Instructions */}
-      <div className="bg-blue-50 rounded-lg p-6">
-        <h3 className="text-lg font-semibold text-blue-900 mb-3">Setup Instructions</h3>
-        <div className="space-y-3 text-sm text-blue-800">
-          <div>
-            <strong>Finale Inventory:</strong>
-            <ol className="list-decimal list-inside ml-4 mt-1 space-y-1">
-              <li>Log into your Finale account</li>
-              <li>Go to Settings → API Keys</li>
-              <li>Create a new API key with inventory and purchase order permissions</li>
-              <li>Copy the API key and secret to the fields above</li>
-            </ol>
-          </div>
-          <div>
-            <strong>Google Sheets (Optional Fallback):</strong>
-            <ol className="list-decimal list-inside ml-4 mt-1 space-y-1">
-              <li>Go to Google Cloud Console</li>
-              <li>Enable the Google Sheets API</li>
-              <li>Create credentials (API key)</li>
-              <li>Share your inventory spreadsheet with public read access</li>
-            </ol>
-          </div>
-          <div>
-            <strong>SendGrid Email:</strong>
-            <ol className="list-decimal list-inside ml-4 mt-1 space-y-1">
-              <li>Sign up at sendgrid.com</li>
-              <li>Go to Settings → API Keys</li>
-              <li>Create a new API key with Mail Send permissions</li>
-              <li>Verify your sender email address in SendGrid</li>
-            </ol>
-          </div>
+        {/* Save Button */}
+        <div className="flex justify-end">
+          <button
+            onClick={saveSettings}
+            disabled={saving}
+            className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
+            {saving ? (
+              <Loader2 className="h-5 w-5 animate-spin" />
+            ) : (
+              <Save className="h-5 w-5" />
+            )}
+            {saving ? 'Saving...' : 'Save Settings'}
+          </button>
         </div>
       </div>
     </div>

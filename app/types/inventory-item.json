@@ -1,0 +1,13 @@
+{
+  "id": "INV-001",
+  "name": "BuildASoil 3.0 Potting Soil",
+  "sku": "BAS-PS-30",
+  "currentStock": 150,
+  "minimumStock": 50,
+  "maximumStock": 500,
+  "unitPrice": 45.99,
+  "supplier": "BuildASoil Manufacturing",
+  "category": "Growing Media",
+  "lastRestocked": "2024-01-15T10:30:00Z",
+  "active": true
+}
