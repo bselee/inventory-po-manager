@@ -1,5 +1,5 @@
--- Complete Database Migration for Inventory PO Manager
--- This script includes ALL migrations needed for the application
+-- Simple Database Migration for Inventory PO Manager
+-- This version avoids complex syntax that might cause issues
 -- Run this in your Supabase SQL editor
 
 -- =====================================================
@@ -65,14 +65,6 @@ CREATE TABLE IF NOT EXISTS sync_logs (
 CREATE INDEX IF NOT EXISTS idx_sync_logs_created_at ON sync_logs(created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_sync_logs_sync_type ON sync_logs(sync_type);
 
--- Enable RLS
-ALTER TABLE sync_logs ENABLE ROW LEVEL SECURITY;
-
--- Drop existing policy if it exists and create new one
-DROP POLICY IF EXISTS "Enable all access for sync_logs" ON sync_logs;
-CREATE POLICY "Enable all access for sync_logs" ON sync_logs
-  FOR ALL USING (true) WITH CHECK (true);
-
 -- =====================================================
 -- Migration 4: Add Finale authentication fields
 -- =====================================================
@@ -82,24 +74,11 @@ ALTER TABLE settings
 ADD COLUMN IF NOT EXISTS finale_username TEXT,
 ADD COLUMN IF NOT EXISTS finale_password TEXT;
 
--- Add comments for documentation
-COMMENT ON COLUMN settings.finale_username IS 'Finale username for session-based authentication (alternative to API key)';
-COMMENT ON COLUMN settings.finale_password IS 'Finale password for session-based authentication (alternative to API key)';
-
 -- =====================================================
--- Migration 5: Ensure all required columns exist
+-- Migration 5: Ensure all required settings columns
 -- =====================================================
 
--- Ensure settings table has an id column
-DO $$
-BEGIN
-  IF NOT EXISTS (SELECT 1 FROM information_schema.columns 
-                 WHERE table_name = 'settings' AND column_name = 'id') THEN
-    ALTER TABLE settings ADD COLUMN id UUID DEFAULT gen_random_uuid() PRIMARY KEY;
-  END IF;
-END $$;
-
--- Ensure all other settings columns exist with proper defaults
+-- Add remaining settings columns
 ALTER TABLE settings
 ADD COLUMN IF NOT EXISTS finale_api_key TEXT,
 ADD COLUMN IF NOT EXISTS finale_api_secret TEXT,
@@ -112,7 +91,11 @@ ADD COLUMN IF NOT EXISTS low_stock_threshold INTEGER DEFAULT 10,
 ADD COLUMN IF NOT EXISTS created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 ADD COLUMN IF NOT EXISTS updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP;
 
--- Create a trigger to update the updated_at timestamp
+-- =====================================================
+-- Create or update trigger for updated_at
+-- =====================================================
+
+-- Create function if it doesn't exist
 CREATE OR REPLACE FUNCTION update_updated_at_column()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -121,7 +104,7 @@ BEGIN
 END;
 $$ language 'plpgsql';
 
--- Apply the trigger to settings table
+-- Drop and recreate trigger
 DROP TRIGGER IF EXISTS update_settings_updated_at ON settings;
 CREATE TRIGGER update_settings_updated_at 
 BEFORE UPDATE ON settings 
@@ -129,31 +112,15 @@ FOR EACH ROW
 EXECUTE FUNCTION update_updated_at_column();
 
 -- =====================================================
--- Data initialization
+-- Initialize settings if needed
 -- =====================================================
 
--- Insert default settings row if it doesn't exist
-INSERT INTO settings (id)
-SELECT gen_random_uuid()
+-- Insert default settings row if table is empty
+INSERT INTO settings (low_stock_threshold)
+SELECT 10
 WHERE NOT EXISTS (SELECT 1 FROM settings LIMIT 1);
 
 -- =====================================================
--- Verification queries (optional - run these to check)
+-- Success!
 -- =====================================================
-
--- Check inventory_items columns
--- SELECT column_name, data_type FROM information_schema.columns 
--- WHERE table_name = 'inventory_items' ORDER BY ordinal_position;
-
--- Check settings columns
--- SELECT column_name, data_type FROM information_schema.columns 
--- WHERE table_name = 'settings' ORDER BY ordinal_position;
-
--- Check if sync_logs table exists
--- SELECT EXISTS (SELECT 1 FROM information_schema.tables WHERE table_name = 'sync_logs');
-
--- =====================================================
--- Success message
--- =====================================================
--- If you see this comment, the migration completed successfully!
--- All required database changes have been applied.
+-- Migration completed successfully!
