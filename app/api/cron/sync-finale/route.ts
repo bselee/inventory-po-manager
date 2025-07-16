@@ -17,7 +17,7 @@ export async function GET(request: NextRequest) {
     // Check if sync is enabled and get frequency
     const { data: settings } = await supabase
       .from('settings')
-      .select('sync_enabled, sync_frequency_minutes, last_sync_time')
+      .select('id, sync_enabled, sync_frequency_minutes, last_sync_time')
       .single()
 
     if (!settings?.sync_enabled) {
