@@ -140,7 +140,7 @@ export default function SettingsPage() {
     try {
       // Map service names to their specific endpoints
       const endpointMap: Record<string, string> = {
-        'finale': '/api/test-finale',
+        'finale': '/api/debug-finale', // Using debug endpoint for better error info
         'google-sheets': '/api/test-sheets',
         'sendgrid': '/api/test-sendgrid'
       }
@@ -155,8 +155,16 @@ export default function SettingsPage() {
       setTestResults(prev => ({ ...prev, [service]: result.success ? 'success' : 'error' }))
 
       if (!result.success) {
+        // Show debug info if available
+        if (result.debug) {
+          console.error(`${service} connection debug info:`, result.debug)
+        }
         setMessage({ type: 'error', text: result.error || `Failed to connect to ${service}` })
       } else {
+        // Show debug info for successful connections too
+        if (result.debug) {
+          console.log(`${service} connection debug info:`, result.debug)
+        }
         setMessage({ type: 'success', text: result.message || `${service} connection successful` })
       }
     } catch (error) {

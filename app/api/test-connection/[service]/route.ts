@@ -19,26 +19,45 @@ export async function POST(
         }
 
         // Test Finale API connection
-        const finaleUrl = `https://${settings.finale_account_path}/api/products`;
+        const finaleUrl = `https://app.finaleinventory.com/api/${settings.finale_account_path}/product`;
         const finaleAuth = Buffer.from(`${settings.finale_api_key}:${settings.finale_api_secret}`).toString('base64');
         
+        console.log('Testing Finale API connection:', {
+          url: finaleUrl,
+          accountPath: settings.finale_account_path,
+          hasApiKey: !!settings.finale_api_key,
+          hasApiSecret: !!settings.finale_api_secret
+        });
+
         const finaleResponse = await fetch(finaleUrl, {
           method: 'GET',
           headers: {
             'Authorization': `Basic ${finaleAuth}`,
-            'Content-Type': 'application/json'
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
           }
         });
 
         if (finaleResponse.ok) {
+          const data = await finaleResponse.json();
+          console.log('Finale API test successful, received data:', {
+            hasProducts: Array.isArray(data),
+            productCount: Array.isArray(data) ? data.length : 0
+          });
           return NextResponse.json({ 
             success: true, 
             message: 'Finale connection successful' 
           });
         } else {
+          const errorText = await finaleResponse.text();
+          console.error('Finale API test failed:', {
+            status: finaleResponse.status,
+            statusText: finaleResponse.statusText,
+            error: errorText
+          });
           return NextResponse.json({ 
             success: false, 
-            error: `Finale API error: ${finaleResponse.status} ${finaleResponse.statusText}` 
+            error: `Finale API error: ${finaleResponse.status} ${finaleResponse.statusText}${errorText ? ` - ${errorText}` : ''}` 
           });
         }
 
