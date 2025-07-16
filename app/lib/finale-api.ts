@@ -21,6 +21,25 @@ interface FinaleApiConfig {
   accountPath: string
 }
 
+interface FinalePurchaseOrder {
+  orderNumber?: string
+  vendorId?: string
+  vendorName?: string
+  orderDate?: string
+  expectedDate?: string
+  status?: string
+  items: FinalePurchaseOrderItem[]
+  notes?: string
+}
+
+interface FinalePurchaseOrderItem {
+  productId: string
+  productSku: string
+  quantity: number
+  unitCost?: number
+  description?: string
+}
+
 export class FinaleApiService {
   private config: FinaleApiConfig
   private baseUrl: string
@@ -122,7 +141,7 @@ export class FinaleApiService {
       sku: finaleProduct.productSku,
       product_name: finaleProduct.productName,
       stock: finaleProduct.quantityOnHand || 0,
-      location: finaleProduct.facilityName || null,
+      location: 'Shipping', // Always use "Shipping" as the single location
       reorder_point: finaleProduct.reorderPoint || 0,
       reorder_quantity: finaleProduct.reorderQuantity || 0,
       vendor: finaleProduct.primarySupplierName || null,
@@ -192,6 +211,124 @@ export class FinaleApiService {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
       }
+    }
+  }
+
+  // Create a purchase order in Finale
+  async createPurchaseOrder(purchaseOrder: FinalePurchaseOrder): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseUrl}/purchaseOrder`, {
+        method: 'POST',
+        headers: {
+          'Authorization': this.authHeader,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          orderDate: purchaseOrder.orderDate || new Date().toISOString(),
+          expectedDate: purchaseOrder.expectedDate,
+          vendorName: purchaseOrder.vendorName,
+          notes: purchaseOrder.notes,
+          items: purchaseOrder.items.map(item => ({
+            productSku: item.productSku,
+            quantity: item.quantity,
+            unitCost: item.unitCost
+          }))
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.text()
+        throw new Error(`Finale API error: ${response.status} - ${errorData}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error creating purchase order in Finale:', error)
+      throw error
+    }
+  }
+
+  // Get purchase order status from Finale
+  async getPurchaseOrder(orderNumber: string): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseUrl}/purchaseOrder/${orderNumber}`, {
+        headers: {
+          'Authorization': this.authHeader,
+          'Content-Type': 'application/json'
+        }
+      })
+
+      if (!response.ok) {
+        throw new Error(`Finale API error: ${response.status}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error fetching purchase order from Finale:', error)
+      throw error
+    }
+  }
+
+  // Get all vendors from Finale
+  async getVendors(): Promise<any[]> {
+    const vendors: any[] = []
+    let offset = 0
+    const limit = 100
+
+    try {
+      while (true) {
+        const response = await fetch(
+          `${this.baseUrl}/vendor?limit=${limit}&offset=${offset}`, 
+          {
+            headers: {
+              'Authorization': this.authHeader,
+              'Content-Type': 'application/json'
+            }
+          }
+        )
+
+        if (!response.ok) {
+          throw new Error(`Finale API error: ${response.status}`)
+        }
+
+        const data = await response.json()
+        
+        if (data.vendors && data.vendors.length > 0) {
+          vendors.push(...data.vendors)
+          offset += limit
+          if (data.vendors.length < limit) break
+        } else {
+          break
+        }
+      }
+
+      return vendors
+    } catch (error) {
+      console.error('Error fetching vendors from Finale:', error)
+      throw error
+    }
+  }
+
+  // Update purchase order status in Finale
+  async updatePurchaseOrderStatus(orderNumber: string, status: string): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseUrl}/purchaseOrder/${orderNumber}`, {
+        method: 'PATCH',
+        headers: {
+          'Authorization': this.authHeader,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status })
+      })
+
+      if (!response.ok) {
+        throw new Error(`Finale API error: ${response.status}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error updating purchase order in Finale:', error)
+      throw error
     }
   }
 }

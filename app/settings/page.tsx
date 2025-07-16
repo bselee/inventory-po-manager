@@ -2,8 +2,10 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/app/lib/supabase'
-import { Save, TestTube, Check, X, Loader2 } from 'lucide-react'
+import { Save, TestTube, Check, X, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import FinaleSyncManager from '@/app/components/FinaleSyncManager'
+import SalesDataUploader from '@/app/components/SalesDataUploader'
+import VendorSyncManager from '@/app/components/VendorSyncManager'
 
 interface Settings {
   id?: string
@@ -15,16 +17,27 @@ interface Settings {
   sendgrid_api_key?: string
   from_email?: string
   low_stock_threshold: number
+  sync_frequency_minutes?: number
+  sync_enabled?: boolean
 }
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Settings>({
-    low_stock_threshold: 10
+    low_stock_threshold: 10,
+    sync_frequency_minutes: 60,
+    sync_enabled: true
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
   const [testResults, setTestResults] = useState<Record<string, 'testing' | 'success' | 'error' | null>>({})
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
+  const [googleSheetUrl, setGoogleSheetUrl] = useState('')
+
+  // Parse Google Sheet ID from URL
+  const parseGoogleSheetId = (url: string): string | null => {
+    const match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/)
+    return match ? match[1] : null
+  }
 
   // Load settings on mount
   useEffect(() => {
@@ -45,6 +58,10 @@ export default function SettingsPage() {
 
       if (data) {
         setSettings(data)
+        // Set the Google Sheet URL if we have an ID
+        if (data.google_sheet_id) {
+          setGoogleSheetUrl(data.google_sheet_id)
+        }
       }
     } catch (error) {
       console.error('Error loading settings:', error)
@@ -71,7 +88,9 @@ export default function SettingsPage() {
             google_sheets_api_key: settings.google_sheets_api_key,
             sendgrid_api_key: settings.sendgrid_api_key,
             from_email: settings.from_email,
-            low_stock_threshold: settings.low_stock_threshold
+            low_stock_threshold: settings.low_stock_threshold,
+            sync_frequency_minutes: settings.sync_frequency_minutes,
+            sync_enabled: settings.sync_enabled
           })
           .eq('id', settings.id)
 
@@ -88,7 +107,9 @@ export default function SettingsPage() {
             google_sheets_api_key: settings.google_sheets_api_key,
             sendgrid_api_key: settings.sendgrid_api_key,
             from_email: settings.from_email,
-            low_stock_threshold: settings.low_stock_threshold
+            low_stock_threshold: settings.low_stock_threshold,
+            sync_frequency_minutes: settings.sync_frequency_minutes,
+            sync_enabled: settings.sync_enabled
           })
           .select()
           .single()
@@ -155,54 +176,99 @@ export default function SettingsPage() {
   return (
     <div className="max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">Settings</h1>
+      
+      {/* Getting Started Guide */}
+      {!settings.id && (
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
+          <h2 className="text-lg font-semibold text-blue-900 mb-3">Getting Started</h2>
+          <ol className="list-decimal list-inside space-y-2 text-sm text-blue-800">
+            <li>Configure your <strong>Finale API credentials</strong> below to sync inventory data</li>
+            <li>Test the connection to ensure credentials are correct</li>
+            <li>Run your first sync using the Finale Sync Manager</li>
+            <li>Upload sales data from your Finale Excel reports</li>
+            <li>Configure email settings if you want to send purchase orders</li>
+          </ol>
+        </div>
+      )}
 
       {message && (
-        <div className={`mb-6 p-4 rounded-md ${
-          message.type === 'success' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+        <div className={`mb-6 p-4 rounded-md flex items-start gap-3 ${
+          message.type === 'success' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
         }`}>
-          {message.text}
+          {message.type === 'success' ? (
+            <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+          ) : (
+            <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+          )}
+          <div className={message.type === 'success' ? 'text-green-800' : 'text-red-800'}>
+            <p className="font-medium">{message.text}</p>
+            {message.type === 'error' && message.text.includes('fetch failed') && (
+              <p className="text-sm mt-1">
+                This usually means the credentials are incorrect or the account path is wrong. 
+                Please double-check your API settings in Finale.
+              </p>
+            )}
+          </div>
         </div>
       )}
 
       <div className="space-y-6">
         {/* Finale Inventory */}
         <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-lg font-semibold mb-4">Finale Inventory</h2>
+          <h2 className="text-lg font-semibold mb-4">Finale Inventory Integration</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Connect to your Finale Inventory account for comprehensive two-way integration:
+          </p>
+          <ul className="list-disc list-inside text-sm text-gray-600 mb-4 space-y-1">
+            <li><strong>Inventory Monitoring:</strong> Real-time stock levels, out-of-stock alerts, and analysis</li>
+            <li><strong>Purchase Orders:</strong> Create POs here and sync directly to Finale</li>
+            <li><strong>Vendor Data:</strong> Sync supplier information and costs</li>
+            <li><strong>Automated Updates:</strong> Hourly sync keeps data current</li>
+          </ul>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 API Key
               </label>
+              <p className="text-xs text-gray-500 mb-2">
+                Find in Finale: Settings → Integrations → Finale API
+              </p>
               <input
                 type="password"
                 value={settings.finale_api_key || ''}
                 onChange={(e) => handleChange('finale_api_key', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your Finale API key"
+                placeholder="e.g., 1234567890abcdef"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 API Secret
               </label>
+              <p className="text-xs text-gray-500 mb-2">
+                Generated with your API Key in Finale
+              </p>
               <input
                 type="password"
                 value={settings.finale_api_secret || ''}
                 onChange={(e) => handleChange('finale_api_secret', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your Finale API secret"
+                placeholder="e.g., abcdef1234567890"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Account Path
               </label>
+              <p className="text-xs text-gray-500 mb-2">
+                Your Finale subdomain (e.g., if your URL is buildsoil.finale.io, enter "buildsoil")
+              </p>
               <input
                 type="text"
                 value={settings.finale_account_path || ''}
                 onChange={(e) => handleChange('finale_account_path', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="e.g., yourcompany.finale.io"
+                placeholder="e.g., yourcompany"
               />
             </div>
             <button
@@ -227,32 +293,110 @@ export default function SettingsPage() {
         {/* Finale Sync Manager */}
         <FinaleSyncManager />
 
-        {/* Google Sheets */}
+        {/* Vendor Sync Manager */}
+        <VendorSyncManager />
+
+        {/* Sales Data Upload */}
+        <SalesDataUploader />
+
+        {/* Sync Settings */}
         <div className="bg-white p-6 rounded-lg shadow">
-          <h2 className="text-lg font-semibold mb-4">Google Sheets</h2>
+          <h2 className="text-lg font-semibold mb-4">Sync Settings</h2>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                Sheet ID
+                Sync Frequency
               </label>
+              <select
+                value={settings.sync_frequency_minutes || 60}
+                onChange={(e) => handleChange('sync_frequency_minutes', parseInt(e.target.value))}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value={15}>Every 15 minutes</option>
+                <option value={30}>Every 30 minutes</option>
+                <option value={60}>Every hour (recommended)</option>
+                <option value={120}>Every 2 hours</option>
+                <option value={240}>Every 4 hours</option>
+                <option value={1440}>Once daily</option>
+              </select>
+              <p className="text-sm text-gray-500 mt-1">
+                How often to automatically sync inventory data from Finale
+              </p>
+            </div>
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                id="sync_enabled"
+                checked={settings.sync_enabled !== false}
+                onChange={(e) => handleChange('sync_enabled', e.target.checked)}
+                className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+              />
+              <label htmlFor="sync_enabled" className="text-sm font-medium text-gray-700">
+                Enable automatic sync
+              </label>
+            </div>
+          </div>
+        </div>
+
+        {/* Google Sheets */}
+        <div className="bg-white p-6 rounded-lg shadow">
+          <h2 className="text-lg font-semibold mb-4">Google Sheets Export</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Configure Google Sheets integration to export inventory data, purchase orders, and reports. 
+            This allows you to share data with team members and create custom reports in Google Sheets.
+          </p>
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-3 mb-4">
+            <p className="text-sm text-blue-800">
+              <strong>Note:</strong> This integration is for exporting data from the app to Google Sheets. 
+              To import sales data from Finale reports, use the Sales Data Upload feature above.
+            </p>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Google Sheet URL or ID
+              </label>
+              <p className="text-xs text-gray-500 mb-2">
+                Paste your entire Google Sheets URL or just the Sheet ID
+              </p>
               <input
                 type="text"
-                value={settings.google_sheet_id || ''}
-                onChange={(e) => handleChange('google_sheet_id', e.target.value)}
+                value={googleSheetUrl || settings.google_sheet_id || ''}
+                onChange={(e) => {
+                  const value = e.target.value
+                  setGoogleSheetUrl(value)
+                  
+                  // Try to parse ID from URL
+                  const parsedId = parseGoogleSheetId(value)
+                  if (parsedId) {
+                    handleChange('google_sheet_id', parsedId)
+                  } else if (!value.includes('docs.google.com')) {
+                    // If it's not a URL, assume it's already an ID
+                    handleChange('google_sheet_id', value)
+                  }
+                }}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your Google Sheet ID"
+                placeholder="https://docs.google.com/spreadsheets/d/1BxiMVs0.../edit or just the ID"
               />
+              {googleSheetUrl && parseGoogleSheetId(googleSheetUrl) && (
+                <p className="text-xs text-green-600 mt-1">
+                  ✓ Sheet ID detected: {parseGoogleSheetId(googleSheetUrl)}
+                </p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 API Key
               </label>
+              <p className="text-xs text-gray-500 mb-2">
+                Generate from Google Cloud Console → APIs & Services → Credentials
+              </p>
               <input
                 type="password"
                 value={settings.google_sheets_api_key || ''}
                 onChange={(e) => handleChange('google_sheets_api_key', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your Google Sheets API key"
+                placeholder="e.g., AIzaSyDj4k3Kj4k3jK4k3jK4k3jK4k3jK4k3jK4"
               />
             </div>
             <button
@@ -277,29 +421,39 @@ export default function SettingsPage() {
         {/* Email Settings */}
         <div className="bg-white p-6 rounded-lg shadow">
           <h2 className="text-lg font-semibold mb-4">Email Settings (SendGrid)</h2>
+          <p className="text-sm text-gray-600 mb-4">
+            Configure SendGrid to automatically send purchase orders to vendors via email. 
+            Purchase orders can be sent as PDF attachments with customizable email templates.
+          </p>
           <div className="space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 SendGrid API Key
               </label>
+              <p className="text-xs text-gray-500 mb-2">
+                Get from SendGrid Dashboard → Settings → API Keys
+              </p>
               <input
                 type="password"
                 value={settings.sendgrid_api_key || ''}
                 onChange={(e) => handleChange('sendgrid_api_key', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Enter your SendGrid API key"
+                placeholder="e.g., SG.aBcDeFgHiJkLmNoPqRsTuVwXyZ1234567890"
               />
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 From Email
               </label>
+              <p className="text-xs text-gray-500 mb-2">
+                Must be a verified sender in SendGrid
+              </p>
               <input
                 type="email"
                 value={settings.from_email || ''}
                 onChange={(e) => handleChange('from_email', e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="noreply@yourdomain.com"
+                placeholder="purchasing@yourcompany.com"
               />
             </div>
             <button

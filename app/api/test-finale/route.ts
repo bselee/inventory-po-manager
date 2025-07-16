@@ -12,7 +12,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Test Finale API connection
-    const finaleUrl = `https://${settings.finale_account_path}/api/products`
+    const finaleUrl = `https://app.finaleinventory.com/api/${settings.finale_account_path}/product?limit=1`
     const finaleAuth = Buffer.from(`${settings.finale_api_key}:${settings.finale_api_secret}`).toString('base64')
     
     const response = await fetch(finaleUrl, {

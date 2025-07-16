@@ -14,6 +14,9 @@ interface InventoryItem {
   reorder_quantity: number
   vendor?: string
   cost: number
+  sales_last_30_days?: number
+  sales_last_90_days?: number
+  last_sales_update?: string
   last_updated: string
 }
 
@@ -33,6 +36,8 @@ export default function InventoryPage() {
   const [filterStatus, setFilterStatus] = useState<'all' | 'out-of-stock' | 'low-stock'>('all')
   const [editingItem, setEditingItem] = useState<string | null>(null)
   const [editStock, setEditStock] = useState(0)
+  const [editCost, setEditCost] = useState(0)
+  const [showCostEdit, setShowCostEdit] = useState(false)
 
   useEffect(() => {
     loadInventory()
@@ -103,6 +108,12 @@ export default function InventoryPage() {
     setEditStock(item.stock)
   }
 
+  const startEditingCost = (item: InventoryItem) => {
+    setEditingItem(item.id)
+    setEditCost(item.cost)
+    setShowCostEdit(true)
+  }
+
   const handleStockUpdate = async (itemId: string) => {
     try {
       const { error } = await supabase
@@ -122,9 +133,33 @@ export default function InventoryPage() {
           : item
       ))
       setEditingItem(null)
-      
-      // Reload summary
-      loadSummary()
+      loadSummary() // Refresh summary
+    } catch (error) {
+      console.error('Error updating stock:', error)
+    }
+  }
+
+  const handleCostUpdate = async (itemId: string) => {
+    try {
+      const { error } = await supabase
+        .from('inventory_items')
+        .update({ 
+          cost: editCost,
+          last_updated: new Date().toISOString()
+        })
+        .eq('id', itemId)
+
+      if (error) throw error
+
+      // Update local state
+      setItems(items.map(item => 
+        item.id === itemId 
+          ? { ...item, cost: editCost, last_updated: new Date().toISOString() }
+          : item
+      ))
+      setEditingItem(null)
+      setShowCostEdit(false)
+      loadSummary() // Refresh summary
     } catch (error) {
       console.error('Error updating stock:', error)
     }
@@ -255,6 +290,12 @@ export default function InventoryPage() {
                   Cost
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  30d Sales
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  90d Sales
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Value
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -274,7 +315,7 @@ export default function InventoryPage() {
                       {item.product_name}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {editingItem === item.id ? (
+                      {editingItem === item.id && !showCostEdit ? (
                         <div className="flex items-center gap-2">
                           <input
                             type="number"
@@ -324,7 +365,49 @@ export default function InventoryPage() {
                       {item.vendor || '-'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      ${item.cost.toFixed(2)}
+                      {editingItem === item.id && showCostEdit ? (
+                        <div className="flex items-center gap-2">
+                          <input
+                            type="number"
+                            value={editCost}
+                            onChange={(e) => setEditCost(parseFloat(e.target.value) || 0)}
+                            className="w-20 px-2 py-1 border border-gray-300 rounded"
+                            step="0.01"
+                            autoFocus
+                          />
+                          <button
+                            onClick={() => handleCostUpdate(item.id)}
+                            className="text-green-600 hover:text-green-800"
+                          >
+                            ✓
+                          </button>
+                          <button
+                            onClick={() => {
+                              setEditingItem(null)
+                              setShowCostEdit(false)
+                            }}
+                            className="text-red-600 hover:text-red-800"
+                          >
+                            ✗
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="flex items-center gap-2">
+                          ${item.cost.toFixed(2)}
+                          <button
+                            onClick={() => startEditingCost(item)}
+                            className="text-gray-400 hover:text-gray-600"
+                          >
+                            <Edit2 className="h-4 w-4" />
+                          </button>
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {item.sales_last_30_days || 0}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                      {item.sales_last_90_days || 0}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
                       ${(item.stock * item.cost).toFixed(2)}
