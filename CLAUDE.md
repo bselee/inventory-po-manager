@@ -30,6 +30,10 @@ This is a Next.js 14 application using the App Router for managing inventory and
 
 5. **State Management**: Client-side state uses React hooks. No global state management library.
 
+6. **File Processing**: Built-in support for CSV, Excel (xlsx), and PDF generation using dedicated libraries.
+
+7. **Styling**: Tailwind CSS with forms plugin for consistent UI components.
+
 ## Important Implementation Notes
 
 ### API Routes Pattern
@@ -67,6 +71,12 @@ Required environment variables (set in Vercel):
 - `SENDGRID_*` (email service credentials)
 - Google Sheets API configuration
 
+### TypeScript Configuration
+- Target: ES5 with modern lib features
+- Strict mode enabled
+- Path alias: `@/*` maps to root directory
+- Module resolution: bundler
+
 ### Current State
 - Most API routes have placeholder implementations returning mock data
 - `/api/sync-finale` is the most complete implementation
@@ -90,3 +100,10 @@ The application auto-deploys to Vercel on push to the main branch. The `vercel.j
 - Security headers
 - Redirect from root to `/inventory`
 - Health check endpoint rewrite
+- Hourly cron job for Finale sync (`/api/cron/sync-finale`)
+- Uses `npm ci` for installation
+
+### Build Configuration
+- TypeScript errors are ignored during build (for development flexibility)
+- ESLint errors are ignored during build
+- SWC minification is disabled

@@ -8,7 +8,9 @@
     "start": "next start",
     "lint": "next lint",
     "type-check": "tsc --noEmit",
-    "setup": "node scripts/setup.js"
+    "setup": "node scripts/setup.js",
+    "deploy": "bash scripts/deploy-vercel.sh",
+    "deploy:check": "node scripts/vercel-deploy.js"
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.0",

@@ -2,6 +2,19 @@
 
 This guide consolidates all known Vercel deployment issues and their solutions.
 
+## Quick Fix: Deployment Not Updating
+
+If your deployment is stuck on an old commit, run:
+```bash
+./scripts/deploy-vercel.sh YOUR_VERCEL_TOKEN
+```
+
+This script will:
+1. Check git status and sync
+2. Verify Vercel configuration
+3. Force a fresh deployment
+4. Verify the deployment worked
+
 ## Common Build Errors
 
 ### 1. TypeScript Errors During Build
@@ -195,9 +208,38 @@ If deployment fails completely:
    - Deploy from clean state
    - Incrementally add changes
 
+## Deployment Stuck on Old Commit
+
+**Issue**: Vercel shows successful deployment but uses outdated commit
+**Common Causes**:
+1. GitHub webhook disconnected
+2. Cron job configuration blocking deployment (Hobby plan)
+3. Vercel using cached/redeploy instead of fresh build
+
+**Solution**:
+```bash
+# Quick fix - force fresh deployment
+./scripts/deploy-vercel.sh YOUR_VERCEL_TOKEN
+
+# Or manually:
+vercel --prod --token YOUR_TOKEN --yes
+```
+
+**Prevention**:
+1. Ensure GitHub webhook is connected in Vercel Dashboard
+2. Use daily cron jobs on Hobby plan (not hourly)
+3. Check deployment commit SHA matches your latest:
+   ```bash
+   # Check local
+   git log --oneline -1
+   
+   # Check what Vercel deployed
+   vercel inspect DEPLOYMENT_URL --token YOUR_TOKEN
+   ```
+
 ## Contact Support
 
 If issues persist:
 - Check Vercel Status: https://vercel-status.com
 - Review Vercel Docs: https://vercel.com/docs
-- Check Supabase Status: https://status.supabase.io
+- Check Supabase Status: https://status.supabase.io/init
