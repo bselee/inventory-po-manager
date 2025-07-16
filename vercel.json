@@ -52,7 +52,7 @@
   "crons": [
     {
       "path": "/api/cron/sync-finale",
-      "schedule": "0 * * * *"
+      "schedule": "0 12 * * *"
     }
   ]
 }
