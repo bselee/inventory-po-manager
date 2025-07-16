@@ -11,6 +11,8 @@ interface Settings {
   id?: string
   finale_api_key?: string
   finale_api_secret?: string
+  finale_username?: string
+  finale_password?: string
   finale_account_path?: string
   google_sheet_id?: string
   google_sheets_api_key?: string
@@ -140,7 +142,7 @@ export default function SettingsPage() {
     try {
       // Map service names to their specific endpoints
       const endpointMap: Record<string, string> = {
-        'finale': '/api/debug-finale', // Using debug endpoint for better error info
+        'finale': '/api/test-finale-session', // Test both auth methods
         'google-sheets': '/api/test-sheets',
         'sendgrid': '/api/test-sendgrid'
       }
@@ -159,13 +161,29 @@ export default function SettingsPage() {
         if (result.debug) {
           console.error(`${service} connection debug info:`, result.debug)
         }
+        if (result.results) {
+          console.log(`${service} authentication test results:`, result.results)
+        }
         setMessage({ type: 'error', text: result.error || `Failed to connect to ${service}` })
       } else {
         // Show debug info for successful connections too
         if (result.debug) {
           console.log(`${service} connection debug info:`, result.debug)
         }
-        setMessage({ type: 'success', text: result.message || `${service} connection successful` })
+        if (result.results) {
+          console.log(`${service} authentication test results:`, result.results)
+          // Show recommendations if available
+          if (result.results.recommendations?.length > 0) {
+            setMessage({ 
+              type: 'success', 
+              text: `${result.message}. ${result.results.recommendations[0]}` 
+            })
+          } else {
+            setMessage({ type: 'success', text: result.message || `${service} connection successful` })
+          }
+        } else {
+          setMessage({ type: 'success', text: result.message || `${service} connection successful` })
+        }
       }
     } catch (error) {
       setTestResults(prev => ({ ...prev, [service]: 'error' }))
@@ -278,6 +296,43 @@ export default function SettingsPage() {
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="e.g., yourcompany"
               />
+            </div>
+            
+            {/* Alternative Authentication Section */}
+            <div className="border-t pt-4 mt-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                Alternative: Username/Password Authentication
+              </h3>
+              <p className="text-xs text-gray-500 mb-3">
+                If you don't have API keys, you can use your Finale username and password. 
+                This is useful for accessing reports and legacy integrations.
+              </p>
+              <div className="space-y-3">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Username (Optional)
+                  </label>
+                  <input
+                    type="text"
+                    value={settings.finale_username || ''}
+                    onChange={(e) => handleChange('finale_username', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Your Finale username"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Password (Optional)
+                  </label>
+                  <input
+                    type="password"
+                    value={settings.finale_password || ''}
+                    onChange={(e) => handleChange('finale_password', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    placeholder="Your Finale password"
+                  />
+                </div>
+              </div>
             </div>
             <button
               onClick={() => testConnection('finale')}
