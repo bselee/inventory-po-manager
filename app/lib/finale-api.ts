@@ -482,12 +482,12 @@ export class FinaleApiService {
 // Helper function to get API config from settings
 export async function getFinaleConfig(): Promise<FinaleApiConfig | null> {
   try {
+    // First try to get any settings record
     const { data: settings, error } = await supabase
       .from('settings')
       .select('finale_api_key, finale_api_secret, finale_account_path')
-      .order('created_at', { ascending: false })
       .limit(1)
-      .single()
+      .maybeSingle() // Use maybeSingle instead of single to handle no records
 
     console.log('[getFinaleConfig] Query result:', { settings, error })
 
