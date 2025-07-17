@@ -66,24 +66,53 @@ export default function SettingsPage() {
           setGoogleSheetUrl(data.google_sheet_id)
         }
       } else {
-        // No settings found, try to load from env
+        // No settings found, try to load from env and auto-save
         const envResponse = await fetch('/api/load-env-settings')
         const envData = await envResponse.json()
         
         if (!envData.hasSettings && envData.envSettings) {
           // Use env settings as defaults
-          setSettings({
-            ...envData.envSettings,
+          const initialSettings = {
+            finale_api_key: envData.envSettings.finale_api_key || '',
+            finale_api_secret: envData.envSettings.finale_api_secret || '',
+            finale_account_path: envData.envSettings.finale_account_path || '',
             low_stock_threshold: 10,
             sync_frequency_minutes: 60,
             sync_enabled: true
-          })
+          }
           
+          setSettings(initialSettings)
+          
+          // Auto-save if we have credentials
           if (envData.envSettings.finale_api_key) {
-            setMessage({ 
-              type: 'success', 
-              text: 'Loaded credentials from environment. Click Save to store them.' 
-            })
+            console.log('Auto-saving environment credentials...')
+            
+            try {
+              const { data, error } = await supabase
+                .from('settings')
+                .upsert({
+                  id: 1,
+                  ...initialSettings
+                }, {
+                  onConflict: 'id'
+                })
+                .select()
+                .single()
+              
+              if (!error && data) {
+                setSettings(data)
+                setMessage({ 
+                  type: 'success', 
+                  text: 'Environment credentials loaded and saved automatically!' 
+                })
+              }
+            } catch (autoSaveError) {
+              console.error('Auto-save failed:', autoSaveError)
+              setMessage({ 
+                type: 'success', 
+                text: 'Loaded credentials from environment. Click Save to store them.' 
+              })
+            }
           }
         }
       }
@@ -100,56 +129,42 @@ export default function SettingsPage() {
     setMessage(null)
 
     try {
-      if (settings.id) {
-        // Update existing settings
-        const { error } = await supabase
-          .from('settings')
-          .update({
-            finale_api_key: settings.finale_api_key,
-            finale_api_secret: settings.finale_api_secret,
-            finale_account_path: settings.finale_account_path,
-            finale_username: settings.finale_username,
-            finale_password: settings.finale_password,
-            google_sheet_id: settings.google_sheet_id,
-            google_sheets_api_key: settings.google_sheets_api_key,
-            sendgrid_api_key: settings.sendgrid_api_key,
-            from_email: settings.from_email,
-            low_stock_threshold: settings.low_stock_threshold,
-            sync_frequency_minutes: settings.sync_frequency_minutes,
-            sync_enabled: settings.sync_enabled
-          })
-          .eq('id', settings.id)
+      console.log('Saving settings:', settings)
+      
+      // Use upsert to handle both insert and update
+      const { data, error } = await supabase
+        .from('settings')
+        .upsert({
+          id: settings.id || 1, // Use existing id or default to 1
+          finale_api_key: settings.finale_api_key || '',
+          finale_api_secret: settings.finale_api_secret || '',
+          finale_account_path: settings.finale_account_path || '',
+          finale_username: settings.finale_username || '',
+          finale_password: settings.finale_password || '',
+          google_sheet_id: settings.google_sheet_id || '',
+          google_sheets_api_key: settings.google_sheets_api_key || '',
+          sendgrid_api_key: settings.sendgrid_api_key || '',
+          from_email: settings.from_email || '',
+          low_stock_threshold: settings.low_stock_threshold || 10,
+          sync_frequency_minutes: settings.sync_frequency_minutes || 60,
+          sync_enabled: settings.sync_enabled !== false
+        }, {
+          onConflict: 'id'
+        })
+        .select()
+        .single()
 
-        if (error) throw error
-      } else {
-        // Insert new settings
-        const { data, error } = await supabase
-          .from('settings')
-          .insert({
-            finale_api_key: settings.finale_api_key,
-            finale_api_secret: settings.finale_api_secret,
-            finale_account_path: settings.finale_account_path,
-            finale_username: settings.finale_username,
-            finale_password: settings.finale_password,
-            google_sheet_id: settings.google_sheet_id,
-            google_sheets_api_key: settings.google_sheets_api_key,
-            sendgrid_api_key: settings.sendgrid_api_key,
-            from_email: settings.from_email,
-            low_stock_threshold: settings.low_stock_threshold,
-            sync_frequency_minutes: settings.sync_frequency_minutes,
-            sync_enabled: settings.sync_enabled
-          })
-          .select()
-          .single()
-
-        if (error) throw error
-        if (data) setSettings(data)
+      if (error) {
+        console.error('Supabase error:', error)
+        throw error
       }
 
+      console.log('Settings saved successfully:', data)
+      setSettings(data)
       setMessage({ type: 'success', text: 'Settings saved successfully!' })
     } catch (error) {
       console.error('Error saving settings:', error)
-      setMessage({ type: 'error', text: 'Failed to save settings' })
+      setMessage({ type: 'error', text: `Failed to save settings: ${error.message}` })
     } finally {
       setSaving(false)
     }
