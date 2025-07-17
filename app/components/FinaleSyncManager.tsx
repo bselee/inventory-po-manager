@@ -28,9 +28,19 @@ export default function FinaleSyncManager() {
   const [showDetails, setShowDetails] = useState(false)
   const [filterMode, setFilterMode] = useState<'current' | 'all' | 'custom'>('current')
   const [customYear, setCustomYear] = useState(new Date().getFullYear())
+  const [refreshKey, setRefreshKey] = useState(0)
 
   useEffect(() => {
     checkSyncStatus()
+  }, [refreshKey])
+
+  // Check for settings changes every few seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      checkSyncStatus()
+    }, 5000) // Check every 5 seconds
+
+    return () => clearInterval(interval)
   }, [])
 
   const checkSyncStatus = async () => {
