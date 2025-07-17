@@ -6,6 +6,7 @@ import { Save, TestTube, Check, X, Loader2, CheckCircle, AlertCircle } from 'luc
 import FinaleSyncManager from '@/app/components/FinaleSyncManager'
 import SalesDataUploader from '@/app/components/SalesDataUploader'
 import VendorSyncManager from '@/app/components/VendorSyncManager'
+import FinaleDebugPanel from '@/app/components/FinaleDebugPanel'
 
 interface Settings {
   id?: string
@@ -352,6 +353,9 @@ export default function SettingsPage() {
               )}
               Test Connection
             </button>
+            
+            {/* Debug Panel */}
+            <FinaleDebugPanel settings={settings} />
           </div>
         </div>
 
