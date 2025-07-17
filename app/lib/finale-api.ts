@@ -80,43 +80,83 @@ export class FinaleApiService {
     }
   }
 
-  // Get all products with inventory data
+  // Get all products with inventory data (current year only)
   async getInventoryData(): Promise<FinaleProduct[]> {
     const products: FinaleProduct[] = []
     let offset = 0
     const limit = 100 // Finale's typical page size
     let hasMore = true
+    
+    // Get current year for filtering
+    const currentYear = new Date().getFullYear()
+    const startOfYear = `${currentYear}-01-01`
+
+    console.log(`[Finale Sync] Fetching products modified since ${startOfYear}`)
 
     try {
       while (hasMore) {
-        const response = await fetch(
-          `${this.baseUrl}/product?limit=${limit}&offset=${offset}`, 
-          {
-            headers: {
-              'Authorization': this.authHeader,
-              'Content-Type': 'application/json'
-            }
+        // Note: The filter parameter syntax may vary - adjust if needed
+        const url = `${this.baseUrl}/product?limit=${limit}&offset=${offset}`
+        console.log(`[Finale Sync] Fetching page: offset=${offset}, limit=${limit}`)
+        
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': this.authHeader,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
           }
-        )
+        })
 
         if (!response.ok) {
+          const errorText = await response.text()
+          console.error(`[Finale Sync] API error: ${response.status}`, errorText)
           throw new Error(`Finale API error: ${response.status}`)
         }
 
         const data = await response.json()
         
-        if (data.products && data.products.length > 0) {
-          products.push(...data.products)
-          offset += limit
+        // Log response structure for debugging
+        if (offset === 0) {
+          console.log(`[Finale Sync] Response structure:`, {
+            isArray: Array.isArray(data),
+            sampleKeys: Array.isArray(data) ? 'array response' : Object.keys(data).slice(0, 5)
+          })
+        }
+        
+        // Handle direct array response (most common for product endpoint)
+        if (Array.isArray(data)) {
+          // Filter for current year if lastModifiedDate exists
+          const currentYearProducts = data.filter(product => {
+            if (!product.lastModifiedDate) return true // Include if no date
+            const modifiedYear = new Date(product.lastModifiedDate).getFullYear()
+            return modifiedYear >= currentYear
+          })
+          
+          products.push(...currentYearProducts)
+          hasMore = data.length === limit
+          console.log(`[Finale Sync] Page retrieved: ${data.length} items, ${currentYearProducts.length} from current year`)
+        } else if (data.products && Array.isArray(data.products)) {
+          // Handle object with products array
+          const currentYearProducts = data.products.filter(product => {
+            if (!product.lastModifiedDate) return true
+            const modifiedYear = new Date(product.lastModifiedDate).getFullYear()
+            return modifiedYear >= currentYear
+          })
+          
+          products.push(...currentYearProducts)
           hasMore = data.products.length === limit
         } else {
+          console.log(`[Finale Sync] Unexpected response format`)
           hasMore = false
         }
+        
+        offset += limit
       }
 
+      console.log(`[Finale Sync] Total products fetched: ${products.length}`)
       return products
     } catch (error) {
-      console.error('Error fetching Finale inventory:', error)
+      console.error('[Finale Sync] Error fetching inventory:', error)
       throw error
     }
   }
@@ -284,37 +324,61 @@ export class FinaleApiService {
     const vendors: any[] = []
     let offset = 0
     const limit = 100
+    let hasMore = true
+
+    console.log('[Finale Sync] Starting vendor fetch...')
 
     try {
-      while (true) {
-        const response = await fetch(
-          `${this.baseUrl}/vendor?limit=${limit}&offset=${offset}`, 
-          {
-            headers: {
-              'Authorization': this.authHeader,
-              'Content-Type': 'application/json'
-            }
+      while (hasMore) {
+        const url = `${this.baseUrl}/vendor?limit=${limit}&offset=${offset}`
+        console.log(`[Finale Sync] Fetching vendors: offset=${offset}, limit=${limit}`)
+        
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': this.authHeader,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
           }
-        )
+        })
 
         if (!response.ok) {
-          throw new Error(`Finale API error: ${response.status}`)
+          const errorText = await response.text()
+          console.error(`[Finale Sync] Vendor API error: ${response.status}`, errorText)
+          throw new Error(`Finale API error: ${response.status} - ${errorText.substring(0, 200)}`)
         }
 
         const data = await response.json()
         
-        if (data.vendors && data.vendors.length > 0) {
-          vendors.push(...data.vendors)
-          offset += limit
-          if (data.vendors.length < limit) break
-        } else {
-          break
+        // Log response structure for debugging
+        if (offset === 0) {
+          console.log(`[Finale Sync] Vendor response structure:`, {
+            isArray: Array.isArray(data),
+            sampleKeys: Array.isArray(data) ? 'array response' : Object.keys(data).slice(0, 5)
+          })
         }
+        
+        // Handle direct array response (like products endpoint)
+        if (Array.isArray(data)) {
+          vendors.push(...data)
+          hasMore = data.length === limit
+          console.log(`[Finale Sync] Vendor page retrieved: ${data.length} items`)
+        } else if (data.vendors && Array.isArray(data.vendors)) {
+          // Handle object with vendors array
+          vendors.push(...data.vendors)
+          hasMore = data.vendors.length === limit
+          console.log(`[Finale Sync] Vendor page retrieved: ${data.vendors.length} items`)
+        } else {
+          console.log(`[Finale Sync] Unexpected vendor response format`, data)
+          hasMore = false
+        }
+        
+        offset += limit
       }
 
+      console.log(`[Finale Sync] Total vendors fetched: ${vendors.length}`)
       return vendors
     } catch (error) {
-      console.error('Error fetching vendors from Finale:', error)
+      console.error('[Finale Sync] Error fetching vendors:', error)
       throw error
     }
   }
