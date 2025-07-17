@@ -129,6 +129,8 @@ export default function SettingsPage() {
             finale_api_key: settings.finale_api_key,
             finale_api_secret: settings.finale_api_secret,
             finale_account_path: settings.finale_account_path,
+            finale_username: settings.finale_username,
+            finale_password: settings.finale_password,
             google_sheet_id: settings.google_sheet_id,
             google_sheets_api_key: settings.google_sheets_api_key,
             sendgrid_api_key: settings.sendgrid_api_key,
