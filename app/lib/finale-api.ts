@@ -47,7 +47,14 @@ export class FinaleApiService {
 
   constructor(config: FinaleApiConfig) {
     this.config = config
-    this.baseUrl = `https://app.finaleinventory.com/api/${config.accountPath}`
+    // Clean the account path - remove any URL parts if provided
+    const cleanPath = config.accountPath
+      .replace(/^https?:\/\//, '')
+      .replace(/\.finaleinventory\.com.*$/, '')
+      .replace(/^app\./, '')
+      .replace(/\/$/, '')
+      .trim()
+    this.baseUrl = `https://app.finaleinventory.com/api/${cleanPath}`
     
     // Create Basic Auth header
     const authString = Buffer.from(`${config.apiKey}:${config.apiSecret}`).toString('base64')

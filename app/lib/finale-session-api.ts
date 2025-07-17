@@ -24,7 +24,14 @@ export class FinaleSessionApiService {
 
   constructor(config: FinaleSessionConfig) {
     this.config = config
-    this.baseUrl = `https://app.finaleinventory.com/${config.accountPath}`
+    // Clean the account path - remove any URL parts if provided
+    const cleanPath = config.accountPath
+      .replace(/^https?:\/\//, '')
+      .replace(/\.finaleinventory\.com.*$/, '')
+      .replace(/^app\./, '')
+      .replace(/\/$/, '')
+      .trim()
+    this.baseUrl = `https://app.finaleinventory.com/${cleanPath}`
   }
 
   /**

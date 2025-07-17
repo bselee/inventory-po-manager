@@ -142,7 +142,7 @@ export default function SettingsPage() {
     try {
       // Map service names to their specific endpoints
       const endpointMap: Record<string, string> = {
-        'finale': '/api/test-finale-session', // Test both auth methods
+        'finale': '/api/finale-auth-test', // Comprehensive auth testing
         'google-sheets': '/api/test-sheets',
         'sendgrid': '/api/test-sendgrid'
       }
@@ -287,7 +287,9 @@ export default function SettingsPage() {
                 Account Path
               </label>
               <p className="text-xs text-gray-500 mb-2">
-                Your Finale subdomain (e.g., if your URL is buildsoil.finale.io, enter "buildsoil")
+                Your account identifier from the URL. If your Finale URL is 
+                https://app.finaleinventory.com/buildasoilorganics/sc2/, 
+                enter "buildasoilorganics" (NOT "app" or the full URL)
               </p>
               <input
                 type="text"
