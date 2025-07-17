@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/lib/supabase'
-import { Building2, Mail, Phone, MapPin, FileText, Search, RefreshCw, Loader2, Edit2, Plus } from 'lucide-react'
+import { Building2, Mail, Phone, MapPin, FileText, Search, RefreshCw, Loader2, Edit2, Plus, Cloud, CloudOff } from 'lucide-react'
 
 interface Vendor {
   id: string
@@ -72,40 +72,55 @@ export default function VendorsPage() {
 
   const handleUpdate = async (vendorId: string) => {
     try {
-      const { error } = await supabase
-        .from('vendors')
-        .update({
-          ...editForm,
-          last_updated: new Date().toISOString()
+      const vendorToUpdate = vendors.find(v => v.id === vendorId)
+      if (!vendorToUpdate) return
+
+      const response = await fetch(`/api/vendors/${vendorId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...vendorToUpdate,
+          ...editForm
         })
-        .eq('id', vendorId)
+      })
 
-      if (error) throw error
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to update vendor')
+      }
 
+      const updatedVendor = await response.json()
+      
       // Update local state
       setVendors(vendors.map(vendor => 
-        vendor.id === vendorId 
-          ? { ...vendor, ...editForm, last_updated: new Date().toISOString() }
-          : vendor
+        vendor.id === vendorId ? updatedVendor : vendor
       ))
       setEditingVendor(null)
+
+      // Show sync warning if present
+      if (updatedVendor.syncWarning) {
+        alert(updatedVendor.syncWarning)
+      }
     } catch (error) {
       console.error('Error updating vendor:', error)
+      alert(`Error: ${error instanceof Error ? error.message : 'Failed to update vendor'}`)
     }
   }
 
   const handleAdd = async () => {
     try {
-      const { data, error } = await supabase
-        .from('vendors')
-        .insert({
-          ...newVendor,
-          last_updated: new Date().toISOString()
-        })
-        .select()
-        .single()
+      const response = await fetch('/api/vendors', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newVendor)
+      })
 
-      if (error) throw error
+      if (!response.ok) {
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to create vendor')
+      }
+
+      const data = await response.json()
 
       if (data) {
         setVendors([...vendors, data])
@@ -118,9 +133,15 @@ export default function VendorsPage() {
           address: '',
           notes: ''
         })
+
+        // Show sync status
+        if (data.syncStatus === 'local-only') {
+          alert('Vendor created locally but could not sync to Finale. Check your Finale settings.')
+        }
       }
     } catch (error) {
       console.error('Error adding vendor:', error)
+      alert(`Error: ${error instanceof Error ? error.message : 'Failed to add vendor'}`)
     }
   }
 
@@ -183,9 +204,16 @@ export default function VendorsPage() {
               <div className="flex items-center gap-3">
                 <Building2 className="h-8 w-8 text-gray-400" />
                 <div>
-                  <h3 className="font-semibold text-lg">{vendor.name}</h3>
+                  <h3 className="font-semibold text-lg flex items-center gap-2">
+                    {vendor.name}
+                    {vendor.finale_vendor_id ? (
+                      <Cloud className="h-4 w-4 text-green-500" title="Synced with Finale" />
+                    ) : (
+                      <CloudOff className="h-4 w-4 text-gray-400" title="Local only" />
+                    )}
+                  </h3>
                   {vendor.finale_vendor_id && (
-                    <p className="text-xs text-gray-500">ID: {vendor.finale_vendor_id}</p>
+                    <p className="text-xs text-gray-500">Finale ID: {vendor.finale_vendor_id}</p>
                   )}
                 </div>
               </div>

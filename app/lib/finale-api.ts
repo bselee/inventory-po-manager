@@ -415,6 +415,68 @@ export class FinaleApiService {
       throw error
     }
   }
+
+  // Create a new vendor in Finale
+  async createVendor(vendor: any): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseUrl}/vendor`, {
+        method: 'POST',
+        headers: {
+          'Authorization': this.authHeader,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          vendorName: vendor.name,
+          contactName: vendor.contact_name,
+          email: vendor.email,
+          phone: vendor.phone,
+          address: vendor.address,
+          notes: vendor.notes
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.text()
+        throw new Error(`Finale API error: ${response.status} - ${errorData}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error creating vendor in Finale:', error)
+      throw error
+    }
+  }
+
+  // Update an existing vendor in Finale
+  async updateVendor(vendorId: string, vendor: any): Promise<any> {
+    try {
+      const response = await fetch(`${this.baseUrl}/vendor/${vendorId}`, {
+        method: 'PUT',
+        headers: {
+          'Authorization': this.authHeader,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          vendorName: vendor.name,
+          contactName: vendor.contact_name,
+          email: vendor.email,
+          phone: vendor.phone,
+          address: vendor.address,
+          notes: vendor.notes
+        })
+      })
+
+      if (!response.ok) {
+        const errorData = await response.text()
+        throw new Error(`Finale API error: ${response.status} - ${errorData}`)
+      }
+
+      return await response.json()
+    } catch (error) {
+      console.error('Error updating vendor in Finale:', error)
+      throw error
+    }
+  }
 }
 
 // Helper function to get API config from settings
