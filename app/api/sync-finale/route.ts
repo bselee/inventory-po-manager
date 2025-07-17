@@ -5,9 +5,9 @@ import { supabase } from '@/lib/supabase'
 
 export async function POST(request: NextRequest) {
   try {
-    // Get dry run flag from request body
+    // Get dry run flag and filter year from request body
     const body = await request.json().catch(() => ({}))
-    const { dryRun = false } = body
+    const { dryRun = false, filterYear } = body
 
     // Get Finale API config from settings
     const config = await getFinaleConfig()
@@ -31,8 +31,8 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
 
-    // Perform sync
-    const result = await finaleApi.syncToSupabase(dryRun)
+    // Perform sync with optional year filter
+    const result = await finaleApi.syncToSupabase(dryRun, filterYear)
 
     return NextResponse.json(result)
   } catch (error) {

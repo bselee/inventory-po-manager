@@ -80,18 +80,21 @@ export class FinaleApiService {
     }
   }
 
-  // Get all products with inventory data (current year only)
-  async getInventoryData(): Promise<FinaleProduct[]> {
+  // Get all products with inventory data (with optional date filtering)
+  async getInventoryData(filterYear?: number | null): Promise<FinaleProduct[]> {
     const products: FinaleProduct[] = []
     let offset = 0
     const limit = 100 // Finale's typical page size
     let hasMore = true
     
-    // Get current year for filtering
-    const currentYear = new Date().getFullYear()
-    const startOfYear = `${currentYear}-01-01`
-
-    console.log(`[Finale Sync] Fetching products modified since ${startOfYear}`)
+    // Use provided year or current year for filtering (null means no filter)
+    const yearFilter = filterYear === undefined ? new Date().getFullYear() : filterYear
+    
+    if (yearFilter) {
+      console.log(`[Finale Sync] Fetching products modified since year ${yearFilter}`)
+    } else {
+      console.log(`[Finale Sync] Fetching all products (no date filter)`)
+    }
 
     try {
       while (hasMore) {
@@ -125,25 +128,30 @@ export class FinaleApiService {
         
         // Handle direct array response (most common for product endpoint)
         if (Array.isArray(data)) {
-          // Filter for current year if lastModifiedDate exists
-          const currentYearProducts = data.filter(product => {
+          // Filter by year if specified
+          const filteredProducts = yearFilter ? data.filter(product => {
             if (!product.lastModifiedDate) return true // Include if no date
             const modifiedYear = new Date(product.lastModifiedDate).getFullYear()
-            return modifiedYear >= currentYear
-          })
+            return modifiedYear >= yearFilter
+          }) : data
           
-          products.push(...currentYearProducts)
+          products.push(...filteredProducts)
           hasMore = data.length === limit
-          console.log(`[Finale Sync] Page retrieved: ${data.length} items, ${currentYearProducts.length} from current year`)
+          
+          if (yearFilter) {
+            console.log(`[Finale Sync] Page retrieved: ${data.length} items, ${filteredProducts.length} from year ${yearFilter} or later`)
+          } else {
+            console.log(`[Finale Sync] Page retrieved: ${data.length} items (no filtering)`)
+          }
         } else if (data.products && Array.isArray(data.products)) {
           // Handle object with products array
-          const currentYearProducts = data.products.filter(product => {
+          const filteredProducts = yearFilter ? data.products.filter(product => {
             if (!product.lastModifiedDate) return true
             const modifiedYear = new Date(product.lastModifiedDate).getFullYear()
-            return modifiedYear >= currentYear
-          })
+            return modifiedYear >= yearFilter
+          }) : data.products
           
-          products.push(...currentYearProducts)
+          products.push(...filteredProducts)
           hasMore = data.products.length === limit
         } else {
           console.log(`[Finale Sync] Unexpected response format`)
@@ -201,12 +209,12 @@ export class FinaleApiService {
   }
 
   // Sync inventory data to Supabase
-  async syncToSupabase(dryRun = false) {
+  async syncToSupabase(dryRun = false, filterYear?: number | null) {
     console.log('Starting Finale to Supabase sync...')
     
     try {
-      // Get all products from Finale
-      const finaleProducts = await this.getInventoryData()
+      // Get all products from Finale with optional year filter
+      const finaleProducts = await this.getInventoryData(filterYear)
       console.log(`Fetched ${finaleProducts.length} products from Finale`)
 
       if (dryRun) {
@@ -215,7 +223,8 @@ export class FinaleApiService {
           success: true,
           totalProducts: finaleProducts.length,
           sample: finaleProducts.slice(0, 5).map(p => this.transformToInventoryItem(p)),
-          dryRun: true
+          dryRun: true,
+          filterYear: filterYear === undefined ? new Date().getFullYear() : filterYear
         }
       }
 
@@ -253,7 +262,8 @@ export class FinaleApiService {
         success: true,
         totalProducts: finaleProducts.length,
         processed,
-        results
+        results,
+        filterYear: filterYear === undefined ? new Date().getFullYear() : filterYear
       }
     } catch (error) {
       console.error('Sync failed:', error)

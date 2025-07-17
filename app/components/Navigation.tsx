@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Package, ShoppingCart, Settings } from 'lucide-react'
+import { Package, ShoppingCart, Settings, Building2 } from 'lucide-react'
 
 export default function Navigation() {
   const pathname = usePathname()
@@ -19,6 +19,12 @@ export default function Navigation() {
       label: 'Purchase Orders',
       icon: ShoppingCart,
       description: 'Manage and create purchase orders'
+    },
+    {
+      href: '/vendors',
+      label: 'Vendors',
+      icon: Building2,
+      description: 'Manage vendor information'
     },
     {
       href: '/settings',

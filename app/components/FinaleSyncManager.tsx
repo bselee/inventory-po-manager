@@ -26,6 +26,8 @@ export default function FinaleSyncManager() {
   const [syncing, setSyncing] = useState(false)
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null)
   const [showDetails, setShowDetails] = useState(false)
+  const [filterMode, setFilterMode] = useState<'current' | 'all' | 'custom'>('current')
+  const [customYear, setCustomYear] = useState(new Date().getFullYear())
 
   useEffect(() => {
     checkSyncStatus()
@@ -45,11 +47,21 @@ export default function FinaleSyncManager() {
     setSyncing(true)
     setSyncResult(null)
 
+    // Determine filter year based on mode
+    let filterYear: number | null | undefined
+    if (filterMode === 'current') {
+      filterYear = undefined // Use default (current year)
+    } else if (filterMode === 'all') {
+      filterYear = null // No filtering
+    } else {
+      filterYear = customYear // Use custom year
+    }
+
     try {
       const response = await fetch('/api/sync-finale', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ dryRun })
+        body: JSON.stringify({ dryRun, filterYear })
       })
 
       const result = await response.json()
@@ -117,6 +129,62 @@ export default function FinaleSyncManager() {
           </>
         )}
       </div>
+
+      {/* Date Filter Options */}
+      {status.configured && (
+        <div className="mb-4 p-4 bg-gray-50 rounded-md">
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Date Filter Options
+          </label>
+          <div className="space-y-2">
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="filterMode"
+                value="current"
+                checked={filterMode === 'current'}
+                onChange={(e) => setFilterMode('current')}
+                className="text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm">Current year only ({new Date().getFullYear()})</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="filterMode"
+                value="all"
+                checked={filterMode === 'all'}
+                onChange={(e) => setFilterMode('all')}
+                className="text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm">All products (no date filter)</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="filterMode"
+                value="custom"
+                checked={filterMode === 'custom'}
+                onChange={(e) => setFilterMode('custom')}
+                className="text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm">Custom year:</span>
+              <input
+                type="number"
+                value={customYear}
+                onChange={(e) => setCustomYear(parseInt(e.target.value) || new Date().getFullYear())}
+                min="2000"
+                max={new Date().getFullYear()}
+                disabled={filterMode !== 'custom'}
+                className="px-2 py-1 border border-gray-300 rounded text-sm w-20 disabled:bg-gray-100"
+              />
+            </label>
+          </div>
+          <p className="text-xs text-gray-500 mt-2">
+            Note: This filters products by their last modified date in Finale
+          </p>
+        </div>
+      )}
 
       {/* Sync Actions */}
       {status.configured ? (
