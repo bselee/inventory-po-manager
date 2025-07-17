@@ -41,11 +41,11 @@ export async function POST(request: NextRequest) {
     if (settings.finale_api_key && settings.finale_api_secret) {
       const authString = Buffer.from(`${settings.finale_api_key}:${settings.finale_api_secret}`).toString('base64')
       
-      // Try multiple API endpoints
+      // Try multiple API endpoints - the correct pattern is /{account}/api/
       const apiEndpoints = [
-        `https://app.finaleinventory.com/api/${accountPath}/product?limit=1`,
         `https://app.finaleinventory.com/${accountPath}/api/product?limit=1`,
-        `https://${accountPath}.finaleinventory.com/api/product?limit=1`
+        `https://app.finaleinventory.com/${accountPath}/api/products?limit=1`,
+        `https://app.finaleinventory.com/${accountPath}/api/item?limit=1`
       ]
       
       for (const endpoint of apiEndpoints) {

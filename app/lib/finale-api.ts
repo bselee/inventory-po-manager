@@ -53,8 +53,11 @@ export class FinaleApiService {
       .replace(/\.finaleinventory\.com.*$/, '')
       .replace(/^app\./, '')
       .replace(/\/$/, '')
+      .replace(/\/api$/, '') // Remove /api if included
       .trim()
-    this.baseUrl = `https://app.finaleinventory.com/api/${cleanPath}`
+    
+    // The correct URL structure is: https://app.finaleinventory.com/{account}/api/
+    this.baseUrl = `https://app.finaleinventory.com/${cleanPath}/api`
     
     // Create Basic Auth header
     const authString = Buffer.from(`${config.apiKey}:${config.apiSecret}`).toString('base64')

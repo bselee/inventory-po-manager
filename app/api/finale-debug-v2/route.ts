@@ -47,7 +47,7 @@ export async function POST(request: NextRequest) {
       console.log('Testing API Key authentication...')
       
       const authString = Buffer.from(`${settings.finale_api_key}:${settings.finale_api_secret}`).toString('base64')
-      const apiUrl = `https://app.finaleinventory.com/api/${accountPath}/product?limit=1`
+      const apiUrl = `https://app.finaleinventory.com/${accountPath}/api/product?limit=1`
       
       try {
         const response = await fetch(apiUrl, {
