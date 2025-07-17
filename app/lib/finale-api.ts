@@ -340,8 +340,9 @@ export class FinaleApiService {
 
     try {
       while (hasMore) {
-        const url = `${this.baseUrl}/vendor?limit=${limit}&offset=${offset}`
-        console.log(`[Finale Sync] Fetching vendors: offset=${offset}, limit=${limit}`)
+        // Finale API uses plural 'vendors' not 'vendor'
+        const url = `${this.baseUrl}/vendors?limit=${limit}&offset=${offset}`
+        console.log(`[Finale Sync] Fetching vendors from URL: ${url}`)
         
         const response = await fetch(url, {
           headers: {
@@ -419,7 +420,7 @@ export class FinaleApiService {
   // Create a new vendor in Finale
   async createVendor(vendor: any): Promise<any> {
     try {
-      const response = await fetch(`${this.baseUrl}/vendor`, {
+      const response = await fetch(`${this.baseUrl}/vendors`, {
         method: 'POST',
         headers: {
           'Authorization': this.authHeader,
@@ -450,7 +451,7 @@ export class FinaleApiService {
   // Update an existing vendor in Finale
   async updateVendor(vendorId: string, vendor: any): Promise<any> {
     try {
-      const response = await fetch(`${this.baseUrl}/vendor/${vendorId}`, {
+      const response = await fetch(`${this.baseUrl}/vendors/${vendorId}`, {
         method: 'PUT',
         headers: {
           'Authorization': this.authHeader,

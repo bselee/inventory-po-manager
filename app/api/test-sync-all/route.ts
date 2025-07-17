@@ -86,7 +86,7 @@ export async function GET() {
     if (results.connection.success) {
       console.log('[Test Sync] Testing vendor fetch...')
       try {
-        const testUrl = `${finaleApi['baseUrl']}/vendor?limit=5`
+        const testUrl = `${finaleApi['baseUrl']}/vendors?limit=5`
         const response = await fetch(testUrl, {
           headers: {
             'Authorization': finaleApi['authHeader'],

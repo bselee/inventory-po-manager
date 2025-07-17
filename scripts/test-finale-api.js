@@ -53,7 +53,7 @@ async function testFinaleAPI() {
     },
     {
       name: 'Vendor endpoint',
-      url: `https://app.finaleinventory.com/api/${accountPath}/vendor?limit=1`
+      url: `https://app.finaleinventory.com/api/${accountPath}/vendors?limit=1`
     }
   ];
 
