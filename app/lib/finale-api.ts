@@ -481,18 +481,43 @@ export class FinaleApiService {
 
 // Helper function to get API config from settings
 export async function getFinaleConfig(): Promise<FinaleApiConfig | null> {
-  const { data: settings, error } = await supabase
-    .from('settings')
-    .select('finale_api_key, finale_api_secret, finale_account_path')
-    .single()
+  try {
+    const { data: settings, error } = await supabase
+      .from('settings')
+      .select('finale_api_key, finale_api_secret, finale_account_path')
+      .order('created_at', { ascending: false })
+      .limit(1)
+      .single()
 
-  if (error || !settings || !settings.finale_api_key || !settings.finale_api_secret || !settings.finale_account_path) {
+    console.log('[getFinaleConfig] Query result:', { settings, error })
+
+    if (error) {
+      console.error('[getFinaleConfig] Database error:', error)
+      return null
+    }
+
+    if (!settings) {
+      console.log('[getFinaleConfig] No settings found')
+      return null
+    }
+
+    if (!settings.finale_api_key || !settings.finale_api_secret || !settings.finale_account_path) {
+      console.log('[getFinaleConfig] Missing required fields:', {
+        hasApiKey: !!settings.finale_api_key,
+        hasApiSecret: !!settings.finale_api_secret,
+        hasAccountPath: !!settings.finale_account_path
+      })
+      return null
+    }
+
+    console.log('[getFinaleConfig] Config found successfully')
+    return {
+      apiKey: settings.finale_api_key,
+      apiSecret: settings.finale_api_secret,
+      accountPath: settings.finale_account_path
+    }
+  } catch (error) {
+    console.error('[getFinaleConfig] Unexpected error:', error)
     return null
-  }
-
-  return {
-    apiKey: settings.finale_api_key,
-    apiSecret: settings.finale_api_secret,
-    accountPath: settings.finale_account_path
   }
 }
