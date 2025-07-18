@@ -28,19 +28,29 @@ export async function POST() {
     }
     
     // Insert a single record with id=1
+    // Only include columns that exist in the database
+    const settingsData: any = {
+      id: 1,
+      finale_api_key: latestSettings.finale_api_key,
+      finale_api_secret: latestSettings.finale_api_secret,
+      finale_account_path: latestSettings.finale_account_path,
+      updated_at: new Date().toISOString()
+    }
+    
+    // Add optional fields only if they exist in the original record
+    if ('finale_username' in latestSettings) {
+      settingsData.finale_username = latestSettings.finale_username || ''
+    }
+    if ('finale_password' in latestSettings) {
+      settingsData.finale_password = latestSettings.finale_password || ''
+    }
+    if ('sync_frequency' in latestSettings) {
+      settingsData.sync_frequency = latestSettings.sync_frequency || 'daily'
+    }
+    
     const { data, error } = await supabase
       .from('settings')
-      .insert({
-        id: 1,
-        finale_api_key: latestSettings.finale_api_key,
-        finale_api_secret: latestSettings.finale_api_secret,
-        finale_account_path: latestSettings.finale_account_path,
-        finale_username: latestSettings.finale_username || '',
-        finale_password: latestSettings.finale_password || '',
-        sync_frequency: latestSettings.sync_frequency || 'daily',
-        notification_email: latestSettings.notification_email || '',
-        updated_at: new Date().toISOString()
-      })
+      .insert(settingsData)
       .select()
       .single()
     
