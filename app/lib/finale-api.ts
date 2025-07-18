@@ -126,37 +126,55 @@ export class FinaleApiService {
           })
         }
         
-        // Handle direct array response (most common for product endpoint)
+        // Finale API returns different formats based on the query
+        let pageProducts: any[] = []
+        
         if (Array.isArray(data)) {
-          // Filter by year if specified
-          const filteredProducts = yearFilter ? data.filter(product => {
-            if (!product.lastModifiedDate) return true // Include if no date
-            const modifiedYear = new Date(product.lastModifiedDate).getFullYear()
-            return modifiedYear >= yearFilter
-          }) : data
-          
-          products.push(...filteredProducts)
-          hasMore = data.length === limit
-          
-          if (yearFilter) {
-            console.log(`[Finale Sync] Page retrieved: ${data.length} items, ${filteredProducts.length} from year ${yearFilter} or later`)
-          } else {
-            console.log(`[Finale Sync] Page retrieved: ${data.length} items (no filtering)`)
-          }
+          // Multiple products returned as array
+          pageProducts = data
         } else if (data.products && Array.isArray(data.products)) {
           // Handle object with products array
-          const filteredProducts = yearFilter ? data.products.filter(product => {
-            if (!product.lastModifiedDate) return true
-            const modifiedYear = new Date(product.lastModifiedDate).getFullYear()
-            return modifiedYear >= yearFilter
-          }) : data.products
-          
-          products.push(...filteredProducts)
-          hasMore = data.products.length === limit
+          pageProducts = data.products
+        } else if (data.productId) {
+          // Single product returned as object - convert to array
+          pageProducts = [data]
         } else {
-          console.log(`[Finale Sync] Unexpected response format`)
+          console.log(`[Finale Sync] Unexpected response format:`, Object.keys(data).slice(0, 10))
           hasMore = false
+          continue
         }
+        
+        // Transform Finale's format to our expected format
+        const transformedProducts = pageProducts.map(p => {
+          // Handle both array properties and direct properties
+          const getId = (val: any) => Array.isArray(val) ? val[0] : val
+          
+          return {
+            productId: getId(p.productId),
+            productName: getId(p.internalName) || getId(p.productName),
+            productSku: getId(p.productId), // Using productId as SKU
+            quantityOnHand: parseInt(getId(p.quantityOnHand) || '0'),
+            quantityAvailable: parseInt(getId(p.quantityAvailable) || '0'),
+            reorderPoint: parseInt(getId(p.reorderPoint) || '0'),
+            reorderQuantity: parseInt(getId(p.reorderQuantity) || '0'),
+            primarySupplierName: getId(p.primarySupplierName),
+            averageCost: parseFloat(getId(p.averageCost) || '0'),
+            facilityName: getId(p.facilityName),
+            lastModifiedDate: getId(p.lastUpdatedDate) || getId(p.lastModifiedDate)
+          }
+        })
+        
+        // Filter by year if specified
+        const filteredProducts = yearFilter ? transformedProducts.filter(product => {
+          if (!product.lastModifiedDate) return true
+          const modifiedYear = new Date(product.lastModifiedDate).getFullYear()
+          return modifiedYear >= yearFilter
+        }) : transformedProducts
+        
+        products.push(...filteredProducts)
+        hasMore = pageProducts.length === limit
+        
+        console.log(`[Finale Sync] Page retrieved: ${pageProducts.length} items, transformed: ${filteredProducts.length}`)
         
         offset += limit
       }
