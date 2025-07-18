@@ -279,6 +279,34 @@ export default function SettingsPage() {
         </div>
       )}
 
+      {/* Temporary Fix Button for Multiple Settings Issue */}
+      {message?.text?.includes('multiple') || message?.text?.includes('not configured') ? (
+        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+          <p className="text-sm text-yellow-800 mb-3">
+            Detected multiple settings records. Click below to fix this issue:
+          </p>
+          <button
+            onClick={async () => {
+              try {
+                const response = await fetch('/api/fix-settings', { method: 'POST' })
+                const data = await response.json()
+                if (data.success) {
+                  setMessage({ type: 'success', text: 'Settings fixed! Please reload the page.' })
+                  setTimeout(() => window.location.reload(), 2000)
+                } else {
+                  setMessage({ type: 'error', text: data.error || 'Failed to fix settings' })
+                }
+              } catch (error) {
+                setMessage({ type: 'error', text: 'Failed to fix settings' })
+              }
+            }}
+            className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700"
+          >
+            Fix Settings Issue
+          </button>
+        </div>
+      ) : null}
+
       <div className="space-y-6">
         {/* Finale Inventory */}
         <div className="bg-white p-6 rounded-lg shadow">
