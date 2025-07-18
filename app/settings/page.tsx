@@ -7,6 +7,7 @@ import FinaleSyncManager from '@/app/components/FinaleSyncManager'
 import SalesDataUploader from '@/app/components/SalesDataUploader'
 import VendorSyncManager from '@/app/components/VendorSyncManager'
 import FinaleDebugPanel from '@/app/components/FinaleDebugPanel'
+import SyncControlPanel from '@/app/components/SyncControlPanel'
 
 interface Settings {
   id?: string
@@ -436,6 +437,9 @@ export default function SettingsPage() {
             <FinaleDebugPanel settings={settings} />
           </div>
         </div>
+
+        {/* Sync Control Panel - Master Sync Controls */}
+        <SyncControlPanel />
 
         {/* Finale Sync Manager */}
         <FinaleSyncManager />

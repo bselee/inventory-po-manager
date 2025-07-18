@@ -52,7 +52,15 @@
   "crons": [
     {
       "path": "/api/cron/sync-finale",
-      "schedule": "0 12 * * *"
+      "schedule": "0 2 * * *"
+    },
+    {
+      "path": "/api/cron/sync-inventory",
+      "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/sync-vendors",
+      "schedule": "0 4 * * *"
     }
   ]
 }
