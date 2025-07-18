@@ -31,14 +31,21 @@ export async function GET() {
       })
     }
     
-    // Step 4: Try to get one product
+    // Step 4: Try to get products without year filter
     try {
-      const products = await finaleApi.getInventoryData(new Date().getFullYear())
+      // First try without filter to see all products
+      const allProducts = await finaleApi.getInventoryData(null)
+      
+      // Then try with current year
+      const currentYearProducts = await finaleApi.getInventoryData(new Date().getFullYear())
+      
       return NextResponse.json({
         success: true,
-        productCount: products.length,
-        sampleProduct: products[0] || null,
-        message: 'Sync should work!'
+        allProductsCount: allProducts.length,
+        currentYearCount: currentYearProducts.length,
+        sampleProduct: allProducts[0] || null,
+        message: allProducts.length > 0 ? 'Products found!' : 'No products found',
+        oldestYear: allProducts.length > 0 ? new Date(allProducts[0].lastModifiedDate || '').getFullYear() : null
       })
     } catch (err) {
       return NextResponse.json({
