@@ -1,5 +1,8 @@
+-- Drop existing view if it exists and recreate with correct structure
+DROP VIEW IF EXISTS inventory_summary;
+
 -- Create inventory_summary view for the inventory page
-CREATE OR REPLACE VIEW inventory_summary AS
+CREATE VIEW inventory_summary AS
 SELECT 
   COUNT(*) as total_items,
   COALESCE(SUM(stock * cost), 0) as total_inventory_value,
