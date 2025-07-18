@@ -23,23 +23,45 @@ export async function POST(request: NextRequest) {
     const finaleApi = new FinaleApiService(config)
 
     // Test connection first
+    console.log('[Sync] Testing Finale connection...')
     const isConnected = await finaleApi.testConnection()
     if (!isConnected) {
+      console.error('[Sync] Connection test failed')
+      
+      // Try to get more details
+      try {
+        const testUrl = `${finaleApi['baseUrl']}/product?limit=1`
+        const response = await fetch(testUrl, {
+          headers: {
+            'Authorization': finaleApi['authHeader'],
+            'Accept': 'application/json'
+          }
+        })
+        console.error('[Sync] Test response:', response.status, response.statusText)
+        const text = await response.text()
+        console.error('[Sync] Response preview:', text.substring(0, 200))
+      } catch (e) {
+        console.error('[Sync] Additional error:', e)
+      }
+      
       return NextResponse.json({ 
         success: false, 
         error: 'Failed to connect to Finale API. Please check your credentials.' 
       }, { status: 500 })
     }
+    console.log('[Sync] Connection test passed')
 
     // Perform sync with optional year filter
     const result = await finaleApi.syncToSupabase(dryRun, filterYear)
 
     return NextResponse.json(result)
   } catch (error) {
-    console.error('Sync endpoint error:', error)
+    console.error('[Sync] Endpoint error:', error)
+    console.error('[Sync] Error stack:', error instanceof Error ? error.stack : 'No stack trace')
     return NextResponse.json({ 
       success: false, 
-      error: error instanceof Error ? error.message : 'Unknown error occurred' 
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
+      details: error instanceof Error ? error.stack?.split('\n')[0] : undefined
     }, { status: 500 })
   }
 }
