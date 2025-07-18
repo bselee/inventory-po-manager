@@ -27,10 +27,9 @@ export async function POST() {
       console.error('Error deleting settings:', deleteError)
     }
     
-    // Insert a single record with id=1
+    // Insert a single record - let the database generate the UUID
     // Only include columns that exist in the database
     const settingsData: any = {
-      id: 1,
       finale_api_key: latestSettings.finale_api_key,
       finale_api_secret: latestSettings.finale_api_secret,
       finale_account_path: latestSettings.finale_account_path,
@@ -63,7 +62,7 @@ export async function POST() {
     
     return NextResponse.json({
       success: true,
-      message: 'Settings consolidated to single record with id=1',
+      message: 'Settings consolidated to single record',
       settings: data
     })
   } catch (error) {

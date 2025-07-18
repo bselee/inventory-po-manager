@@ -88,14 +88,20 @@ export default function SettingsPage() {
             console.log('Auto-saving environment credentials...')
             
             try {
+              // First try to get existing settings
+              const { data: existingSettings } = await supabase
+                .from('settings')
+                .select('*')
+                .limit(1)
+                .single()
+              
+              const upsertPayload = existingSettings 
+                ? { id: existingSettings.id, ...initialSettings }
+                : { ...initialSettings }
+              
               const { data, error } = await supabase
                 .from('settings')
-                .upsert({
-                  id: 1,
-                  ...initialSettings
-                }, {
-                  onConflict: 'id'
-                })
+                .upsert(upsertPayload)
                 .select()
                 .single()
               
@@ -132,25 +138,29 @@ export default function SettingsPage() {
       console.log('Saving settings:', settings)
       
       // Use upsert to handle both insert and update
+      const upsertData: any = {
+        finale_api_key: settings.finale_api_key || '',
+        finale_api_secret: settings.finale_api_secret || '',
+        finale_account_path: settings.finale_account_path || '',
+        finale_username: settings.finale_username || '',
+        finale_password: settings.finale_password || '',
+        google_sheet_id: settings.google_sheet_id || '',
+        google_sheets_api_key: settings.google_sheets_api_key || '',
+        sendgrid_api_key: settings.sendgrid_api_key || '',
+        from_email: settings.from_email || '',
+        low_stock_threshold: settings.low_stock_threshold || 10,
+        sync_frequency_minutes: settings.sync_frequency_minutes || 60,
+        sync_enabled: settings.sync_enabled !== false
+      }
+      
+      // Add id if it exists
+      if (settings.id) {
+        upsertData.id = settings.id
+      }
+      
       const { data, error } = await supabase
         .from('settings')
-        .upsert({
-          id: settings.id || 1, // Use existing id or default to 1
-          finale_api_key: settings.finale_api_key || '',
-          finale_api_secret: settings.finale_api_secret || '',
-          finale_account_path: settings.finale_account_path || '',
-          finale_username: settings.finale_username || '',
-          finale_password: settings.finale_password || '',
-          google_sheet_id: settings.google_sheet_id || '',
-          google_sheets_api_key: settings.google_sheets_api_key || '',
-          sendgrid_api_key: settings.sendgrid_api_key || '',
-          from_email: settings.from_email || '',
-          low_stock_threshold: settings.low_stock_threshold || 10,
-          sync_frequency_minutes: settings.sync_frequency_minutes || 60,
-          sync_enabled: settings.sync_enabled !== false
-        }, {
-          onConflict: 'id'
-        })
+        .upsert(upsertData)
         .select()
         .single()
 
