@@ -17,14 +17,18 @@ export async function POST() {
       }, { status: 404 })
     }
     
-    // Delete all settings records
+    // Delete all existing settings records
     const { error: deleteError } = await supabase
       .from('settings')
       .delete()
-      .neq('id', 'dummy') // Delete all records
+      .gte('created_at', '1900-01-01') // This will match all records
     
     if (deleteError) {
       console.error('Error deleting settings:', deleteError)
+      return NextResponse.json({
+        error: 'Failed to delete old settings',
+        details: deleteError.message
+      }, { status: 500 })
     }
     
     // Insert a single record - let the database generate the UUID
@@ -60,10 +64,16 @@ export async function POST() {
       }, { status: 500 })
     }
     
+    // Verify we now have only one record
+    const { count } = await supabase
+      .from('settings')
+      .select('*', { count: 'exact', head: true })
+    
     return NextResponse.json({
       success: true,
       message: 'Settings consolidated to single record',
-      settings: data
+      settings: data,
+      totalRecords: count
     })
   } catch (error) {
     return NextResponse.json({
