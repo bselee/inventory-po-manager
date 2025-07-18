@@ -99,7 +99,8 @@ export class FinaleApiService {
     try {
       while (hasMore) {
         // Note: The filter parameter syntax may vary - adjust if needed
-        const url = `${this.baseUrl}/product?limit=${limit}&offset=${offset}`
+        // Request products with inventory data
+        const url = `${this.baseUrl}/product?limit=${limit}&offset=${offset}&expand=1`
         console.log(`[Finale Sync] Fetching page: offset=${offset}, limit=${limit}`)
         
         const response = await fetch(url, {
@@ -130,14 +131,29 @@ export class FinaleApiService {
         let pageProducts: any[] = []
         
         if (Array.isArray(data)) {
-          // Multiple products returned as array
+          // Standard array of products
           pageProducts = data
         } else if (data.products && Array.isArray(data.products)) {
-          // Handle object with products array
+          // Object with products array
           pageProducts = data.products
-        } else if (data.productId) {
-          // Single product returned as object - convert to array
-          pageProducts = [data]
+        } else if (data.productId && Array.isArray(data.productId)) {
+          // Finale's parallel array format - convert to array of objects
+          const productCount = data.productId.length
+          pageProducts = []
+          
+          for (let i = 0; i < productCount; i++) {
+            const product: any = {}
+            // Convert parallel arrays to individual product objects
+            for (const [key, value] of Object.entries(data)) {
+              if (Array.isArray(value) && value.length >= productCount) {
+                product[key] = value[i]
+              }
+            }
+            pageProducts.push(product)
+          }
+          
+          console.log(`[Finale Sync] Converted ${productCount} products from parallel arrays`)
+          console.log(`[Finale Sync] Sample product:`, pageProducts[0])
         } else {
           console.log(`[Finale Sync] Unexpected response format:`, Object.keys(data).slice(0, 10))
           hasMore = false
@@ -146,21 +162,19 @@ export class FinaleApiService {
         
         // Transform Finale's format to our expected format
         const transformedProducts = pageProducts.map(p => {
-          // Handle both array properties and direct properties
-          const getId = (val: any) => Array.isArray(val) ? val[0] : val
-          
+          // Values should already be extracted from arrays
           return {
-            productId: getId(p.productId),
-            productName: getId(p.internalName) || getId(p.productName),
-            productSku: getId(p.productId), // Using productId as SKU
-            quantityOnHand: parseInt(getId(p.quantityOnHand) || '0'),
-            quantityAvailable: parseInt(getId(p.quantityAvailable) || '0'),
-            reorderPoint: parseInt(getId(p.reorderPoint) || '0'),
-            reorderQuantity: parseInt(getId(p.reorderQuantity) || '0'),
-            primarySupplierName: getId(p.primarySupplierName),
-            averageCost: parseFloat(getId(p.averageCost) || '0'),
-            facilityName: getId(p.facilityName),
-            lastModifiedDate: getId(p.lastUpdatedDate) || getId(p.lastModifiedDate)
+            productId: p.productId || '',
+            productName: p.internalName || p.productName || '',
+            productSku: p.productId || '', // Using productId as SKU
+            quantityOnHand: parseInt(p.quantityOnHand || '0'),
+            quantityAvailable: parseInt(p.quantityAvailable || '0'),
+            reorderPoint: parseInt(p.reorderPoint || '0'),
+            reorderQuantity: parseInt(p.reorderQuantity || '0'),
+            primarySupplierName: p.primarySupplierName || '',
+            averageCost: parseFloat(p.averageCost || '0'),
+            facilityName: p.facilityName || '',
+            lastModifiedDate: p.lastUpdatedDate || p.lastModifiedDate || ''
           }
         })
         
