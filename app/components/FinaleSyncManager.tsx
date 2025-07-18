@@ -156,7 +156,7 @@ export default function FinaleSyncManager() {
                 onChange={(e) => setFilterMode('current')}
                 className="text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-sm">Current year only ({new Date().getFullYear()})</span>
+              <span className="text-sm">Current year records only ({new Date().getFullYear()})</span>
             </label>
             <label className="flex items-center gap-2">
               <input
@@ -167,7 +167,7 @@ export default function FinaleSyncManager() {
                 onChange={(e) => setFilterMode('all')}
                 className="text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-sm">All products (no date filter)</span>
+              <span className="text-sm">All records (no date filter) - Recommended for initial sync</span>
             </label>
             <label className="flex items-center gap-2">
               <input
@@ -191,7 +191,8 @@ export default function FinaleSyncManager() {
             </label>
           </div>
           <p className="text-xs text-gray-500 mt-2">
-            Note: This filters products by their last modified date in Finale
+            Note: This filters inventory records by their last modified date in Finale. 
+            Use "Current year records only" for regular syncs to avoid overwhelming the system.
           </p>
         </div>
       )}

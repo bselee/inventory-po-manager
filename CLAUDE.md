@@ -12,6 +12,8 @@ npm run start      # Start production server
 npm run lint       # Run ESLint
 npm run type-check # Check TypeScript types
 npm run setup      # Run database setup (currently empty)
+npm run deploy     # Deploy to Vercel
+npm run deploy:check # Check Vercel deployment status
 ```
 
 ## Architecture Overview
@@ -73,9 +75,10 @@ The Finale API service (`/app/lib/finale-api.ts`) handles all Finale operations:
 - **Authentication**: Uses Basic Auth with API key/secret
 - **Base URL Pattern**: `https://app.finaleinventory.com/{account}/api/`
 - **Key Endpoints**:
-  - `/products` - Inventory data with pagination
+  - `/products` - Inventory data with pagination (100 items max per request)
   - `/vendors` (plural) - Vendor management
   - `/purchaseOrder` - Purchase order operations
+- **Response Format**: Handles parallel array format (columns + data arrays)
 - **Date Filtering**: Inventory sync supports filtering by year (default: current year)
 - **Error Handling**: Comprehensive error messages and retry logic
 
@@ -84,6 +87,12 @@ The Finale API service (`/app/lib/finale-api.ts`) handles all Finale operations:
 - `/api/sync-finale` is the most complete implementation
 - Authentication/authorization is not yet implemented
 - Test files exist but contain only stubs
+
+### Critical Deployment Notes
+- Settings are stored in the `settings` table with id=1
+- Use `upsert` operations for settings to handle both insert and update cases
+- The `getFinaleConfig` helper uses `maybeSingle()` to handle missing records gracefully
+- Vendor endpoints use plural form (`/vendors` not `/vendor`)
 
 ## Testing
 
@@ -95,6 +104,15 @@ Tests are located in `__tests__` directories within API routes. To run tests:
 # 3. Implement actual test cases
 ```
 
+## Database Schema
+
+Key tables and their purposes:
+- `inventory_items`: SKU, stock levels, costs, sales data, Finale sync status
+- `purchase_orders`: PO management with vendor relations and Finale sync tracking
+- `vendors`: Vendor management with contact info and Finale integration
+- `settings`: Application configuration (single row with id=1)
+- `sync_logs`: Tracks sync history with external services
+
 ## Deployment
 
 The application auto-deploys to Vercel on push to the main branch. The `vercel.json` configuration includes:
@@ -102,6 +120,7 @@ The application auto-deploys to Vercel on push to the main branch. The `vercel.j
 - Security headers
 - Redirect from root to `/inventory`
 - Health check endpoint rewrite
+- Cron jobs for automated syncing
 
 ### Critical Deployment Notes
 - Settings are stored in the `settings` table with id=1

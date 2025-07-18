@@ -1,33 +1,24 @@
 import { NextResponse } from 'next/server';
+import { supabase } from '@/app/lib/supabase';
 
 // GET /api/inventory - Fetch inventory items
 export async function GET() {
   try {
-    // Placeholder: Fetch inventory from database
-    const inventory = [
-      {
-        id: '1',
-        name: 'Sample Product 1',
-        sku: 'SKU001',
-        quantity: 100,
-        minQuantity: 20,
-        maxQuantity: 500,
-        price: 25.99,
-        lastUpdated: new Date().toISOString()
-      },
-      {
-        id: '2',
-        name: 'Sample Product 2',
-        sku: 'SKU002',
-        quantity: 50,
-        minQuantity: 10,
-        maxQuantity: 200,
-        price: 15.99,
-        lastUpdated: new Date().toISOString()
-      }
-    ];
+    // Fetch inventory from database
+    const { data: inventory, error } = await supabase
+      .from('inventory_items')
+      .select('*')
+      .order('sku', { ascending: true });
 
-    return NextResponse.json({ inventory });
+    if (error) {
+      console.error('Error fetching inventory:', error);
+      return NextResponse.json(
+        { error: 'Failed to fetch inventory from database' },
+        { status: 500 }
+      );
+    }
+
+    return NextResponse.json({ inventory: inventory || [] });
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to fetch inventory' },
