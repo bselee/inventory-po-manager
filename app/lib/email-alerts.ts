@@ -2,10 +2,12 @@ import sgMail from '@sendgrid/mail'
 import { supabase } from './supabase'
 
 interface SyncAlert {
-  type: 'failure' | 'warning' | 'success' | 'stuck'
+  type: 'failure' | 'warning' | 'success' | 'stuck' | 'out-of-stock' | 'reorder-needed'
   syncId?: number
   error?: string
   details?: any
+  items?: any[]
+  count?: number
 }
 
 export class EmailAlertService {
@@ -126,6 +128,75 @@ export class EmailAlertService {
             ` : ''}
           `
           textContent = `Finale Sync Recovered\n\nThe sync completed successfully.\nTime: ${new Date().toLocaleString()}`
+          break
+          
+        case 'out-of-stock':
+          subject = '🚨 Out of Stock Alert'
+          htmlContent = `
+            <h2>Out of Stock Alert</h2>
+            <p><strong>${alert.count || 0} items</strong> are now out of stock!</p>
+            <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+            ${alert.items && alert.items.length > 0 ? `
+              <h3>Out of Stock Items:</h3>
+              <table border="1" cellpadding="5" cellspacing="0">
+                <tr>
+                  <th>SKU</th>
+                  <th>Product Name</th>
+                  <th>Reorder Point</th>
+                  <th>Supplier</th>
+                </tr>
+                ${alert.items.slice(0, 20).map(item => `
+                  <tr>
+                    <td>${item.productSku || item.sku}</td>
+                    <td>${item.productName || 'N/A'}</td>
+                    <td>${item.reorderPoint || 0}</td>
+                    <td>${item.primarySupplierName || 'N/A'}</td>
+                  </tr>
+                `).join('')}
+              </table>
+              ${alert.items.length > 20 ? `<p>... and ${alert.items.length - 20} more items</p>` : ''}
+            ` : ''}
+            <hr>
+            <p><strong>Action Required:</strong> Please create purchase orders for these items.</p>
+            <p><a href="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/inventory">View Inventory</a></p>
+          `
+          textContent = `Out of Stock Alert\n\n${alert.count || 0} items are out of stock.\nTime: ${new Date().toLocaleString()}\n\nPlease check the inventory system.`
+          break
+          
+        case 'reorder-needed':
+          subject = '📦 Reorder Alert - Low Stock Items'
+          htmlContent = `
+            <h2>Reorder Alert</h2>
+            <p><strong>${alert.count || 0} items</strong> have fallen below their reorder point.</p>
+            <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+            ${alert.items && alert.items.length > 0 ? `
+              <h3>Items Needing Reorder:</h3>
+              <table border="1" cellpadding="5" cellspacing="0">
+                <tr>
+                  <th>SKU</th>
+                  <th>Product Name</th>
+                  <th>Current Stock</th>
+                  <th>Reorder Point</th>
+                  <th>Reorder Qty</th>
+                  <th>Supplier</th>
+                </tr>
+                ${alert.items.slice(0, 20).map(item => `
+                  <tr>
+                    <td>${item.productSku || item.sku}</td>
+                    <td>${item.productName || 'N/A'}</td>
+                    <td>${item.quantityOnHand || 0}</td>
+                    <td>${item.reorderPoint || 0}</td>
+                    <td>${item.reorderQuantity || 0}</td>
+                    <td>${item.primarySupplierName || 'N/A'}</td>
+                  </tr>
+                `).join('')}
+              </table>
+              ${alert.items.length > 20 ? `<p>... and ${alert.items.length - 20} more items</p>` : ''}
+            ` : ''}
+            <hr>
+            <p><a href="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/purchase-orders/new">Create Purchase Order</a></p>
+          `
+          textContent = `Reorder Alert\n\n${alert.count || 0} items need reordering.\nTime: ${new Date().toLocaleString()}\n\nPlease check the inventory system.`
           break
       }
       

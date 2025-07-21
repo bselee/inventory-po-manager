@@ -5,9 +5,9 @@ import { supabase } from '@/app/lib/supabase'
 
 export async function POST(request: NextRequest) {
   try {
-    // Get dry run flag and filter year from request body
+    // Get sync options from request body
     const body = await request.json().catch(() => ({}))
-    const { dryRun = false, filterYear } = body
+    const { dryRun = false, filterYear, strategy = 'smart' } = body
 
     // Check if a sync is already running
     const { data: runningSync } = await supabase
@@ -90,8 +90,31 @@ export async function POST(request: NextRequest) {
     }
     console.log('[Sync] Connection test passed')
 
-    // Perform sync with optional year filter
-    const result = await finaleApi.syncToSupabase(dryRun, filterYear)
+    // Perform sync based on strategy
+    let result
+    switch (strategy) {
+      case 'full':
+        console.log('[Sync] Running full sync')
+        result = await finaleApi.syncToSupabase(dryRun, filterYear)
+        break
+      case 'inventory':
+        console.log('[Sync] Running inventory-only sync')
+        result = await finaleApi.syncInventoryOnly()
+        break
+      case 'critical':
+        console.log('[Sync] Running critical items sync')
+        result = await finaleApi.syncCriticalItems()
+        break
+      case 'active':
+        console.log('[Sync] Running active products sync')
+        result = await finaleApi.syncActiveProducts()
+        break
+      case 'smart':
+      default:
+        console.log('[Sync] Running smart sync')
+        result = await finaleApi.syncSmart()
+        break
+    }
 
     return NextResponse.json(result)
   } catch (error) {

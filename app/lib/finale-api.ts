@@ -84,9 +84,7 @@ export class FinaleApiService {
   // Get all products with inventory data (with optional date filtering)
   async getInventoryData(filterYear?: number | null): Promise<FinaleProduct[]> {
     const products: FinaleProduct[] = []
-    let offset = 0
-    const limit = 100 // Finale's typical page size
-    let hasMore = true
+    const productMap = new Map<string, any>()
     
     // Use provided year or current year for filtering (null means no filter)
     const yearFilter = filterYear === undefined ? new Date().getFullYear() : filterYear
@@ -98,103 +96,159 @@ export class FinaleApiService {
     }
 
     try {
+      // Step 1: Get all products first
+      console.log('[Finale Sync] Step 1: Fetching product catalog...')
+      let offset = 0
+      const limit = 100
+      let hasMore = true
+      
       while (hasMore) {
-        // Note: The filter parameter syntax may vary - adjust if needed
-        // Request products with inventory data
-        const url = `${this.baseUrl}/product?limit=${limit}&offset=${offset}&expand=1`
-        console.log(`[Finale Sync] Fetching page: offset=${offset}, limit=${limit}`)
-        
-        const response = await fetch(url, {
+        const productUrl = `${this.baseUrl}/product?limit=${limit}&offset=${offset}`
+        const response = await fetch(productUrl, {
           headers: {
             'Authorization': this.authHeader,
-            'Content-Type': 'application/json',
             'Accept': 'application/json'
           }
         })
 
         if (!response.ok) {
-          const errorText = await response.text()
-          console.error(`[Finale Sync] API error: ${response.status}`, errorText)
-          throw new Error(`Finale API error: ${response.status}`)
+          throw new Error(`Product API error: ${response.status}`)
         }
 
         const data = await response.json()
         
-        // Log response structure for debugging
-        if (offset === 0) {
-          console.log(`[Finale Sync] Response structure:`, {
-            isArray: Array.isArray(data),
-            sampleKeys: Array.isArray(data) ? 'array response' : Object.keys(data).slice(0, 5)
-          })
-        }
-        
-        // Finale API returns different formats based on the query
-        let pageProducts: any[] = []
-        
-        if (Array.isArray(data)) {
-          // Standard array of products
-          pageProducts = data
-        } else if (data.products && Array.isArray(data.products)) {
-          // Object with products array
-          pageProducts = data.products
-        } else if (data.productId && Array.isArray(data.productId)) {
-          // Finale's parallel array format - convert to array of objects
+        // Handle Finale's parallel array format
+        if (data.productId && Array.isArray(data.productId)) {
           const productCount = data.productId.length
-          pageProducts = []
           
           for (let i = 0; i < productCount; i++) {
             const product: any = {}
-            // Convert parallel arrays to individual product objects
             for (const [key, value] of Object.entries(data)) {
               if (Array.isArray(value) && value.length >= productCount) {
                 product[key] = value[i]
               }
             }
-            pageProducts.push(product)
+            productMap.set(product.productId, product)
           }
           
-          console.log(`[Finale Sync] Converted ${productCount} products from parallel arrays`)
-          console.log(`[Finale Sync] Sample product:`, pageProducts[0])
+          hasMore = productCount === limit
+          offset += limit
         } else {
-          console.log(`[Finale Sync] Unexpected response format:`, Object.keys(data).slice(0, 10))
           hasMore = false
-          continue
         }
-        
-        // Transform Finale's format to our expected format
-        const transformedProducts = pageProducts.map(p => {
-          // Values should already be extracted from arrays
-          return {
-            productId: p.productId || '',
-            productName: p.internalName || p.productName || '',
-            productSku: p.productId || '', // Using productId as SKU
-            quantityOnHand: parseInt(p.quantityOnHand || '0'),
-            quantityAvailable: parseInt(p.quantityAvailable || '0'),
-            reorderPoint: parseInt(p.reorderPoint || '0'),
-            reorderQuantity: parseInt(p.reorderQuantity || '0'),
-            primarySupplierName: p.primarySupplierName || '',
-            averageCost: parseFloat(p.averageCost || '0'),
-            facilityName: p.facilityName || '',
-            lastModifiedDate: p.lastUpdatedDate || p.lastModifiedDate || ''
-          }
-        })
-        
-        // Filter by year if specified
-        const filteredProducts = yearFilter ? transformedProducts.filter(product => {
-          if (!product.lastModifiedDate) return true
-          const modifiedYear = new Date(product.lastModifiedDate).getFullYear()
-          return modifiedYear >= yearFilter
-        }) : transformedProducts
-        
-        products.push(...filteredProducts)
-        hasMore = pageProducts.length === limit
-        
-        console.log(`[Finale Sync] Page retrieved: ${pageProducts.length} items, transformed: ${filteredProducts.length}`)
-        
-        offset += limit
+      }
+      
+      console.log(`[Finale Sync] Found ${productMap.size} products`)
+      
+      // Step 2: Get inventory items with stock levels
+      console.log('[Finale Sync] Step 2: Fetching inventory quantities...')
+      const inventoryUrl = `${this.baseUrl}/inventoryitem/?limit=1000`
+      const inventoryResponse = await fetch(inventoryUrl, {
+        headers: {
+          'Authorization': this.authHeader,
+          'Accept': 'application/json'
+        }
+      })
+
+      if (!inventoryResponse.ok) {
+        throw new Error(`Inventory API error: ${inventoryResponse.status}`)
       }
 
-      console.log(`[Finale Sync] Total products fetched: ${products.length}`)
+      const inventoryData = await inventoryResponse.json()
+      
+      // Create a map of productId -> aggregated inventory
+      const inventoryMap = new Map<string, any>()
+      
+      if (inventoryData.productId && Array.isArray(inventoryData.productId)) {
+        const itemCount = inventoryData.productId.length
+        
+        for (let i = 0; i < itemCount; i++) {
+          const productId = inventoryData.productId[i]
+          const quantityOnHand = parseFloat(inventoryData.quantityOnHand?.[i] || '0')
+          const quantityOnOrder = parseFloat(inventoryData.quantityOnOrder?.[i] || '0')
+          const quantityReserved = parseFloat(inventoryData.quantityReserved?.[i] || '0')
+          
+          if (!inventoryMap.has(productId)) {
+            inventoryMap.set(productId, {
+              quantityOnHand: 0,
+              quantityOnOrder: 0,
+              quantityReserved: 0
+            })
+          }
+          
+          const existing = inventoryMap.get(productId)
+          existing.quantityOnHand += quantityOnHand
+          existing.quantityOnOrder += quantityOnOrder
+          existing.quantityReserved += quantityReserved
+        }
+      }
+      
+      console.log(`[Finale Sync] Found inventory data for ${inventoryMap.size} products`)
+      
+      // Step 3: Combine product and inventory data
+      console.log('[Finale Sync] Step 3: Combining product and inventory data...')
+      
+      for (const [productId, product] of productMap) {
+        const inventory = inventoryMap.get(productId) || {
+          quantityOnHand: 0,
+          quantityOnOrder: 0,
+          quantityReserved: 0
+        }
+        
+        const finaleProduct: FinaleProduct = {
+          productId: productId,
+          productName: product.internalName || product.productName || productId,
+          productSku: productId, // Using productId as SKU
+          quantityOnHand: Math.round(inventory.quantityOnHand),
+          quantityAvailable: Math.round(inventory.quantityOnHand - inventory.quantityReserved),
+          reorderPoint: 0, // Will need to get from reorderGuidelineList if available
+          reorderQuantity: 0, // Will need to get from reorderGuidelineList if available
+          primarySupplierName: '', // Will need to get from supplierList if available
+          averageCost: 0, // Will need to get from priceList if available
+          facilityName: 'Main', // Default facility
+          lastModifiedDate: product.lastUpdatedDate || product.createdDate || new Date().toISOString()
+        }
+        
+        // Extract cost from priceList if available
+        if (product.priceList && Array.isArray(product.priceList)) {
+          const costPrice = product.priceList.find((p: any) => 
+            p.productPriceTypeId === 'AVERAGE_COST' || 
+            p.productPriceTypeId === 'DEFAULT_PRICE' ||
+            p.price > 0
+          )
+          if (costPrice?.price) {
+            finaleProduct.averageCost = parseFloat(costPrice.price)
+          }
+        }
+        
+        // Extract supplier from supplierList if available
+        if (product.supplierList && Array.isArray(product.supplierList) && product.supplierList.length > 0) {
+          finaleProduct.primarySupplierName = product.supplierList[0].partyName || ''
+        }
+        
+        // Apply year filter if specified
+        if (yearFilter) {
+          const modifiedYear = new Date(finaleProduct.lastModifiedDate).getFullYear()
+          if (modifiedYear >= yearFilter) {
+            products.push(finaleProduct)
+          }
+        } else {
+          products.push(finaleProduct)
+        }
+      }
+
+      console.log(`[Finale Sync] Total products with inventory: ${products.length}`)
+      
+      // Log sample for debugging
+      if (products.length > 0) {
+        console.log('[Finale Sync] Sample product with inventory:', {
+          productId: products[0].productId,
+          productName: products[0].productName,
+          quantityOnHand: products[0].quantityOnHand,
+          quantityAvailable: products[0].quantityAvailable
+        })
+      }
+      
       return products
     } catch (error) {
       console.error('[Finale Sync] Error fetching inventory:', error)
@@ -530,6 +584,314 @@ export class FinaleApiService {
     }
   }
 
+  // OPTIMIZED SYNC STRATEGIES
+  
+  // Strategy 1: Inventory-only sync (fastest - just updates stock levels)
+  async syncInventoryOnly(): Promise<any> {
+    console.log('🚀 Running inventory-only sync (stock levels only)...')
+    const startTime = Date.now()
+    
+    try {
+      // Create sync log
+      const { data: syncLog } = await supabase
+        .from('sync_logs')
+        .insert({
+          sync_type: 'finale_inventory_quick',
+          status: 'running',
+          synced_at: new Date().toISOString(),
+          metadata: { strategy: 'inventory-only' }
+        })
+        .select()
+        .single()
+      
+      // Fetch inventory data only
+      const inventoryUrl = `${this.baseUrl}/inventoryitem/?limit=5000`
+      const response = await fetch(inventoryUrl, {
+        headers: {
+          'Authorization': this.authHeader,
+          'Accept': 'application/json'
+        }
+      })
+      
+      if (!response.ok) {
+        throw new Error(`Inventory API error: ${response.status}`)
+      }
+      
+      const inventoryData = await response.json()
+      
+      // Aggregate inventory by product
+      const inventoryMap = new Map<string, { onHand: number, reserved: number }>()
+      
+      if (inventoryData.productId && Array.isArray(inventoryData.productId)) {
+        for (let i = 0; i < inventoryData.productId.length; i++) {
+          const productId = inventoryData.productId[i]
+          const onHand = parseFloat(inventoryData.quantityOnHand?.[i] || 0)
+          const reserved = parseFloat(inventoryData.quantityReserved?.[i] || 0)
+          
+          if (!inventoryMap.has(productId)) {
+            inventoryMap.set(productId, { onHand: 0, reserved: 0 })
+          }
+          
+          const inv = inventoryMap.get(productId)!
+          inv.onHand += onHand
+          inv.reserved += reserved
+        }
+      }
+      
+      // Update only stock levels in database
+      const updates = []
+      for (const [sku, inv] of inventoryMap) {
+        updates.push({
+          sku,
+          stock: Math.round(inv.onHand),
+          last_updated: new Date().toISOString()
+        })
+      }
+      
+      // Batch update
+      let updated = 0
+      const batchSize = 100
+      
+      for (let i = 0; i < updates.length; i += batchSize) {
+        const batch = updates.slice(i, i + batchSize)
+        const { error } = await supabase
+          .from('inventory_items')
+          .upsert(batch, {
+            onConflict: 'sku',
+            ignoreDuplicates: false
+          })
+        
+        if (!error) {
+          updated += batch.length
+        }
+      }
+      
+      // Check for critical items
+      const { data: criticalItems } = await supabase
+        .from('inventory_items')
+        .select('sku, product_name, stock, reorder_point')
+        .or('stock.eq.0,stock.lt.reorder_point')
+      
+      const duration = Date.now() - startTime
+      
+      // Update sync log
+      if (syncLog) {
+        await supabase
+          .from('sync_logs')
+          .update({
+            status: 'success',
+            items_processed: inventoryMap.size,
+            items_updated: updated,
+            duration_ms: duration,
+            metadata: {
+              strategy: 'inventory-only',
+              criticalItems: criticalItems?.length || 0,
+              outOfStock: criticalItems?.filter(i => i.stock === 0).length || 0
+            }
+          })
+          .eq('id', syncLog.id)
+      }
+      
+      return {
+        success: true,
+        strategy: 'inventory-only',
+        itemsProcessed: inventoryMap.size,
+        itemsUpdated: updated,
+        duration: Math.round(duration / 1000) + 's',
+        criticalItems: criticalItems || [],
+        message: `Quick sync complete: ${updated} stock levels updated`
+      }
+      
+    } catch (error) {
+      console.error('Inventory sync error:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+  
+  // Strategy 2: Critical items sync (low stock and reorder needed)
+  async syncCriticalItems(): Promise<any> {
+    console.log('🚨 Syncing critical items (low stock/reorder needed)...')
+    
+    try {
+      // Get items that need attention from our database
+      const { data: criticalItems } = await supabase
+        .from('inventory_items')
+        .select('sku')
+        .or('stock.lt.10,stock.lt.reorder_point')
+        .limit(200)
+      
+      if (!criticalItems || criticalItems.length === 0) {
+        return {
+          success: true,
+          message: 'No critical items found',
+          itemsProcessed: 0
+        }
+      }
+      
+      const criticalSKUs = criticalItems.map(item => item.sku)
+      console.log(`Found ${criticalSKUs.length} critical items to sync`)
+      
+      // Get full product data for these SKUs
+      const products = await this.getInventoryData()
+      const criticalProducts = products.filter(p => 
+        criticalSKUs.includes(p.productSku)
+      )
+      
+      // Transform and update
+      const updates = criticalProducts.map(p => this.transformToInventoryItem(p))
+      
+      // Batch update
+      const { error } = await supabase
+        .from('inventory_items')
+        .upsert(updates, {
+          onConflict: 'sku',
+          ignoreDuplicates: false
+        })
+      
+      if (error) throw error
+      
+      // Check for out of stock items
+      const outOfStock = criticalProducts.filter(p => p.quantityOnHand === 0)
+      const belowReorder = criticalProducts.filter(p => 
+        p.quantityOnHand < (p.reorderPoint || 0)
+      )
+      
+      // Send alerts if needed
+      if (outOfStock.length > 0) {
+        await emailAlerts.initialize()
+        await emailAlerts.sendSyncAlert({
+          type: 'out-of-stock',
+          items: outOfStock,
+          count: outOfStock.length
+        })
+      }
+      
+      return {
+        success: true,
+        strategy: 'critical',
+        itemsProcessed: criticalProducts.length,
+        itemsUpdated: updates.length,
+        outOfStock: outOfStock.length,
+        belowReorder: belowReorder.length,
+        message: `Critical sync complete: ${outOfStock.length} out of stock, ${belowReorder.length} need reorder`
+      }
+      
+    } catch (error) {
+      console.error('Critical sync error:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+  
+  // Strategy 3: Smart sync (decides what to sync based on conditions)
+  async syncSmart(): Promise<any> {
+    console.log('🤖 Running smart sync...')
+    
+    // Check last sync time
+    const { data: lastSync } = await supabase
+      .from('sync_logs')
+      .select('synced_at, metadata')
+      .eq('sync_type', 'finale_inventory')
+      .eq('status', 'success')
+      .order('synced_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    
+    if (!lastSync) {
+      console.log('No previous sync - running full sync')
+      return this.syncToSupabase(false, new Date().getFullYear())
+    }
+    
+    const minutesSince = (Date.now() - new Date(lastSync.synced_at).getTime()) / (1000 * 60)
+    
+    if (minutesSince < 30) {
+      // Very recent - only critical items
+      console.log(`Last sync ${Math.round(minutesSince)} min ago - syncing critical items only`)
+      return this.syncCriticalItems()
+    } else if (minutesSince < 120) {
+      // Recent - inventory levels only
+      console.log(`Last sync ${Math.round(minutesSince)} min ago - syncing inventory levels`)
+      return this.syncInventoryOnly()
+    } else if (minutesSince < 1440) { // 24 hours
+      // Daily - active products with inventory
+      console.log(`Last sync ${Math.round(minutesSince / 60)} hours ago - syncing active products`)
+      return this.syncActiveProducts()
+    } else {
+      // Overdue - full sync
+      console.log(`Last sync ${Math.round(minutesSince / 60)} hours ago - running full sync`)
+      return this.syncToSupabase(false)
+    }
+  }
+  
+  // Strategy 4: Active products only (skip discontinued)
+  async syncActiveProducts(): Promise<any> {
+    console.log('📦 Syncing active products only...')
+    
+    try {
+      // Get all products but filter to active only
+      const allProducts = await this.getInventoryData()
+      
+      // Filter active products (multiple ways to check)
+      const activeProducts = allProducts.filter(p => {
+        // Check various fields that might indicate active status
+        if (p.statusId === 'INACTIVE') return false
+        if (p.discontinued === true) return false
+        if (p.active === false) return false
+        
+        // Also skip products with no recent activity
+        const lastModified = new Date(p.lastModifiedDate || 0)
+        const daysSinceModified = (Date.now() - lastModified.getTime()) / (1000 * 60 * 60 * 24)
+        if (daysSinceModified > 365) return false // Skip if not modified in a year
+        
+        return true
+      })
+      
+      console.log(`Found ${activeProducts.length} active products (of ${allProducts.length} total)`)
+      
+      // Transform and update
+      const updates = activeProducts.map(p => this.transformToInventoryItem(p))
+      
+      // Batch update
+      const batchSize = 50
+      let updated = 0
+      
+      for (let i = 0; i < updates.length; i += batchSize) {
+        const batch = updates.slice(i, i + batchSize)
+        const { error } = await supabase
+          .from('inventory_items')
+          .upsert(batch, {
+            onConflict: 'sku',
+            ignoreDuplicates: false
+          })
+        
+        if (!error) {
+          updated += batch.length
+        }
+      }
+      
+      return {
+        success: true,
+        strategy: 'active-products',
+        totalProducts: allProducts.length,
+        activeProducts: activeProducts.length,
+        itemsUpdated: updated,
+        message: `Active products sync complete: ${updated} items updated`
+      }
+      
+    } catch (error) {
+      console.error('Active products sync error:', error)
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      }
+    }
+  }
+  
   // Get purchase order status from Finale
   async getPurchaseOrder(orderNumber: string): Promise<any> {
     try {

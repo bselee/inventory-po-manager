@@ -124,9 +124,9 @@ export async function runAutoSync() {
           }
         })
       
-      // Run the sync
+      // Run the sync using smart strategy
       console.log('🔄 Starting automatic sync...')
-      const result = await finaleApi.syncToSupabase(false)
+      const result = await finaleApi.syncSmart()
       
       if (result.success) {
         console.log(`✅ Auto-sync complete: ${result.processed} items processed`)
