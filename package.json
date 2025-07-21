@@ -13,7 +13,7 @@
     "deploy:check": "node scripts/vercel-deploy.js"
   },
   "dependencies": {
-    "@sendgrid/mail": "^8.1.0",
+    "@sendgrid/mail": "^8.1.5",
     "@supabase/supabase-js": "^2.51.0",
     "axios": "^1.6.2",
     "clsx": "^2.0.0",

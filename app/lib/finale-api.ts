@@ -1,5 +1,6 @@
 // lib/finale-api.ts
 import { supabase } from './supabase'
+import { emailAlerts } from './email-alerts'
 
 interface FinaleProduct {
   productId: string
@@ -243,8 +244,37 @@ export class FinaleApiService {
   // Sync inventory data to Supabase
   async syncToSupabase(dryRun = false, filterYear?: number | null) {
     console.log('Starting Finale to Supabase sync...')
+    const syncStartTime = Date.now()
+    let syncLogId: number | null = null
     
     try {
+      // Create sync log entry at start
+      if (!dryRun) {
+        const { data: syncLog, error: logError } = await supabase
+          .from('sync_logs')
+          .insert({
+            sync_type: 'finale_inventory',
+            status: 'running',
+            synced_at: new Date().toISOString(),
+            items_processed: 0,
+            items_updated: 0,
+            errors: [],
+            metadata: {
+              filterYear: filterYear === undefined ? new Date().getFullYear() : filterYear,
+              dryRun: false,
+              startTime: new Date().toISOString()
+            }
+          })
+          .select()
+          .single()
+        
+        if (logError) {
+          console.error('Failed to create sync log:', logError)
+        } else if (syncLog) {
+          syncLogId = syncLog.id
+        }
+      }
+
       // Get all products from Finale with optional year filter
       const finaleProducts = await this.getInventoryData(filterYear)
       console.log(`Fetched ${finaleProducts.length} products from Finale`)
@@ -266,39 +296,199 @@ export class FinaleApiService {
       // Batch upsert to Supabase (update existing, insert new)
       const batchSize = 50
       let processed = 0
+      let failed = 0
       const results = []
+      const errors: string[] = []
 
       for (let i = 0; i < inventoryItems.length; i += batchSize) {
         const batch = inventoryItems.slice(i, i + batchSize)
+        const batchNumber = Math.floor(i / batchSize) + 1
         
-        const { data, error } = await supabase
-          .from('inventory_items')
-          .upsert(batch, { 
-            onConflict: 'sku',
-            ignoreDuplicates: false 
-          })
-          .select()
+        // Retry logic with exponential backoff
+        let retryCount = 0
+        const maxRetries = 3
+        let batchSuccess = false
+        let lastError: any = null
 
-        if (error) {
-          console.error(`Error upserting batch ${i / batchSize + 1}:`, error)
-          results.push({ batch: i / batchSize + 1, error: error.message })
-        } else {
-          processed += batch.length
-          results.push({ batch: i / batchSize + 1, success: true, count: batch.length })
+        while (retryCount <= maxRetries && !batchSuccess) {
+          try {
+            const { data, error } = await supabase
+              .from('inventory_items')
+              .upsert(batch, { 
+                onConflict: 'sku',
+                ignoreDuplicates: false 
+              })
+              .select()
+
+            if (error) {
+              lastError = error
+              if (retryCount < maxRetries) {
+                const backoffMs = Math.min(1000 * Math.pow(2, retryCount), 10000) // Max 10 seconds
+                console.log(`Batch ${batchNumber} failed, retrying in ${backoffMs}ms... (attempt ${retryCount + 1}/${maxRetries})`)
+                await new Promise(resolve => setTimeout(resolve, backoffMs))
+                retryCount++
+              } else {
+                throw error
+              }
+            } else {
+              batchSuccess = true
+              processed += batch.length
+              results.push({ 
+                batch: batchNumber, 
+                success: true, 
+                count: batch.length,
+                retries: retryCount 
+              })
+            }
+          } catch (error) {
+            if (retryCount >= maxRetries) {
+              console.error(`Error upserting batch ${batchNumber} after ${maxRetries} retries:`, error)
+              results.push({ 
+                batch: batchNumber, 
+                error: error instanceof Error ? error.message : 'Unknown error',
+                retries: retryCount 
+              })
+              errors.push(`Batch ${batchNumber}: ${error instanceof Error ? error.message : 'Unknown error'} (after ${retryCount} retries)`)
+              failed += batch.length
+              break
+            }
+          }
+        }
+
+        // Update sync log progress periodically (every 10 batches)
+        if (syncLogId && batchNumber % 10 === 0) {
+          await supabase
+            .from('sync_logs')
+            .update({
+              items_processed: i + batch.length,
+              items_updated: processed,
+              metadata: {
+                filterYear: filterYear === undefined ? new Date().getFullYear() : filterYear,
+                dryRun: false,
+                startTime: new Date(syncStartTime).toISOString(),
+                progress: `${Math.round((i + batch.length) / inventoryItems.length * 100)}%`,
+                currentBatch: batchNumber,
+                totalBatches: Math.ceil(inventoryItems.length / batchSize)
+              }
+            })
+            .eq('id', syncLogId)
         }
       }
 
-      console.log(`Sync complete. Processed ${processed} items.`)
+      const syncDuration = Date.now() - syncStartTime
+      const finalStatus = errors.length === 0 ? 'success' : (processed > 0 ? 'partial' : 'error')
+
+      // Update sync log with final results
+      if (syncLogId) {
+        await supabase
+          .from('sync_logs')
+          .update({
+            status: finalStatus,
+            items_processed: inventoryItems.length,
+            items_updated: processed,
+            errors: errors,
+            duration_ms: syncDuration,
+            metadata: {
+              filterYear: filterYear === undefined ? new Date().getFullYear() : filterYear,
+              dryRun: false,
+              startTime: new Date(syncStartTime).toISOString(),
+              endTime: new Date().toISOString(),
+              totalProducts: finaleProducts.length,
+              batchResults: results,
+              itemsFailed: failed
+            }
+          })
+          .eq('id', syncLogId)
+      }
+
+      console.log(`Sync complete. Processed ${processed} items in ${syncDuration}ms.`)
+
+      // Send email alerts based on sync result
+      await emailAlerts.initialize()
+      
+      if (finalStatus === 'error') {
+        await emailAlerts.sendSyncAlert({
+          type: 'failure',
+          syncId: syncLogId || undefined,
+          error: errors[0] || 'Multiple batch failures',
+          details: {
+            totalProducts: finaleProducts.length,
+            processed,
+            failed,
+            errors: errors.slice(0, 5), // First 5 errors
+            duration: syncDuration
+          }
+        })
+      } else if (finalStatus === 'partial') {
+        await emailAlerts.sendSyncAlert({
+          type: 'warning',
+          syncId: syncLogId || undefined,
+          details: {
+            totalProducts: finaleProducts.length,
+            processed,
+            itemsFailed: failed,
+            errors: errors.slice(0, 5),
+            duration: syncDuration
+          }
+        })
+      } else if (finalStatus === 'success') {
+        // Check if this is a recovery from previous failures
+        await emailAlerts.sendSyncAlert({
+          type: 'success',
+          syncId: syncLogId || undefined,
+          details: {
+            itemsProcessed: inventoryItems.length,
+            itemsUpdated: processed,
+            duration: syncDuration
+          }
+        })
+      }
 
       return {
-        success: true,
+        success: finalStatus !== 'error',
         totalProducts: finaleProducts.length,
         processed,
+        failed,
         results,
+        errors,
+        duration: syncDuration,
         filterYear: filterYear === undefined ? new Date().getFullYear() : filterYear
       }
     } catch (error) {
       console.error('Sync failed:', error)
+      
+      // Update sync log with error status
+      if (syncLogId) {
+        const syncDuration = Date.now() - syncStartTime
+        await supabase
+          .from('sync_logs')
+          .update({
+            status: 'error',
+            errors: [error instanceof Error ? error.message : 'Unknown error'],
+            duration_ms: syncDuration,
+            metadata: {
+              filterYear: filterYear === undefined ? new Date().getFullYear() : filterYear,
+              dryRun: false,
+              startTime: new Date(syncStartTime).toISOString(),
+              endTime: new Date().toISOString(),
+              errorDetails: error instanceof Error ? error.stack : undefined
+            }
+          })
+          .eq('id', syncLogId)
+      }
+      
+      // Send failure alert
+      await emailAlerts.initialize()
+      await emailAlerts.sendSyncAlert({
+        type: 'failure',
+        syncId: syncLogId || undefined,
+        error: error instanceof Error ? error.message : 'Unknown error',
+        details: {
+          errorStack: error instanceof Error ? error.stack : undefined,
+          filterYear: filterYear === undefined ? new Date().getFullYear() : filterYear
+        }
+      })
+      
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'

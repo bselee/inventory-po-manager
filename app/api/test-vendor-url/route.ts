@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { FinaleApiService, getFinaleConfig } from '@/lib/finale-api'
+import { FinaleApiService, getFinaleConfig } from '@/app/lib/finale-api'
 
 export async function GET() {
   try {

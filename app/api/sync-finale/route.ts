@@ -1,13 +1,52 @@
 // app/api/sync-finale/route.ts
 import { NextRequest, NextResponse } from 'next/server'
-import { FinaleApiService, getFinaleConfig } from '@/lib/finale-api'
-import { supabase } from '@/lib/supabase'
+import { FinaleApiService, getFinaleConfig } from '@/app/lib/finale-api'
+import { supabase } from '@/app/lib/supabase'
 
 export async function POST(request: NextRequest) {
   try {
     // Get dry run flag and filter year from request body
     const body = await request.json().catch(() => ({}))
     const { dryRun = false, filterYear } = body
+
+    // Check if a sync is already running
+    const { data: runningSync } = await supabase
+      .from('sync_logs')
+      .select('id, synced_at, metadata')
+      .eq('sync_type', 'finale_inventory')
+      .eq('status', 'running')
+      .order('synced_at', { ascending: false })
+      .limit(1)
+      .maybeSingle()
+    
+    if (runningSync) {
+      const runningMinutes = Math.round(
+        (Date.now() - new Date(runningSync.synced_at).getTime()) / 1000 / 60
+      )
+      
+      // If running for more than 30 minutes, consider it stuck
+      if (runningMinutes > 30) {
+        console.log(`[Sync] Found stuck sync ${runningSync.id}, marking as failed`)
+        await supabase
+          .from('sync_logs')
+          .update({
+            status: 'error',
+            errors: [`Sync terminated - was running for ${runningMinutes} minutes`],
+            duration_ms: runningMinutes * 60 * 1000
+          })
+          .eq('id', runningSync.id)
+      } else {
+        return NextResponse.json({
+          success: false,
+          error: 'A sync is already in progress',
+          details: {
+            syncId: runningSync.id,
+            runningFor: `${runningMinutes} minutes`,
+            progress: runningSync.metadata?.progress || 'Unknown'
+          }
+        }, { status: 409 })
+      }
+    }
 
     // Get Finale API config from settings
     const config = await getFinaleConfig()

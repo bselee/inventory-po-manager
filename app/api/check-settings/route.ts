@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { supabase } from '@/lib/supabase'
-import { getFinaleConfig } from '@/lib/finale-api'
+import { supabase } from '@/app/lib/supabase'
+import { getFinaleConfig } from '@/app/lib/finale-api'
 
 export async function GET() {
   try {

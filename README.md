@@ -4,12 +4,18 @@ A Next.js application for managing inventory levels and automating purchase orde
 
 ## Features
 
+- **Automatic Data Sync**: Fully automated synchronization with Finale Inventory
+  - Initial sync runs automatically on first startup
+  - Continuous sync based on configured schedule (default: hourly)
+  - No manual intervention required - just configure and forget
 - Real-time inventory tracking and management
 - Automated purchase order generation based on stock levels
-- Finale Inventory synchronization
+- Finale Inventory synchronization with retry logic and error recovery
 - Google Sheets import/export
-- Email notifications via SendGrid
+- Email notifications via SendGrid for sync alerts
 - Modern React UI with Tailwind CSS
+- Comprehensive monitoring dashboard with health checks
+- Data integrity validation and duplicate detection
 
 ## Quick Start
 

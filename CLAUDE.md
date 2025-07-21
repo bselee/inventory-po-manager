@@ -69,6 +69,10 @@ Required environment variables (set in Vercel):
 - `SENDGRID_*` (email service credentials)
 - Google Sheets API configuration
 
+Additional environment variables may be required based on enabled features:
+- Authentication providers (if implementing auth)
+- Additional service integrations
+
 ### Finale API Integration
 
 The Finale API service (`/app/lib/finale-api.ts`) handles all Finale operations:
@@ -104,6 +108,13 @@ Tests are located in `__tests__` directories within API routes. To run tests:
 # 3. Implement actual test cases
 ```
 
+## Database Migrations
+
+The project includes a migration system in `/scripts/migrations/`. When modifying the database schema:
+1. Create new migration files following the numbered pattern
+2. Test migrations locally before deploying
+3. Key migration features include sales tracking fields (30/90 day), sync status tracking, and authentication fields
+
 ## Database Schema
 
 Key tables and their purposes:
@@ -122,8 +133,14 @@ The application auto-deploys to Vercel on push to the main branch. The `vercel.j
 - Health check endpoint rewrite
 - Cron jobs for automated syncing
 
+### Deployment Scripts
+- `npm run deploy`: Runs comprehensive deployment script with validation
+- `npm run deploy:check`: Verifies deployment status and health
+- Scripts include git status checking, remote sync verification, and health check validation
+
 ### Critical Deployment Notes
 - Settings are stored in the `settings` table with id=1
 - Use `upsert` operations for settings to handle both insert and update cases
 - The `getFinaleConfig` helper uses `maybeSingle()` to handle missing records gracefully
 - Vendor endpoints use plural form (`/vendors` not `/vendor`)
+- Detailed deployment guides and troubleshooting available in `/docs/`

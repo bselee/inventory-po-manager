@@ -1,0 +1,209 @@
+import sgMail from '@sendgrid/mail'
+import { supabase } from './supabase'
+
+interface SyncAlert {
+  type: 'failure' | 'warning' | 'success' | 'stuck'
+  syncId?: number
+  error?: string
+  details?: any
+}
+
+export class EmailAlertService {
+  private isConfigured: boolean = false
+  private alertEmail?: string
+  
+  async initialize() {
+    try {
+      // Get SendGrid config from settings
+      const { data: settings } = await supabase
+        .from('settings')
+        .select('sendgrid_api_key, alert_email')
+        .single()
+      
+      if (settings?.sendgrid_api_key && settings?.alert_email) {
+        sgMail.setApiKey(settings.sendgrid_api_key)
+        this.alertEmail = settings.alert_email
+        this.isConfigured = true
+        console.log('Email alert service initialized')
+      } else {
+        console.log('Email alerts not configured - missing SendGrid API key or alert email')
+      }
+    } catch (error) {
+      console.error('Failed to initialize email alerts:', error)
+    }
+  }
+  
+  async sendSyncAlert(alert: SyncAlert) {
+    if (!this.isConfigured || !this.alertEmail) {
+      console.log('Email alerts not configured, skipping alert:', alert.type)
+      return
+    }
+    
+    try {
+      let subject = ''
+      let htmlContent = ''
+      let textContent = ''
+      
+      switch (alert.type) {
+        case 'failure':
+          subject = '🚨 Finale Sync Failed'
+          htmlContent = `
+            <h2>Finale Sync Failure Alert</h2>
+            <p><strong>Error:</strong> ${alert.error || 'Unknown error'}</p>
+            ${alert.syncId ? `<p><strong>Sync ID:</strong> ${alert.syncId}</p>` : ''}
+            <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+            ${alert.details ? `
+              <h3>Details:</h3>
+              <pre>${JSON.stringify(alert.details, null, 2)}</pre>
+            ` : ''}
+            <hr>
+            <p><a href="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/sync-status">View Sync Dashboard</a></p>
+          `
+          textContent = `Finale Sync Failed\n\nError: ${alert.error || 'Unknown error'}\nTime: ${new Date().toLocaleString()}`
+          break
+          
+        case 'warning':
+          subject = '⚠️ Finale Sync Completed with Warnings'
+          htmlContent = `
+            <h2>Finale Sync Warning</h2>
+            <p>The sync completed but encountered some issues.</p>
+            ${alert.syncId ? `<p><strong>Sync ID:</strong> ${alert.syncId}</p>` : ''}
+            <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+            ${alert.details ? `
+              <h3>Details:</h3>
+              <ul>
+                ${alert.details.itemsFailed ? `<li><strong>Items Failed:</strong> ${alert.details.itemsFailed}</li>` : ''}
+                ${alert.details.errors?.length ? `<li><strong>Errors:</strong> ${alert.details.errors.length}</li>` : ''}
+                ${alert.details.duration ? `<li><strong>Duration:</strong> ${alert.details.duration}ms</li>` : ''}
+              </ul>
+            ` : ''}
+            <hr>
+            <p><a href="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/sync-status">View Sync Dashboard</a></p>
+          `
+          textContent = `Finale Sync Warning\n\nThe sync completed with issues.\nTime: ${new Date().toLocaleString()}`
+          break
+          
+        case 'stuck':
+          subject = '🔴 Finale Sync Appears Stuck'
+          htmlContent = `
+            <h2>Stuck Sync Alert</h2>
+            <p>A sync has been running for over 30 minutes and may be stuck.</p>
+            ${alert.syncId ? `<p><strong>Sync ID:</strong> ${alert.syncId}</p>` : ''}
+            <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+            <p>Please check the sync status and consider restarting if necessary.</p>
+            <hr>
+            <p><a href="${process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000'}/sync-status">View Sync Dashboard</a></p>
+          `
+          textContent = `Stuck Sync Alert\n\nA sync has been running for over 30 minutes.\nTime: ${new Date().toLocaleString()}`
+          break
+          
+        case 'success':
+          // Only send success emails if there were previous failures
+          const { data: recentFailure } = await supabase
+            .from('sync_logs')
+            .select('id')
+            .eq('sync_type', 'finale_inventory')
+            .eq('status', 'error')
+            .order('synced_at', { ascending: false })
+            .limit(1)
+            .maybeSingle()
+          
+          if (!recentFailure) return // Don't send success email if no recent failures
+          
+          subject = '✅ Finale Sync Recovered'
+          htmlContent = `
+            <h2>Finale Sync Success</h2>
+            <p>The sync has recovered and completed successfully after previous failures.</p>
+            ${alert.syncId ? `<p><strong>Sync ID:</strong> ${alert.syncId}</p>` : ''}
+            <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+            ${alert.details ? `
+              <h3>Details:</h3>
+              <ul>
+                <li><strong>Items Processed:</strong> ${alert.details.itemsProcessed || 0}</li>
+                <li><strong>Items Updated:</strong> ${alert.details.itemsUpdated || 0}</li>
+                <li><strong>Duration:</strong> ${alert.details.duration || 0}ms</li>
+              </ul>
+            ` : ''}
+          `
+          textContent = `Finale Sync Recovered\n\nThe sync completed successfully.\nTime: ${new Date().toLocaleString()}`
+          break
+      }
+      
+      if (subject && htmlContent) {
+        const msg = {
+          to: this.alertEmail,
+          from: process.env.SENDGRID_FROM_EMAIL || 'noreply@inventory-manager.com',
+          subject,
+          text: textContent,
+          html: htmlContent
+        }
+        
+        await sgMail.send(msg)
+        console.log(`Alert email sent: ${alert.type}`)
+        
+        // Log the alert
+        await supabase
+          .from('sync_logs')
+          .insert({
+            sync_type: 'email_alert',
+            status: 'success',
+            synced_at: new Date().toISOString(),
+            metadata: {
+              alertType: alert.type,
+              syncId: alert.syncId,
+              recipient: this.alertEmail
+            }
+          })
+      }
+    } catch (error) {
+      console.error('Failed to send alert email:', error)
+      
+      // Log the failed alert
+      await supabase
+        .from('sync_logs')
+        .insert({
+          sync_type: 'email_alert',
+          status: 'error',
+          synced_at: new Date().toISOString(),
+          errors: [error instanceof Error ? error.message : 'Failed to send email'],
+          metadata: {
+            alertType: alert.type,
+            syncId: alert.syncId
+          }
+        })
+    }
+  }
+  
+  // Check for stuck syncs and send alerts
+  async checkForStuckSyncs() {
+    try {
+      const thirtyMinutesAgo = new Date()
+      thirtyMinutesAgo.setMinutes(thirtyMinutesAgo.getMinutes() - 30)
+      
+      const { data: stuckSyncs } = await supabase
+        .from('sync_logs')
+        .select('id, synced_at')
+        .eq('sync_type', 'finale_inventory')
+        .eq('status', 'running')
+        .lt('synced_at', thirtyMinutesAgo.toISOString())
+      
+      if (stuckSyncs && stuckSyncs.length > 0) {
+        for (const sync of stuckSyncs) {
+          await this.sendSyncAlert({
+            type: 'stuck',
+            syncId: sync.id,
+            details: {
+              startedAt: sync.synced_at,
+              runningFor: Math.round((Date.now() - new Date(sync.synced_at).getTime()) / 1000 / 60) + ' minutes'
+            }
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Error checking for stuck syncs:', error)
+    }
+  }
+}
+
+// Create singleton instance
+export const emailAlerts = new EmailAlertService()

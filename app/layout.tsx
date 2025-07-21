@@ -1,26 +1,37 @@
-import './globals.css'
-import Navigation from './components/Navigation'
+import type { Metadata } from "next";
+import localFont from "next/font/local";
+import "./globals.css";
+import { StartupSync } from "@/components/startup-sync";
 
-export const metadata = {
-  title: 'Inventory & PO Manager',
-  description: 'Modern inventory management and purchase order system',
-}
+const geistSans = localFont({
+  src: "./fonts/GeistVF.woff",
+  variable: "--font-geist-sans",
+  weight: "100 900",
+});
+const geistMono = localFont({
+  src: "./fonts/GeistMonoVF.woff",
+  variable: "--font-geist-mono",
+  weight: "100 900",
+});
+
+export const metadata: Metadata = {
+  title: "Inventory PO Manager",
+  description: "Manage inventory and purchase orders",
+};
 
 export default function RootLayout({
   children,
-}: {
-  children: React.ReactNode
-}) {
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
     <html lang="en">
-      <body>
-        <div className="min-h-screen bg-gray-50">
-          <Navigation />
-          <main className="container mx-auto px-4 py-8">
-            {children}
-          </main>
-        </div>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
+        <StartupSync />
+        {children}
       </body>
     </html>
-  )
+  );
 }
