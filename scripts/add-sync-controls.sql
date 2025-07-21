@@ -14,5 +14,4 @@ SET sync_type = 'inventory'
 WHERE sync_type = 'finale_inventory';
 
 -- Create index for faster sync log queries
-CREATE INDEX IF NOT EXISTS idx_sync_logs_type_status_synced 
-ON sync_logs(sync_type, status, synced_at DESC);
+-- Note: This will be created by fix-sync-logs-columns.sql which handles the column naming issue
