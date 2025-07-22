@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { supabase } from '@/app/lib/supabase';
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+export const maxDuration = 60
+
 // GET /api/inventory - Fetch inventory items
 export async function GET() {
   try {

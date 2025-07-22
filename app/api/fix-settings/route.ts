@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/app/lib/supabase'
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+export const maxDuration = 60
+
 export async function POST() {
   try {
     // First, get the most recent settings record

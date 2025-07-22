@@ -3,6 +3,10 @@ import { NextResponse } from 'next/server'
 import { getFinaleConfig } from '@/app/lib/finale-api'
 import { FinaleVendorService } from '@/app/lib/finale-vendors'
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+export const maxDuration = 60
+
 export async function POST() {
   try {
     const config = await getFinaleConfig()

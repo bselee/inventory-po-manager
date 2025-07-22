@@ -3,6 +3,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { FinaleApiService, getFinaleConfig } from '@/app/lib/finale-api'
 import { supabase } from '@/app/lib/supabase'
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+export const maxDuration = 60
+
 export async function POST(request: NextRequest) {
   try {
     // Get sync options from request body

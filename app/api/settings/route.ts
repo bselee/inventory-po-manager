@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+export const maxDuration = 60
+
 // GET /api/settings - Fetch application settings
 export async function GET() {
   try {

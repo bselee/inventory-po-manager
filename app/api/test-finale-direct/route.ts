@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server'
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+export const maxDuration = 60
+
 export async function GET() {
   // Direct test with your credentials
   const apiKey = 'I9TVdRvblFod'

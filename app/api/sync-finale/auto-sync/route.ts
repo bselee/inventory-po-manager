@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/app/lib/supabase'
 import { startAutoSync, stopAutoSync, runAutoSync } from '@/app/lib/auto-sync-manager'
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+export const maxDuration = 60
+
 // GET: Check auto-sync status
 export async function GET() {
   try {

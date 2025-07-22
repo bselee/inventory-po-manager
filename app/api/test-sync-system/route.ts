@@ -3,6 +3,10 @@ import { supabase } from '@/app/lib/supabase'
 import { FinaleApiService, getFinaleConfig } from '@/app/lib/finale-api'
 import { emailAlerts } from '@/app/lib/email-alerts'
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+export const maxDuration = 60
+
 interface TestResult {
   test: string
   status: 'pass' | 'fail' | 'warning'

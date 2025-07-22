@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { FinaleApiService, getFinaleConfig } from '@/app/lib/finale-api'
 import { supabase } from '@/app/lib/supabase'
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+export const maxDuration = 60
+
 export async function GET(request: NextRequest) {
   try {
     const testResults = {

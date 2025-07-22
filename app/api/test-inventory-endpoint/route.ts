@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server'
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+export const maxDuration = 60
+
 export async function GET() {
   const apiKey = 'I9TVdRvblFod'
   const apiSecret = '63h4TCI62vlQUYM3btEA7bycoIflGQUz'

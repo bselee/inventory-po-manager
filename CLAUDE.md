@@ -86,11 +86,48 @@ The Finale API service (`/app/lib/finale-api.ts`) handles all Finale operations:
 - **Date Filtering**: Inventory sync supports filtering by year (default: current year)
 - **Error Handling**: Comprehensive error messages and retry logic
 
+### Sync Implementation
+
+The application supports multiple sync strategies (`/app/api/sync-finale/route.ts`):
+1. **Smart Sync** (default): Time-based intelligent sync
+   - Last 6 hours: Inventory only
+   - 6-24 hours: Critical items only  
+   - 24+ hours: Full sync
+2. **Full Sync**: All products and purchase orders
+3. **Inventory Only**: Just inventory levels
+4. **Critical Items**: Items below reorder point
+5. **Active Products**: Non-discontinued items only
+
+Key sync features:
+- **Batch Processing**: 50-100 items per batch
+- **Rate Limiting**: Exponential backoff (3 retries, 1-10s delays)
+- **Stuck Detection**: Syncs > 30 minutes marked as failed
+- **Concurrent Prevention**: Returns 409 if sync already running
+- **Year Filtering**: Full syncs filter by current year to reduce data
+
+### Cron Jobs
+
+Configured in `vercel.json` (requires Vercel Pro plan or higher):
+- `/api/cron/sync-finale`: Runs every 6 hours
+- `/api/cron/check-inventory`: Daily inventory level checks
+- `/api/cron/cleanup`: Weekly cleanup tasks
+
+### Email Alerts
+
+SendGrid integration sends alerts for:
+- Sync failures and errors
+- Low inventory warnings
+- Stuck sync processes (> 30 minutes)
+- Critical inventory items below reorder point
+
+Configure via settings page with SendGrid API key and alert email.
+
 ### Current State
-- Most API routes have placeholder implementations returning mock data
-- `/api/sync-finale` is the most complete implementation
+- API routes are fully implemented with comprehensive error handling
+- Robust sync system with multiple strategies and retry logic
 - Authentication/authorization is not yet implemented
 - Test files exist but contain only stubs
+- Production-ready with extensive monitoring and alerting
 
 ### Critical Deployment Notes
 - Settings are stored in the `settings` table with id=1
@@ -144,3 +181,63 @@ The application auto-deploys to Vercel on push to the main branch. The `vercel.j
 - The `getFinaleConfig` helper uses `maybeSingle()` to handle missing records gracefully
 - Vendor endpoints use plural form (`/vendors` not `/vendor`)
 - Detailed deployment guides and troubleshooting available in `/docs/`
+
+## Sync Implementation Details
+
+### Sync Strategies
+The Finale sync system (`/app/lib/finale-api.ts`) implements multiple sync strategies:
+1. **Smart Sync** (default): Automatically chooses strategy based on last sync time
+   - < 30 minutes: Critical items only
+   - 30-120 minutes: Inventory levels only
+   - 120-1440 minutes: Active products only
+   - > 24 hours: Full sync
+2. **Full Sync**: Complete product catalog with inventory (year-filtered by default)
+3. **Inventory-Only**: Just stock levels update (fastest)
+4. **Critical Items**: Low stock and reorder-needed items
+5. **Active Products**: Skips discontinued/inactive items
+
+### Rate Limiting & Error Handling
+- **Batch Processing**: 50-100 items per batch
+- **Retry Logic**: Exponential backoff with 3 retries max
+  - Initial retry: 1 second
+  - Max backoff: 10 seconds
+- **Stuck Sync Detection**: Syncs running > 30 minutes are marked as failed
+- **Concurrent Sync Prevention**: Returns 409 if sync already running
+
+### Cron Jobs Configuration
+Defined in `vercel.json`:
+- `/api/cron/sync-finale`: Daily at 2 AM UTC
+- `/api/cron/sync-inventory`: Every 6 hours
+- `/api/cron/sync-vendors`: Daily at 4 AM UTC
+
+Note: Cron frequency must be compatible with Vercel plan limits
+
+### Email Alerts
+The system sends email alerts via SendGrid for:
+- Sync failures
+- Partial sync completions (with warnings)
+- Stuck syncs (> 30 minutes)
+- Out-of-stock items
+- Items needing reorder
+- Successful recovery from previous failures
+
+Configure in settings: `sendgrid_api_key` and `alert_email`
+
+### API Timeout Settings
+- All API routes: 60-second timeout (configured in `vercel.json`)
+- Health check endpoint: `/api/health` (rewritten from `/health`)
+- Use streaming responses for large data sets when possible
+
+### Deployment Validation
+The deployment scripts include:
+- Git status checking
+- Remote sync verification
+- Local build testing
+- Health check validation after deployment
+- Automatic retries for transient failures
+
+Run deployment checks with:
+```bash
+npm run deploy:check  # Pre-deployment validation
+npm run deploy        # Full deployment with checks
+```

@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+export const maxDuration = 60
+
 // POST /api/purchase-orders/[id]/send - Send purchase order to vendor
 export async function POST(
   request: Request,
