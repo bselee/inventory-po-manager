@@ -1,0 +1,223 @@
+{
+  "timestamp": "2025-07-22T15:33:12.983Z",
+  "overall": "healthy",
+  "tests": {
+    "ENV: NEXT_PUBLIC_SUPABASE_URL": {
+      "passed": true,
+      "message": "Set",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.005Z"
+    },
+    "ENV: NEXT_PUBLIC_SUPABASE_ANON_KEY": {
+      "passed": true,
+      "message": "Set",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.006Z"
+    },
+    "ENV: SUPABASE_SERVICE_ROLE_KEY": {
+      "passed": true,
+      "message": "Set",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.007Z"
+    },
+    "ENV: FINALE_API_URL": {
+      "passed": true,
+      "message": "Missing (optional)",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.008Z"
+    },
+    "ENV: SENDGRID_API_KEY": {
+      "passed": true,
+      "message": "Missing (optional)",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.009Z"
+    },
+    "Environment Configuration": {
+      "passed": true,
+      "message": "All required variables set",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.010Z"
+    },
+    "FILE: package.json": {
+      "passed": true,
+      "message": "Exists",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.012Z"
+    },
+    "FILE: next.config.js": {
+      "passed": true,
+      "message": "Exists",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.019Z"
+    },
+    "FILE: app/layout.tsx": {
+      "passed": true,
+      "message": "Exists",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.021Z"
+    },
+    "FILE: app/page.tsx": {
+      "passed": true,
+      "message": "Exists",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.025Z"
+    },
+    "FILE: lib/supabase.ts": {
+      "passed": true,
+      "message": "Exists",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.028Z"
+    },
+    "FILE: app/types/index.ts": {
+      "passed": true,
+      "message": "Exists",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.033Z"
+    },
+    "DIR: app": {
+      "passed": true,
+      "message": "Exists",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.034Z"
+    },
+    "DIR: lib": {
+      "passed": true,
+      "message": "Exists",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.035Z"
+    },
+    "DIR: scripts": {
+      "passed": true,
+      "message": "Exists",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.037Z"
+    },
+    "DIR: tests": {
+      "passed": true,
+      "message": "Exists",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.037Z"
+    },
+    "DEP: @supabase/supabase-js": {
+      "passed": true,
+      "message": "v^2.51.0",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.038Z"
+    },
+    "DEP: next": {
+      "passed": true,
+      "message": "v^14.2.30",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.038Z"
+    },
+    "DEP: react": {
+      "passed": true,
+      "message": "v^18.2.0",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.038Z"
+    },
+    "DEP: typescript": {
+      "passed": true,
+      "message": "v^5.3.2",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.038Z"
+    },
+    "DEV: jest": {
+      "passed": true,
+      "message": "v^29.7.0",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.039Z"
+    },
+    "DEV: ts-jest": {
+      "passed": true,
+      "message": "v^29.4.0",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.039Z"
+    },
+    "DEV: @types/jest": {
+      "passed": true,
+      "message": "v^29.5.14",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.039Z"
+    },
+    "DEV: zod": {
+      "passed": true,
+      "message": "v^3.25.76",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.039Z"
+    },
+    "SCRIPT: scripts/health-check.js": {
+      "passed": true,
+      "message": "Exists",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.040Z"
+    },
+    "SCRIPT: scripts/validate-database.js": {
+      "passed": true,
+      "message": "Exists",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.041Z"
+    },
+    "SCRIPT: scripts/backup-database.js": {
+      "passed": true,
+      "message": "Exists",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.041Z"
+    },
+    "SCRIPT: scripts/database-hardening.sql": {
+      "passed": true,
+      "message": "Exists",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.041Z"
+    },
+    "Types: InventoryItem": {
+      "passed": true,
+      "message": "Defined",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.043Z"
+    },
+    "Types: PurchaseOrder": {
+      "passed": true,
+      "message": "Defined",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.045Z"
+    },
+    "Types: Validation Schemas": {
+      "passed": true,
+      "message": "Present",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.046Z"
+    },
+    "Types: Zod Integration": {
+      "passed": true,
+      "message": "Integrated",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.046Z"
+    },
+    "Build: TypeScript Config": {
+      "passed": true,
+      "message": "Valid tsconfig.json",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.048Z"
+    },
+    "Build: Jest Config": {
+      "passed": true,
+      "message": "Configured",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.049Z"
+    },
+    "Build: Next.js Config": {
+      "passed": true,
+      "message": "Configured",
+      "details": null,
+      "timestamp": "2025-07-22T15:33:13.050Z"
+    }
+  },
+  "summary": {
+    "passed": 35,
+    "failed": 0,
+    "total": 35
+  },
+  "passRate": "100.0%",
+  "recommendations": []
+}
