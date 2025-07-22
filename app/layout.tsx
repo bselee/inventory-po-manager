@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 // import localFont from "next/font/local";
 import "./globals.css";
+import Navigation from "./components/Navigation";
 // import { StartupSync } from "@/components/startup-sync";
 
 // const geistSans = localFont({
@@ -26,11 +27,12 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className="antialiased"
-      >
+      <body className="antialiased bg-gray-50 min-h-screen">
         {/* <StartupSync /> */}
-        {children}
+        <Navigation />
+        <main className="container mx-auto px-4 py-6">
+          {children}
+        </main>
       </body>
     </html>
   );

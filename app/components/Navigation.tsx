@@ -56,16 +56,43 @@ export default function Navigation() {
                   href={item.href}
                   className={`flex items-center space-x-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                     isActive
-                      ? 'bg-blue-100 text-blue-700'
+                      ? 'bg-blue-100 text-blue-700 shadow-sm'
                       : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                   }`}
                   title={item.description}
                 >
                   <Icon className="h-4 w-4" />
                   <span>{item.label}</span>
+                  {isActive && (
+                    <div className="h-1 w-1 bg-blue-500 rounded-full ml-1"></div>
+                  )}
                 </Link>
               )
             })}
+          </div>
+        </div>
+        
+        {/* Page context bar */}
+        <div className="border-t bg-gray-50 px-4 py-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 text-sm text-gray-600">
+              <span>Current Page:</span>
+              <span className="font-medium text-gray-900">
+                {navItems.find(item => item.href === pathname)?.label || 'Home'}
+              </span>
+              <span className="text-gray-400">•</span>
+              <span className="text-gray-500">
+                {navItems.find(item => item.href === pathname)?.description || 'Dashboard'}
+              </span>
+            </div>
+            <div className="text-xs text-gray-400">
+              {new Date().toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+              })}
+            </div>
           </div>
         </div>
       </div>

@@ -5,14 +5,31 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Development Commands
 
 ```bash
+# Core development
 npm install        # Install dependencies
 npm run dev        # Start development server (http://localhost:3000)
 npm run build      # Build for production
 npm run start      # Start production server
 npm run lint       # Run ESLint
 npm run type-check # Check TypeScript types
-npm run setup      # Run database setup (currently empty)
-npm run deploy     # Deploy to Vercel
+
+# Testing
+npm run test              # Run all tests
+npm run test:watch        # Run tests in watch mode
+npm run test:coverage     # Run tests with coverage report
+npm run test:api          # Run API-specific tests
+npm run test:unit         # Run unit tests
+npm run test:integration  # Run integration tests
+npm run test:db           # Run database tests
+npm run test:health       # Run health check script
+
+# Database
+npm run db:migrate   # Run database migrations
+npm run db:validate  # Validate database schema
+npm run db:backup    # Backup database
+
+# Deployment
+npm run deploy       # Deploy to Vercel
 npm run deploy:check # Check Vercel deployment status
 ```
 
@@ -35,8 +52,12 @@ This is a Next.js 14 application using the App Router for managing inventory and
 ## Important Implementation Notes
 
 ### API Routes Pattern
-All API routes follow this structure:
+All API routes must include these exports for Vercel deployment:
 ```typescript
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+export const maxDuration = 60
+
 export async function GET/POST/PUT/DELETE(request: Request) {
   try {
     // Validate input
@@ -63,15 +84,15 @@ const { data, error } = await supabase
 
 ### Environment Variables
 Required environment variables (set in Vercel):
-- `NEXT_PUBLIC_SUPABASE_URL`
-- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
-- `FINALE_API_*` (credentials for Finale integration)
-- `SENDGRID_*` (email service credentials)
-- Google Sheets API configuration
+- `NEXT_PUBLIC_SUPABASE_URL` - Supabase project URL
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY` - Supabase anonymous key
+- `SUPABASE_SERVICE_ROLE_KEY` - Supabase service role key for server operations
+- `FINALE_API_KEY` - Finale API key (also configurable via settings)
+- `FINALE_API_SECRET` - Finale API secret (also configurable via settings)
+- `FINALE_ACCOUNT_PATH` - Finale account URL path
+- `SENDGRID_API_KEY` - SendGrid API key for email alerts (optional)
 
-Additional environment variables may be required based on enabled features:
-- Authentication providers (if implementing auth)
-- Additional service integrations
+Note: Finale and SendGrid credentials can be configured either via environment variables or through the application settings interface
 
 ### Finale API Integration
 
@@ -137,13 +158,23 @@ Configure via settings page with SendGrid API key and alert email.
 
 ## Testing
 
-Tests are located in `__tests__` directories within API routes. To run tests:
+Jest is configured with TypeScript support. Tests should be placed in:
+- `tests/` directory for integration tests
+- `app/**/__tests__/` for component/route tests
+- `lib/**/__tests__/` for utility tests
+
+Test files should use `.test.ts` or `.spec.ts` extensions.
+
 ```bash
-# Note: Jest is not configured yet. When implementing tests:
-# 1. Add Jest configuration
-# 2. Update package.json with test script
-# 3. Implement actual test cases
+npm run test              # Run all tests
+npm run test:watch        # Watch mode
+npm run test:coverage     # With coverage (threshold: 70%)
 ```
+
+Module aliases are configured:
+- `@/` maps to root directory
+- `@/app/` maps to app directory
+- `@/lib/` maps to lib directory
 
 ## Database Migrations
 
@@ -175,69 +206,4 @@ The application auto-deploys to Vercel on push to the main branch. The `vercel.j
 - `npm run deploy:check`: Verifies deployment status and health
 - Scripts include git status checking, remote sync verification, and health check validation
 
-### Critical Deployment Notes
-- Settings are stored in the `settings` table with id=1
-- Use `upsert` operations for settings to handle both insert and update cases
-- The `getFinaleConfig` helper uses `maybeSingle()` to handle missing records gracefully
-- Vendor endpoints use plural form (`/vendors` not `/vendor`)
 - Detailed deployment guides and troubleshooting available in `/docs/`
-
-## Sync Implementation Details
-
-### Sync Strategies
-The Finale sync system (`/app/lib/finale-api.ts`) implements multiple sync strategies:
-1. **Smart Sync** (default): Automatically chooses strategy based on last sync time
-   - < 30 minutes: Critical items only
-   - 30-120 minutes: Inventory levels only
-   - 120-1440 minutes: Active products only
-   - > 24 hours: Full sync
-2. **Full Sync**: Complete product catalog with inventory (year-filtered by default)
-3. **Inventory-Only**: Just stock levels update (fastest)
-4. **Critical Items**: Low stock and reorder-needed items
-5. **Active Products**: Skips discontinued/inactive items
-
-### Rate Limiting & Error Handling
-- **Batch Processing**: 50-100 items per batch
-- **Retry Logic**: Exponential backoff with 3 retries max
-  - Initial retry: 1 second
-  - Max backoff: 10 seconds
-- **Stuck Sync Detection**: Syncs running > 30 minutes are marked as failed
-- **Concurrent Sync Prevention**: Returns 409 if sync already running
-
-### Cron Jobs Configuration
-Defined in `vercel.json`:
-- `/api/cron/sync-finale`: Daily at 2 AM UTC
-- `/api/cron/sync-inventory`: Every 6 hours
-- `/api/cron/sync-vendors`: Daily at 4 AM UTC
-
-Note: Cron frequency must be compatible with Vercel plan limits
-
-### Email Alerts
-The system sends email alerts via SendGrid for:
-- Sync failures
-- Partial sync completions (with warnings)
-- Stuck syncs (> 30 minutes)
-- Out-of-stock items
-- Items needing reorder
-- Successful recovery from previous failures
-
-Configure in settings: `sendgrid_api_key` and `alert_email`
-
-### API Timeout Settings
-- All API routes: 60-second timeout (configured in `vercel.json`)
-- Health check endpoint: `/api/health` (rewritten from `/health`)
-- Use streaming responses for large data sets when possible
-
-### Deployment Validation
-The deployment scripts include:
-- Git status checking
-- Remote sync verification
-- Local build testing
-- Health check validation after deployment
-- Automatic retries for transient failures
-
-Run deployment checks with:
-```bash
-npm run deploy:check  # Pre-deployment validation
-npm run deploy        # Full deployment with checks
-```

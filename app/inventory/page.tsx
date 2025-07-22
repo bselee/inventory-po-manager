@@ -7,13 +7,17 @@ import { Package, AlertTriangle, TrendingDown, Search, Filter, RefreshCw, Plus, 
 interface InventoryItem {
   id: string
   sku: string
-  product_name: string
-  stock: number
+  product_name?: string
+  name?: string
+  current_stock: number
   location?: string
-  reorder_point: number
-  reorder_quantity: number
+  minimum_stock: number
+  maximum_stock?: number
+  reorder_point?: number
+  reorder_quantity?: number
   vendor?: string
-  cost: number
+  cost?: number
+  unit_price?: number
   sales_last_30_days?: number
   sales_last_90_days?: number
   last_sales_update?: string
@@ -81,9 +85,9 @@ export default function InventoryPage() {
   }
 
   const getStockStatus = (item: InventoryItem) => {
-    if (item.stock === 0) {
+    if (item.current_stock === 0) {
       return { text: 'Out of Stock', color: 'red' }
-    } else if (item.stock <= item.reorder_point) {
+    } else if (item.current_stock <= (item.minimum_stock || item.reorder_point || 0)) {
       return { text: 'Low Stock', color: 'yellow' }
     }
     return { text: 'In Stock', color: 'green' }
@@ -91,26 +95,26 @@ export default function InventoryPage() {
 
   const filteredItems = items.filter(item => {
     const matchesSearch = 
-      item.product_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (item.product_name || item.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (item.vendor && item.vendor.toLowerCase().includes(searchTerm.toLowerCase()))
 
     const matchesFilter = 
       filterStatus === 'all' ||
-      (filterStatus === 'out-of-stock' && item.stock === 0) ||
-      (filterStatus === 'low-stock' && item.stock > 0 && item.stock <= item.reorder_point)
+      (filterStatus === 'out-of-stock' && item.current_stock === 0) ||
+      (filterStatus === 'low-stock' && item.current_stock > 0 && item.current_stock <= (item.minimum_stock || item.reorder_point || 0))
 
     return matchesSearch && matchesFilter
   })
 
   const startEditingStock = (item: InventoryItem) => {
     setEditingItem(item.id)
-    setEditStock(item.stock)
+    setEditStock(item.current_stock)
   }
 
   const startEditingCost = (item: InventoryItem) => {
     setEditingItem(item.id)
-    setEditCost(item.cost)
+    setEditCost(item.unit_price || item.cost || 0)
     setShowCostEdit(true)
   }
 
@@ -119,7 +123,7 @@ export default function InventoryPage() {
       const { error } = await supabase
         .from('inventory_items')
         .update({ 
-          stock: editStock,
+          current_stock: editStock,
           last_updated: new Date().toISOString()
         })
         .eq('id', itemId)
@@ -127,9 +131,9 @@ export default function InventoryPage() {
       if (error) throw error
 
       // Update local state
-      setItems(items.map(item => 
-        item.id === itemId 
-          ? { ...item, stock: editStock, last_updated: new Date().toISOString() }
+      setItems(items.map(item =>
+        item.id === itemId
+          ? { ...item, current_stock: editStock, last_updated: new Date().toISOString() }
           : item
       ))
       setEditingItem(null)
@@ -144,7 +148,7 @@ export default function InventoryPage() {
       const { error } = await supabase
         .from('inventory_items')
         .update({ 
-          cost: editCost,
+          unit_price: editCost,
           last_updated: new Date().toISOString()
         })
         .eq('id', itemId)
@@ -154,7 +158,7 @@ export default function InventoryPage() {
       // Update local state
       setItems(items.map(item => 
         item.id === itemId 
-          ? { ...item, cost: editCost, last_updated: new Date().toISOString() }
+          ? { ...item, unit_price: editCost, cost: editCost, last_updated: new Date().toISOString() }
           : item
       ))
       setEditingItem(null)
@@ -339,7 +343,7 @@ export default function InventoryPage() {
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
-                          {item.stock}
+                          {item.current_stock}
                           <button
                             onClick={() => startEditingStock(item)}
                             className="text-gray-400 hover:text-gray-600"
@@ -393,7 +397,7 @@ export default function InventoryPage() {
                         </div>
                       ) : (
                         <div className="flex items-center gap-2">
-                          ${item.cost.toFixed(2)}
+                          ${(item.unit_price || item.cost || 0).toFixed(2)}
                           <button
                             onClick={() => startEditingCost(item)}
                             className="text-gray-400 hover:text-gray-600"
@@ -410,10 +414,10 @@ export default function InventoryPage() {
                       {item.sales_last_90_days || 0}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 font-medium">
-                      ${(item.stock * item.cost).toFixed(2)}
+                      ${(item.current_stock * (item.unit_price || item.cost || 0)).toFixed(2)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                      {item.stock === 0 && (
+                      {item.current_stock === 0 && (
                         <button className="text-blue-600 hover:text-blue-800">
                           Create PO
                         </button>
