@@ -23,6 +23,9 @@ npm run test:integration  # Run integration tests
 npm run test:db           # Run database tests
 npm run test:health       # Run health check script
 
+# Run a single Jest test file
+npm run test -- path/to/test.spec.ts
+
 # Testing - Playwright
 npm run test:e2e          # Run all Playwright tests
 npm run test:e2e:ui       # Run with Playwright UI mode
@@ -34,6 +37,11 @@ npm run test:inventory    # Test inventory page
 npm run test:settings     # Test settings page
 npm run test:comprehensive # Run comprehensive test suite
 npm run test:all          # Run Jest + Playwright tests
+
+# Run a single Playwright test file
+npx playwright test tests/e2e/specific-test.spec.ts
+# Run tests matching a pattern
+npx playwright test -g "should sync inventory"
 
 # Database
 npm run db:migrate   # Run database migrations
@@ -267,4 +275,116 @@ The application auto-deploys to Vercel on push to the main branch. The `vercel.j
 - `npm run deploy:check`: Verifies deployment status and health
 - Scripts include git status checking, remote sync verification, and health check validation
 
-- Detailed deployment guides and troubleshooting available in `/docs/`
+## Code Patterns and Best Practices
+
+### API Response Pattern
+Always use consistent response formatting:
+```typescript
+// Success response
+return NextResponse.json({ 
+  data: result,
+  message: 'Operation successful' 
+})
+
+// Error response
+return NextResponse.json(
+  { error: error instanceof Error ? error.message : 'Unknown error' },
+  { status: 500 }
+)
+```
+
+### Error Handling Pattern
+Wrap all async operations in try-catch blocks:
+```typescript
+try {
+  const result = await someAsyncOperation()
+  return NextResponse.json({ data: result })
+} catch (error) {
+  console.error('Operation failed:', error)
+  return NextResponse.json(
+    { error: 'Operation failed' },
+    { status: 500 }
+  )
+}
+```
+
+### Component Structure
+Follow this consistent structure for React components:
+```typescript
+// 1. Imports
+import { useState, useEffect } from 'react'
+
+// 2. Types/Interfaces
+interface ComponentProps {
+  prop1: string
+  prop2?: number
+}
+
+// 3. Component
+export default function ComponentName({ prop1, prop2 = 0 }: ComponentProps) {
+  // 4. State and hooks
+  const [state, setState] = useState<string>('')
+  
+  // 5. Effects
+  useEffect(() => {
+    // Effect logic
+  }, [])
+  
+  // 6. Handlers
+  const handleClick = () => {
+    // Handler logic
+  }
+  
+  // 7. Render
+  return (
+    <div>
+      {/* Component JSX */}
+    </div>
+  )
+}
+```
+
+## Common Issues and Troubleshooting
+
+### Sync Issues
+1. **Stuck Sync (>30 minutes)**: The system automatically marks these as failed. Check `/app/api/sync-status-monitor/route.ts` for the cleanup logic.
+2. **Rate Limiting**: The system implements exponential backoff. If syncs fail repeatedly, check Finale API rate limits.
+3. **Concurrent Sync Prevention**: The system returns 409 if a sync is already running. Wait for completion or mark as failed.
+
+### Database Connection Issues
+1. **Connection Pool Exhaustion**: Ensure all Supabase queries properly handle errors
+2. **Migration Failures**: Run migrations in order from `/scripts/migrations/`
+3. **Settings Table**: Always use `upsert` for settings (id=1) to handle missing records
+
+### Finale API Issues
+1. **Authentication Failures**: Check API key/secret in settings or environment variables
+2. **Endpoint Discovery**: The system tries multiple vendor endpoint patterns automatically
+3. **Response Format**: Finale uses parallel array format (columns + data arrays)
+
+### Deployment Issues
+1. **Vercel Timeouts**: API routes have 60-second limit, ensure operations complete within this time
+2. **Environment Variables**: Verify all required variables are set in Vercel dashboard
+3. **Build Failures**: Check TypeScript errors with `npm run type-check`
+
+### Testing Issues
+1. **Playwright Port Conflicts**: Uses port 3001, ensure it's available
+2. **Test Database**: Some tests require database access, ensure connection is configured
+3. **Flaky Tests**: Creative tests may need adjustment based on data state
+
+## Performance Optimization Tips
+
+1. **Batch Operations**: Process inventory in batches of 50-100 items
+2. **Caching**: Implement caching for frequently accessed data
+3. **Pagination**: Use pagination for large datasets in UI
+4. **Query Optimization**: Use specific select() clauses in Supabase queries
+5. **Parallel Processing**: Use Promise.all() for independent operations
+
+## Security Considerations
+
+1. **API Key Storage**: Never commit API keys, use environment variables
+2. **Input Validation**: Always validate and sanitize user input
+3. **SQL Injection**: Use parameterized queries with Supabase
+4. **CORS**: Configure appropriate CORS headers for API routes
+5. **Rate Limiting**: Implement rate limiting for public endpoints
+
+Detailed deployment guides and troubleshooting available in `/docs/`

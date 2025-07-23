@@ -1134,7 +1134,7 @@ export async function getFinaleConfig(): Promise<FinaleApiConfig | null> {
     // First try to get any settings record
     const { data: settings, error } = await supabase
       .from('settings')
-      .select('finale_api_key, finale_api_secret, finale_account_path')
+      .select('finale_username, finale_password, finale_account_path')
       .limit(1)
       .maybeSingle() // Use maybeSingle instead of single to handle no records
 
@@ -1150,10 +1150,10 @@ export async function getFinaleConfig(): Promise<FinaleApiConfig | null> {
       return null
     }
 
-    if (!settings.finale_api_key || !settings.finale_api_secret || !settings.finale_account_path) {
+    if (!settings.finale_username || !settings.finale_password || !settings.finale_account_path) {
       console.log('[getFinaleConfig] Missing required fields:', {
-        hasApiKey: !!settings.finale_api_key,
-        hasApiSecret: !!settings.finale_api_secret,
+        hasUsername: !!settings.finale_username,
+        hasPassword: !!settings.finale_password,
         hasAccountPath: !!settings.finale_account_path
       })
       return null
@@ -1161,8 +1161,8 @@ export async function getFinaleConfig(): Promise<FinaleApiConfig | null> {
 
     console.log('[getFinaleConfig] Config found successfully')
     return {
-      apiKey: settings.finale_api_key,
-      apiSecret: settings.finale_api_secret,
+      apiKey: settings.finale_username,
+      apiSecret: settings.finale_password,
       accountPath: settings.finale_account_path
     }
   } catch (error) {

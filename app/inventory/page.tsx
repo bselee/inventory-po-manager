@@ -55,6 +55,7 @@ interface FilterConfig {
 
 export default function InventoryPage() {
   const [items, setItems] = useState<InventoryItem[]>([])
+  const [allItems, setAllItems] = useState<InventoryItem[]>([]) // Store all items for filtering/searching
   const [summary, setSummary] = useState<InventorySummary | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
@@ -64,7 +65,7 @@ export default function InventoryPage() {
     status: 'all',
     vendor: '',
     location: '',
-    priceRange: { min: 0, max: 1000 },
+    priceRange: { min: 0, max: 999999 }, // Set to very high value to include all items
     salesVelocity: 'all',
     stockDays: 'all'
   })
@@ -73,11 +74,37 @@ export default function InventoryPage() {
   const [editStock, setEditStock] = useState(0)
   const [editCost, setEditCost] = useState(0)
   const [showCostEdit, setShowCostEdit] = useState(false)
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(100) // Default to 100 items per page
+  const [totalItems, setTotalItems] = useState(0)
 
   useEffect(() => {
     loadInventory()
     loadSummary()
   }, [])
+
+  // Update displayed items when filters, search, or pagination changes
+  useEffect(() => {
+    if (allItems.length > 0) {
+      const filteredAndSorted = getFilteredAndSortedItems()
+      const startIndex = (currentPage - 1) * itemsPerPage
+      const endIndex = startIndex + itemsPerPage
+      setItems(filteredAndSorted.slice(startIndex, endIndex))
+      setTotalItems(filteredAndSorted.length)
+    }
+  }, [allItems, searchTerm, filterConfig, sortConfig, currentPage, itemsPerPage])
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [searchTerm, filterConfig])
+
+  // Pagination handlers
+  const totalPages = Math.ceil(totalItems / itemsPerPage)
+  
+  const goToPage = (page: number) => {
+    setCurrentPage(Math.max(1, Math.min(page, totalPages)))
+  }
 
   // Enhanced calculation functions for planning
   const calculateSalesVelocity = (item: InventoryItem): number => {
@@ -131,14 +158,42 @@ export default function InventoryPage() {
 
   const loadInventory = async () => {
     try {
+      // First get the total count
+      const { count } = await supabase
+        .from('inventory_items')
+        .select('*', { count: 'exact', head: true })
+
+      console.log(`Total inventory items in database: ${count}`)
+      setTotalItems(count || 0)
+
+      // Then fetch all items with a high limit to ensure we get everything
       const { data, error } = await supabase
         .from('inventory_items')
         .select('*')
         .order('product_name', { ascending: true })
+        .limit(5000) // Set high limit to ensure we get all items
 
       if (error) throw error
-      const enhancedItems = enhanceItemsWithCalculations(data || [])
-      setItems(enhancedItems)
+      
+      console.log(`Loaded ${data?.length || 0} items from database`)
+      
+      // Transform database fields to match frontend expectations
+      const transformedData = (data || []).map(item => ({
+        ...item,
+        current_stock: item.stock || 0,
+        minimum_stock: item.reorder_point || 0,
+        unit_price: item.cost || 0,
+        name: item.product_name || item.name || ''
+      }))
+      
+      const enhancedItems = enhanceItemsWithCalculations(transformedData)
+      setAllItems(enhancedItems) // Store all items
+      
+      // Set initial page items
+      const startIndex = (currentPage - 1) * itemsPerPage
+      const endIndex = startIndex + itemsPerPage
+      setItems(enhancedItems.slice(startIndex, endIndex))
+      
     } catch (error) {
       console.error('Error loading inventory:', error)
     } finally {
@@ -188,7 +243,7 @@ export default function InventoryPage() {
 
   // Enhanced filtering function
   const getFilteredAndSortedItems = () => {
-    let filtered = items.filter(item => {
+    let filtered = allItems.filter(item => {
       // Search filter
       const matchesSearch = 
         (item.product_name || item.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -276,7 +331,7 @@ export default function InventoryPage() {
       const { error } = await supabase
         .from('inventory_items')
         .update({ 
-          current_stock: editStock,
+          stock: editStock,
           last_updated: new Date().toISOString()
         })
         .eq('id', itemId)
@@ -286,7 +341,7 @@ export default function InventoryPage() {
       // Update local state
       setItems(items.map(item =>
         item.id === itemId
-          ? { ...item, current_stock: editStock, last_updated: new Date().toISOString() }
+          ? { ...item, current_stock: editStock, stock: editStock, last_updated: new Date().toISOString() }
           : item
       ))
       setEditingItem(null)
@@ -301,7 +356,7 @@ export default function InventoryPage() {
       const { error } = await supabase
         .from('inventory_items')
         .update({ 
-          unit_price: editCost,
+          cost: editCost,
           last_updated: new Date().toISOString()
         })
         .eq('id', itemId)
@@ -318,7 +373,7 @@ export default function InventoryPage() {
       setShowCostEdit(false)
       loadSummary() // Refresh summary
     } catch (error) {
-      console.error('Error updating stock:', error)
+      console.error('Error updating cost:', error)
     }
   }
 
@@ -489,7 +544,7 @@ export default function InventoryPage() {
               status: 'all',
               vendor: '',
               location: '',
-              priceRange: { min: 0, max: 1000 },
+              priceRange: { min: 0, max: 999999 },
               salesVelocity: 'all',
               stockDays: 'all'
             })}
@@ -532,9 +587,12 @@ export default function InventoryPage() {
                       <div className="flex items-center gap-1">
                         {label}
                         {key !== 'actions' && sortConfig.key === key && (
-                          <span className="text-blue-600">
-                            {sortConfig.direction === 'asc' ? '↑' : '↓'}
+                          <span className="text-blue-600 font-bold text-lg ml-1">
+                            {sortConfig.direction === 'asc' ? '▲' : '▼'}
                           </span>
+                        )}
+                        {key !== 'actions' && sortConfig.key !== key && (
+                          <span className="text-gray-400 text-xs ml-1">▲▼</span>
                         )}
                       </div>
                     </th>
@@ -731,6 +789,91 @@ export default function InventoryPage() {
                 No items found matching your criteria
               </div>
             )}
+          </div>
+          
+          {/* Pagination Controls */}
+          <div className="bg-white px-6 py-4 border-t border-gray-200 flex items-center justify-between">
+            {/* Items per page selector */}
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-700">Show:</span>
+              <select
+                value={itemsPerPage}
+                onChange={(e) => {
+                  setItemsPerPage(Number(e.target.value))
+                  setCurrentPage(1) // Reset to first page when changing items per page
+                }}
+                className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label="Items per page"
+              >
+                <option value={25}>25</option>
+                <option value={50}>50</option>
+                <option value={100}>100</option>
+                <option value={250}>250</option>
+                <option value={500}>500</option>
+                <option value={1000}>1000</option>
+              </select>
+              <span className="text-sm text-gray-700">
+                items per page
+              </span>
+            </div>
+
+            {/* Pagination info and controls */}
+            <div className="flex items-center space-x-6">
+              {/* Results info */}
+              <div className="text-sm text-gray-700">
+                Showing {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} to{' '}
+                {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} results
+              </div>
+
+              {/* Page controls */}
+              {totalPages > 1 && (
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed border border-gray-300 rounded-md hover:bg-gray-50"
+                  >
+                    Previous
+                  </button>
+                  
+                  {/* Page numbers */}
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    let pageNum
+                    if (totalPages <= 5) {
+                      pageNum = i + 1
+                    } else if (currentPage <= 3) {
+                      pageNum = i + 1
+                    } else if (currentPage >= totalPages - 2) {
+                      pageNum = totalPages - 4 + i
+                    } else {
+                      pageNum = currentPage - 2 + i
+                    }
+                    
+                    return (
+                      <button
+                        key={pageNum}
+                        onClick={() => handlePageChange(pageNum)}
+                        className={`px-3 py-2 text-sm border rounded-md ${
+                          currentPage === pageNum
+                            ? 'bg-blue-600 text-white border-blue-600'
+                            : 'text-gray-700 border-gray-300 hover:bg-gray-50'
+                        }`}
+                      >
+                        {pageNum}
+                      </button>
+                    )
+                  })}
+                  
+                  <button
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed border border-gray-300 rounded-md hover:bg-gray-50"
+                  >
+                    Next
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
