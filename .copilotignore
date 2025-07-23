@@ -1,0 +1,42 @@
+# Copilot ignore patterns
+
+# Environment and secrets
+.env*
+*.key
+*.pem
+
+# Build outputs
+.next/
+dist/
+build/
+
+# Dependencies
+node_modules/
+
+# Test outputs
+coverage/
+playwright-report/
+test-results/
+
+# Logs
+*.log
+logs/
+
+# Database backups
+backups/
+
+# Temporary files
+*.tmp
+*.temp
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/settings.json
+.idea/
+
+# Documentation that might contain sensitive info
+docs/api-keys.md
+docs/secrets.md

@@ -1,0 +1,18 @@
+# Auto-assign configuration for PR reviews
+addReviewers: true
+addAssignees: false
+
+reviewers:
+  - bselee
+
+numberOfReviewers: 1
+
+skipKeywords:
+  - wip
+  - draft
+
+# Only auto-assign for these file patterns
+filterLabels:
+  - frontend
+  - backend
+  - docs
