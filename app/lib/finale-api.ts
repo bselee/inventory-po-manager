@@ -913,7 +913,7 @@ export class FinaleApiService {
     }
   }
 
-  // Get all vendors from Finale
+  // Get all vendors from Finale (with multiple endpoint fallbacks)
   async getVendors(): Promise<any[]> {
     const vendors: any[] = []
     let offset = 0
@@ -922,10 +922,60 @@ export class FinaleApiService {
 
     console.log('[Finale Sync] Starting vendor fetch...')
 
+    // Try multiple endpoint patterns as Finale API varies
+    const endpointPatterns = [
+      'vendor',        // Singular - might work for some accounts
+      'vendors',       // Plural - standard pattern  
+      'party',         // Party endpoint (vendors are parties)
+      'supplier'       // Some systems call them suppliers
+    ]
+
+    let successfulEndpoint = null
+    let lastError = null
+
+    for (const endpoint of endpointPatterns) {
+      try {
+        console.log(`[Finale Sync] Trying ${endpoint} endpoint...`)
+        
+        const testUrl = `${this.baseUrl}/${endpoint}?limit=1`
+        const testResponse = await fetch(testUrl, {
+          headers: {
+            'Authorization': this.authHeader,
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          }
+        })
+
+        if (testResponse.ok) {
+          const testData = await testResponse.json()
+          console.log(`[Finale Sync] ${endpoint} endpoint works!`)
+          successfulEndpoint = endpoint
+          
+          // Log response structure for debugging
+          console.log(`[Finale Sync] Response structure:`, {
+            isArray: Array.isArray(testData),
+            hasDataKey: !!testData.data,
+            sampleKeys: Array.isArray(testData) ? 'array response' : Object.keys(testData).slice(0, 10)
+          })
+          break
+        } else {
+          console.log(`[Finale Sync] ${endpoint} endpoint failed with ${testResponse.status}`)
+          lastError = `${endpoint}: ${testResponse.status}`
+        }
+      } catch (error) {
+        console.log(`[Finale Sync] ${endpoint} endpoint error:`, error instanceof Error ? error.message : 'Unknown error')
+        lastError = `${endpoint}: ${error instanceof Error ? error.message : 'Unknown error'}`
+      }
+    }
+
+    if (!successfulEndpoint) {
+      throw new Error(`No working vendor endpoint found. Tried: ${endpointPatterns.join(', ')}. Last error: ${lastError}`)
+    }
+
     try {
+      // Now fetch all vendors using the working endpoint
       while (hasMore) {
-        // Finale API uses plural 'vendors' not 'vendor'
-        const url = `${this.baseUrl}/vendors?limit=${limit}&offset=${offset}`
+        const url = `${this.baseUrl}/${successfulEndpoint}?limit=${limit}&offset=${offset}`
         console.log(`[Finale Sync] Fetching vendors from URL: ${url}`)
         
         const response = await fetch(url, {
@@ -944,33 +994,47 @@ export class FinaleApiService {
 
         const data = await response.json()
         
-        // Log response structure for debugging
-        if (offset === 0) {
-          console.log(`[Finale Sync] Vendor response structure:`, {
-            isArray: Array.isArray(data),
-            sampleKeys: Array.isArray(data) ? 'array response' : Object.keys(data).slice(0, 5)
-          })
-        }
+        // Handle different response formats
+        let vendorBatch = []
         
-        // Handle direct array response (like products endpoint)
         if (Array.isArray(data)) {
-          vendors.push(...data)
-          hasMore = data.length === limit
-          console.log(`[Finale Sync] Vendor page retrieved: ${data.length} items`)
-        } else if (data.vendors && Array.isArray(data.vendors)) {
-          // Handle object with vendors array
-          vendors.push(...data.vendors)
-          hasMore = data.vendors.length === limit
-          console.log(`[Finale Sync] Vendor page retrieved: ${data.vendors.length} items`)
+          // Direct array response
+          vendorBatch = data
+        } else if (data[successfulEndpoint] && Array.isArray(data[successfulEndpoint])) {
+          // Object with endpoint name as key (e.g., { vendors: [...] })
+          vendorBatch = data[successfulEndpoint]
+        } else if (data.data && Array.isArray(data.data)) {
+          // Object with data key (e.g., { data: [...] })
+          vendorBatch = data.data
+        } else if (data.results && Array.isArray(data.results)) {
+          // Object with results key (e.g., { results: [...] })
+          vendorBatch = data.results
         } else {
-          console.log(`[Finale Sync] Unexpected vendor response format`, data)
+          console.log(`[Finale Sync] Unexpected vendor response format for ${successfulEndpoint}:`, Object.keys(data))
           hasMore = false
+          break
         }
         
+        vendors.push(...vendorBatch)
+        hasMore = vendorBatch.length === limit
         offset += limit
+        
+        console.log(`[Finale Sync] Vendor page retrieved: ${vendorBatch.length} items (total: ${vendors.length})`)
       }
 
-      console.log(`[Finale Sync] Total vendors fetched: ${vendors.length}`)
+      console.log(`[Finale Sync] Total vendors fetched: ${vendors.length} using ${successfulEndpoint} endpoint`)
+      
+      // Log sample vendor structure for debugging
+      if (vendors.length > 0) {
+        console.log('[Finale Sync] Sample vendor structure:', {
+          sampleVendor: Object.keys(vendors[0]),
+          hasVendorName: 'vendorName' in vendors[0],
+          hasName: 'name' in vendors[0],
+          hasPartyName: 'partyName' in vendors[0],
+          hasId: 'id' in vendors[0] || 'vendorId' in vendors[0] || 'partyId' in vendors[0]
+        })
+      }
+      
       return vendors
     } catch (error) {
       console.error('[Finale Sync] Error fetching vendors:', error)

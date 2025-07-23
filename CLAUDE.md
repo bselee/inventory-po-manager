@@ -13,8 +13,8 @@ npm run start      # Start production server
 npm run lint       # Run ESLint
 npm run type-check # Check TypeScript types
 
-# Testing
-npm run test              # Run all tests
+# Testing - Jest
+npm run test              # Run all Jest tests
 npm run test:watch        # Run tests in watch mode
 npm run test:coverage     # Run tests with coverage report
 npm run test:api          # Run API-specific tests
@@ -22,6 +22,18 @@ npm run test:unit         # Run unit tests
 npm run test:integration  # Run integration tests
 npm run test:db           # Run database tests
 npm run test:health       # Run health check script
+
+# Testing - Playwright
+npm run test:e2e          # Run all Playwright tests
+npm run test:e2e:ui       # Run with Playwright UI mode
+npm run test:e2e:headed   # Run in headed browser mode
+npm run test:e2e:debug    # Run in debug mode
+npm run test:crawl        # Run application crawler test
+npm run test:health-e2e   # Run E2E health check
+npm run test:inventory    # Test inventory page
+npm run test:settings     # Test settings page
+npm run test:comprehensive # Run comprehensive test suite
+npm run test:all          # Run Jest + Playwright tests
 
 # Database
 npm run db:migrate   # Run database migrations
@@ -35,7 +47,23 @@ npm run deploy:check # Check Vercel deployment status
 
 ## Architecture Overview
 
-This is a Next.js 14 application using the App Router for managing inventory and purchase orders. The application integrates with external services (Finale Inventory, Google Sheets, SendGrid) and uses Supabase as the database.
+Enterprise-grade inventory management system built with Next.js 14 App Router. Features intelligent purchase order automation, real-time analytics, and seamless Finale Inventory integration.
+
+### Core Features
+- **Intelligent Inventory Management**: Real-time tracking with predictive analytics
+- **Smart Purchase Orders**: Automated generation based on sales velocity and reorder points
+- **Multi-View Dashboards**: Table view, Planning view (30/60/90 day), Analytics view
+- **Advanced Business Logic**: Sales velocity analysis, stock status classification, demand trend tracking
+
+### Enhanced Inventory Features
+The inventory page (`/app/inventory/page.tsx`) includes sophisticated calculations:
+- **Sales Velocity**: Daily unit movement (30-day average)
+- **Days Until Stockout**: Predictive calculation based on velocity
+- **Stock Status Levels**: Critical (≤7 days), Low (≤30 days), Adequate, Overstocked
+- **Demand Trends**: Increasing/Stable/Decreasing based on 30 vs 90-day comparison
+- **Reorder Recommendations**: Automatic flagging of items needing immediate attention
+- **Advanced Filtering**: By status, vendor, location, price range, sales velocity, stock days
+- **Smart Sorting**: Multi-column sorting with direction indicators
 
 ### Key Architectural Decisions
 
@@ -101,11 +129,12 @@ The Finale API service (`/app/lib/finale-api.ts`) handles all Finale operations:
 - **Base URL Pattern**: `https://app.finaleinventory.com/{account}/api/`
 - **Key Endpoints**:
   - `/products` - Inventory data with pagination (100 items max per request)
-  - `/vendors` (plural) - Vendor management
+  - `/vendors` (plural) - Vendor management with multiple fallback endpoints
   - `/purchaseOrder` - Purchase order operations
 - **Response Format**: Handles parallel array format (columns + data arrays)
 - **Date Filtering**: Inventory sync supports filtering by year (default: current year)
 - **Error Handling**: Comprehensive error messages and retry logic
+- **Vendor Endpoint Discovery**: Automatically tries multiple patterns (vendor, vendors, party, supplier)
 
 ### Sync Implementation
 
@@ -147,8 +176,18 @@ Configure via settings page with SendGrid API key and alert email.
 - API routes are fully implemented with comprehensive error handling
 - Robust sync system with multiple strategies and retry logic
 - Authentication/authorization is not yet implemented
-- Test files exist but contain only stubs
+- Playwright E2E tests implemented with creative testing patterns
 - Production-ready with extensive monitoring and alerting
+
+### Settings Page Features
+The settings page (`/app/settings/page.tsx`) provides comprehensive configuration:
+- **Real-time Sync Status Monitor**: Live view of running syncs with auto-refresh
+- **Manual Sync Trigger**: Direct control over sync operations
+- **Stuck Sync Detection**: Automatic cleanup of syncs running >30 minutes
+- **Finale Debug Panel**: Test connections and troubleshoot API issues
+- **Sync Control Panel**: Master controls for all sync operations
+- **Vendor Sync Manager**: Dedicated vendor data synchronization
+- **Sales Data Uploader**: Import sales data from Finale Excel reports
 
 ### Critical Deployment Notes
 - Settings are stored in the `settings` table with id=1
@@ -158,6 +197,7 @@ Configure via settings page with SendGrid API key and alert email.
 
 ## Testing
 
+### Jest Testing
 Jest is configured with TypeScript support. Tests should be placed in:
 - `tests/` directory for integration tests
 - `app/**/__tests__/` for component/route tests
@@ -175,6 +215,27 @@ Module aliases are configured:
 - `@/` maps to root directory
 - `@/app/` maps to app directory
 - `@/lib/` maps to lib directory
+
+### Playwright E2E Testing
+Playwright is configured for end-to-end testing with creative patterns for business logic validation:
+- **Test Directory**: `tests/e2e/`
+- **Base URL**: `http://localhost:3001`
+- **Browsers**: Chrome, Firefox, Safari, Edge, Mobile Chrome/Safari
+- **Features**: Screenshots on failure, video retention, trace collection
+
+Key test suites:
+- **Application Crawler**: Automated discovery and validation of all pages
+- **Health Check**: API and system health validation
+- **Inventory Page**: Business logic validation (sales velocity, reorder recommendations)
+- **Settings Page**: Configuration and sync testing
+- **Comprehensive Tests**: Full application workflow testing
+
+Creative testing patterns available (see `/docs/playwright-creative-guide.md`):
+- Business intelligence validation
+- Performance benchmarking
+- Visual regression testing
+- Accessibility auditing
+- Component state exploration
 
 ## Database Migrations
 

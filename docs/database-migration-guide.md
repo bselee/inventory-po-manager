@@ -1,6 +1,6 @@
 # Database Migration Guide
 
-This guide explains how to run the database migrations for the Inventory PO Manager.
+This guide explains how to set up the database for the BuildASoil Inventory Manager.
 
 ## Quick Start - Supabase SQL Editor (Recommended)
 
@@ -13,7 +13,7 @@ This guide explains how to run the database migrations for the Inventory PO Mana
    - Click "New query" button
 
 3. **Run the Migration**
-   - Copy the entire contents of [`scripts/complete-migration.sql`](../scripts/complete-migration.sql)
+   - Copy the entire contents of [`scripts/all-migrations.sql`](../scripts/all-migrations.sql)
    - Paste it into the SQL editor
    - Click "Run" button (or press Ctrl+Enter)
 
@@ -21,83 +21,53 @@ This guide explains how to run the database migrations for the Inventory PO Mana
    - You should see "Success" at the bottom
    - The query should complete without errors
 
-## What the Migration Does
+## What the Migration Creates
 
-The complete migration includes:
+### Core Tables
+- **`inventory_items`** - Product catalog with stock levels and sales data
+- **`purchase_orders`** - PO management with Finale sync tracking
+- **`vendors`** - Vendor information with Finale integration
+- **`settings`** - Application configuration
+- **`sync_logs`** - Comprehensive sync operation logging
 
-### 1. Sales Tracking Fields
-- Adds `cost`, `sales_last_30_days`, `sales_last_90_days`, `last_sales_update` to inventory
-- Adds sync configuration fields to settings
-
-### 2. Finale Integration
-- Adds Finale PO sync fields to purchase orders
-- Adds Finale vendor ID mapping
-- Creates indexes for performance
-
-### 3. Sync Logging
-- Creates `sync_logs` table for audit trail
-- Enables Row Level Security
-- Adds proper indexes
-
-### 4. Authentication Fields
-- Adds `finale_username` and `finale_password` for session-based auth
-- Supports both API key and username/password authentication
-
-### 5. Settings Table
-- Ensures all required columns exist
-- Adds automatic timestamp updates
-- Creates default settings row
-
-## Alternative Methods
-
-### Method 1: Using Node.js Script (Experimental)
-```bash
-# Make sure you have .env configured
-node scripts/run-supabase-migration.js
-```
-Note: This may not work due to Supabase permissions. If it fails, use the SQL Editor method above.
-
-### Method 2: Individual Migrations
-If you prefer to run migrations one at a time:
-
-1. `scripts/add-sales-cost-fields.sql`
-2. `scripts/add-finale-po-sync.sql`
-3. `scripts/add-finale-auth-fields.sql`
-4. The sync_logs table creation from `complete-migration.sql`
+### Key Features Added
+- **Sales tracking fields** for velocity analysis
+- **Finale integration columns** for two-way sync
+- **Performance indexes** for fast queries
+- **Data validation constraints** for integrity
+- **Row Level Security** policies
 
 ## Verification
 
 After running the migration, verify it worked:
 
-1. **Check Settings Table**
+1. **Check Tables Exist**
    ```sql
-   SELECT column_name FROM information_schema.columns 
-   WHERE table_name = 'settings' 
-   ORDER BY ordinal_position;
+   SELECT table_name FROM information_schema.tables 
+   WHERE table_schema = 'public' 
+   ORDER BY table_name;
    ```
 
-2. **Check Sync Logs Table**
-   ```sql
-   SELECT * FROM sync_logs LIMIT 1;
-   ```
-
-3. **Test in Application**
+2. **Test Application**
+   - Visit your deployed application
    - Go to Settings page
-   - You should see username/password fields
-   - Test Finale connection
+   - Verify Finale configuration fields are visible
 
 ## Troubleshooting
 
 ### "Permission denied" Error
-- Make sure you're using the Supabase SQL Editor
+- Ensure you're using the Supabase SQL Editor
 - The web interface has full permissions
 
 ### "Column already exists" Error
 - This is safe to ignore
 - The migration uses `IF NOT EXISTS` clauses
-- Existing columns won't be modified
+- Existing data won't be affected
 
 ### Application Not Working After Migration
+- Check the browser console for errors
+- Verify environment variables are set
+- Check Supabase connection in Settings page
 1. Check that all migrations completed
 2. Restart your application
 3. Clear browser cache

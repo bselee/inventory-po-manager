@@ -36,6 +36,8 @@ export default function SettingsPage() {
   const [testResults, setTestResults] = useState<Record<string, 'testing' | 'success' | 'error' | null>>({})
   const [message, setMessage] = useState<{ type: 'success' | 'error', text: string } | null>(null)
   const [googleSheetUrl, setGoogleSheetUrl] = useState('')
+  const [syncStatus, setSyncStatus] = useState<any>(null)
+  const [autoRefresh, setAutoRefresh] = useState(true)
 
   // Parse Google Sheet ID from URL
   const parseGoogleSheetId = (url: string): string | null => {
@@ -46,7 +48,50 @@ export default function SettingsPage() {
   // Load settings on mount
   useEffect(() => {
     loadSettings()
-  }, [])
+    loadSyncStatus()
+    
+    // Set up auto-refresh for sync status
+    if (autoRefresh) {
+      const interval = setInterval(loadSyncStatus, 10000) // Every 10 seconds
+      return () => clearInterval(interval)
+    }
+  }, [autoRefresh])
+
+  // Load sync status
+  const loadSyncStatus = async () => {
+    try {
+      const response = await fetch('/api/sync-status-monitor')
+      if (response.ok) {
+        const data = await response.json()
+        setSyncStatus(data)
+      }
+    } catch (error) {
+      console.error('Failed to load sync status:', error)
+    }
+  }
+
+  // Clean up stuck syncs
+  const cleanupStuckSyncs = async () => {
+    try {
+      setMessage({ type: 'success', text: 'Checking for stuck sync operations...' })
+      
+      const response = await fetch('/api/sync-status-monitor', { method: 'POST' })
+      const result = await response.json()
+      
+      if (result.success) {
+        setMessage({ 
+          type: 'success', 
+          text: result.message + (result.stuckSyncs > 0 ? ` (${result.stuckSyncs} operations cleaned)` : '')
+        })
+        // Refresh sync status after cleanup
+        setTimeout(loadSyncStatus, 1000)
+      } else {
+        setMessage({ type: 'error', text: result.error || 'Failed to cleanup stuck syncs' })
+      }
+    } catch (error) {
+      setMessage({ type: 'error', text: 'Failed to cleanup stuck syncs' })
+    }
+  }
 
   const loadSettings = async () => {
     try {
@@ -173,9 +218,13 @@ export default function SettingsPage() {
       console.log('Settings saved successfully:', data)
       setSettings(data)
       setMessage({ type: 'success', text: 'Settings saved successfully!' })
+      
+      // Refresh sync status after saving settings
+      setTimeout(loadSyncStatus, 1000)
     } catch (error) {
       console.error('Error saving settings:', error)
-      setMessage({ type: 'error', text: `Failed to save settings: ${error.message}` })
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      setMessage({ type: 'error', text: `Failed to save settings: ${errorMessage}` })
     } finally {
       setSaving(false)
     }
@@ -190,6 +239,7 @@ export default function SettingsPage() {
 
   const testConnection = async (service: string) => {
     setTestResults(prev => ({ ...prev, [service]: 'testing' }))
+    setMessage(null) // Clear previous messages
 
     try {
       // Map service names to their specific endpoints
@@ -205,41 +255,118 @@ export default function SettingsPage() {
         body: JSON.stringify(settings)
       })
 
-      const result = await response.json()
+      // Handle non-JSON responses
+      const contentType = response.headers.get('content-type')
+      let result
+      
+      if (contentType && contentType.includes('application/json')) {
+        result = await response.json()
+      } else {
+        const text = await response.text()
+        result = {
+          success: false,
+          error: `Server returned non-JSON response (${response.status}): ${text.substring(0, 200)}...`
+        }
+      }
+
       setTestResults(prev => ({ ...prev, [service]: result.success ? 'success' : 'error' }))
 
       if (!result.success) {
-        // Show debug info if available
+        // Enhanced error messaging
+        let errorMessage = result.error || `Failed to connect to ${service}`
+        
+        // Add helpful hints for common errors
+        if (errorMessage.includes('404')) {
+          errorMessage += '. Check if the API endpoint exists or account path is correct.'
+        } else if (errorMessage.includes('401') || errorMessage.includes('403')) {
+          errorMessage += '. Check your API credentials.'
+        } else if (errorMessage.includes('credentials')) {
+          errorMessage += '. Please verify your API settings.'
+        }
+
+        setMessage({ type: 'error', text: errorMessage })
+        
+        // Log debug info for troubleshooting
         if (result.debug) {
           console.error(`${service} connection debug info:`, result.debug)
         }
-        if (result.results) {
-          console.log(`${service} authentication test results:`, result.results)
-        }
-        setMessage({ type: 'error', text: result.error || `Failed to connect to ${service}` })
       } else {
-        // Show debug info for successful connections too
+        // Success message with helpful details
+        let successMessage = result.message || `${service} connection successful`
+        
+        if (result.results?.recommendations?.length > 0) {
+          successMessage += `. ${result.results.recommendations[0]}`
+        }
+        
+        setMessage({ type: 'success', text: successMessage })
+        
+        // Log success details
         if (result.debug) {
           console.log(`${service} connection debug info:`, result.debug)
         }
         if (result.results) {
-          console.log(`${service} authentication test results:`, result.results)
-          // Show recommendations if available
-          if (result.results.recommendations?.length > 0) {
-            setMessage({ 
-              type: 'success', 
-              text: `${result.message}. ${result.results.recommendations[0]}` 
-            })
-          } else {
-            setMessage({ type: 'success', text: result.message || `${service} connection successful` })
-          }
-        } else {
-          setMessage({ type: 'success', text: result.message || `${service} connection successful` })
+          console.log(`${service} test results:`, result.results)
         }
       }
     } catch (error) {
+      console.error(`Connection test error for ${service}:`, error)
       setTestResults(prev => ({ ...prev, [service]: 'error' }))
-      setMessage({ type: 'error', text: `Failed to test ${service} connection` })
+      
+      let errorMessage = `Network error testing ${service} connection`
+      if (error instanceof Error) {
+        if (error.message.includes('fetch')) {
+          errorMessage += '. Check your internet connection or server availability.'
+        } else {
+          errorMessage += `: ${error.message}`
+        }
+      }
+      
+      setMessage({ type: 'error', text: errorMessage })
+    }
+  }
+
+  const triggerManualSync = async () => {
+    if (!settings.finale_account_path || !settings.finale_username || !settings.finale_password) {
+      setMessage({ 
+        type: 'error', 
+        text: 'Please configure and test Finale credentials before starting a sync.' 
+      })
+      return
+    }
+
+    setMessage({ type: 'success', text: 'Starting manual sync...' })
+
+    try {
+      const response = await fetch('/api/sync/manual', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ force: true })
+      })
+
+      const result = await response.json()
+
+      if (result.success) {
+        setMessage({ 
+          type: 'success', 
+          text: 'Manual sync started successfully! Check sync status below for progress.' 
+        })
+        // Refresh sync status immediately and then every few seconds
+        loadSyncStatus()
+        setTimeout(loadSyncStatus, 3000)
+        setTimeout(loadSyncStatus, 6000)
+      } else {
+        setMessage({ 
+          type: 'error', 
+          text: `Failed to start sync: ${result.error || 'Unknown error'}` 
+        })
+      }
+    } catch (error) {
+      console.error('Manual sync trigger error:', error)
+      const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred'
+      setMessage({ 
+        type: 'error', 
+        text: `Failed to trigger manual sync: ${errorMessage}` 
+      })
     }
   }
 
@@ -255,7 +382,118 @@ export default function SettingsPage() {
     <div className="max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">Settings</h1>
       
-      {/* Getting Started Guide */}
+      {/* Real-time Sync Status */}
+      {syncStatus && (
+        <div className="bg-white p-6 rounded-lg shadow mb-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-lg font-semibold flex items-center gap-2">
+              <Loader2 className="h-5 w-5" />
+              Sync Status Monitor
+            </h2>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => setAutoRefresh(!autoRefresh)}
+                className={`px-3 py-1 text-xs rounded ${
+                  autoRefresh 
+                    ? 'bg-green-100 text-green-800' 
+                    : 'bg-gray-100 text-gray-600'
+                }`}
+              >
+                Auto-refresh: {autoRefresh ? 'ON' : 'OFF'}
+              </button>
+              <button
+                onClick={loadSyncStatus}
+                className="px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded hover:bg-blue-200"
+              >
+                Refresh Now
+              </button>
+              <button
+                onClick={triggerManualSync}
+                className="px-3 py-1 text-xs bg-green-100 text-green-800 rounded hover:bg-green-200"
+              >
+                Start Manual Sync
+              </button>
+            </div>
+          </div>
+          
+          {/* Running Syncs */}
+          {syncStatus.runningSyncs?.length > 0 && (
+            <div className="mb-4">
+              <h3 className="font-medium text-gray-900 mb-2">Currently Running:</h3>
+              <div className="space-y-2">
+                {syncStatus.runningSyncs.map((sync: any) => (
+                  <div 
+                    key={sync.id} 
+                    className={`flex items-center justify-between p-3 rounded ${
+                      sync.isStuck ? 'bg-red-50 border border-red-200' : 'bg-blue-50 border border-blue-200'
+                    }`}
+                  >
+                    <div className="flex items-center gap-3">
+                      {sync.isStuck ? (
+                        <X className="h-4 w-4 text-red-600" />
+                      ) : (
+                        <Loader2 className="h-4 w-4 text-blue-600 animate-spin" />
+                      )}
+                      <div>
+                        <div className="font-medium text-sm">
+                          {sync.sync_type.replace('_', ' ')}
+                        </div>
+                        <div className="text-xs text-gray-600">
+                          Running for {Math.floor(sync.runtime / 60)}m {sync.runtime % 60}s
+                          {sync.isStuck && ' - STUCK!'}
+                        </div>
+                      </div>
+                    </div>
+                    {sync.isStuck && (
+                      <button
+                        onClick={cleanupStuckSyncs}
+                        className="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700"
+                      >
+                        Clean Up
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Recent Syncs */}
+          {syncStatus.recentSyncs?.length > 0 && (
+            <div>
+              <h3 className="font-medium text-gray-900 mb-2">Recent Activity:</h3>
+              <div className="space-y-1">
+                {syncStatus.recentSyncs.slice(0, 3).map((sync: any) => (
+                  <div key={sync.id} className="flex items-center justify-between p-2 bg-gray-50 rounded text-sm">
+                    <div className="flex items-center gap-2">
+                      {sync.status === 'success' ? (
+                        <Check className="h-3 w-3 text-green-600" />
+                      ) : sync.status === 'error' ? (
+                        <X className="h-3 w-3 text-red-600" />
+                      ) : (
+                        <AlertCircle className="h-3 w-3 text-yellow-600" />
+                      )}
+                      <span className="font-medium">{sync.sync_type.replace('_', ' ')}</span>
+                    </div>
+                    <div className="text-xs text-gray-600">
+                      {sync.items_updated || 0} items • {sync.duration_ms ? `${Math.round(sync.duration_ms / 1000)}s` : 'N/A'}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {syncStatus.totalRunning === 0 && (!syncStatus.recentSyncs || syncStatus.recentSyncs.length === 0) && (
+            <div className="text-center py-4 text-gray-500">
+              <Loader2 className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+              <p>No sync activity detected</p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Status Messages */}
       {!settings.id && (
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
           <h2 className="text-lg font-semibold text-blue-900 mb-3">Getting Started</h2>
@@ -455,13 +693,15 @@ export default function SettingsPage() {
           <h2 className="text-lg font-semibold mb-4">Sync Settings</h2>
           <div className="space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="sync_frequency" className="block text-sm font-medium text-gray-700 mb-1">
                 Sync Frequency
               </label>
               <select
+                id="sync_frequency"
                 value={settings.sync_frequency_minutes || 60}
                 onChange={(e) => handleChange('sync_frequency_minutes', parseInt(e.target.value))}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                aria-label="Select sync frequency"
               >
                 <option value={15}>Every 15 minutes</option>
                 <option value={30}>Every 30 minutes</option>
@@ -630,15 +870,17 @@ export default function SettingsPage() {
         <div className="bg-white p-6 rounded-lg shadow">
           <h2 className="text-lg font-semibold mb-4">General Settings</h2>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="low_stock_threshold" className="block text-sm font-medium text-gray-700 mb-1">
               Low Stock Threshold
             </label>
             <input
+              id="low_stock_threshold"
               type="number"
               value={settings.low_stock_threshold}
               onChange={(e) => handleChange('low_stock_threshold', parseInt(e.target.value) || 10)}
               min="1"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Low stock threshold"
             />
             <p className="text-sm text-gray-500 mt-1">
               Items with stock at or below this level will be marked as low stock

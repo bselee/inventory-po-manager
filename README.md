@@ -1,37 +1,105 @@
 # BuildASoil Inventory & Purchase Order Manager
 
-A Next.js application for managing inventory levels and automating purchase order creation, integrated with Finale Inventory, Google Sheets, and SendGrid.
+Enterprise-grade inventory management system with intelligent purchase order automation, real-time analytics, and seamless Finale Inventory integration.
 
-## Features
+## ✨ Key Features
 
-- **Automatic Data Sync**: Fully automated synchronization with Finale Inventory
-  - Initial sync runs automatically on first startup
-  - Continuous sync based on configured schedule (default: hourly)
-  - No manual intervention required - just configure and forget
-- Real-time inventory tracking and management
-- Automated purchase order generation based on stock levels
-- Finale Inventory synchronization with retry logic and error recovery
-- Google Sheets import/export
-- Email notifications via SendGrid for sync alerts
-- Modern React UI with Tailwind CSS
-- Comprehensive monitoring dashboard with health checks
-- Data integrity validation and duplicate detection
+### 📊 **Intelligent Inventory Management**
 
-## Quick Start
+- **Real-time stock tracking** with automated alerts
+- **Sales velocity analysis** - identify fast/slow/dead stock
+- **Predictive reorder recommendations** based on sales trends
+- **Multi-view dashboards**: Table, Planning (30/60/90 day), Analytics
+- **Advanced filtering** by status, vendor, location, sales velocity
 
-1. Clone the repository
-2. Install dependencies: `npm install`
-3. Configure environment variables in Vercel
-4. Deploy to Vercel (auto-deploys on push to main)
+### 🛒 **Smart Purchase Order System**
 
-## Documentation
+- **Automated PO generation** from critical stock levels
+- **Two-way Finale sync** - create and track POs in both systems
+- **Vendor management** with contact integration
+- **Status tracking** (draft → sent → received)
+- **Email PO delivery** to vendors
 
-See the `/docs` directory for detailed documentation.
+### 🔄 **Finale Inventory Integration**
 
-## Tech Stack
+- **Multiple sync strategies** (full, inventory-only, critical items, smart)
+- **Optimized performance** - inventory sync in under 10 seconds
+- **Automatic retry logic** with comprehensive error handling
+- **Real-time sync monitoring** and health checks
 
-- Next.js 14 (App Router)
-- TypeScript
-- Supabase (PostgreSQL)
-- Tailwind CSS
-- Vercel deployment
+### 🎯 **Business Intelligence**
+
+- **Days-until-stockout calculations** with trend analysis
+- **Stock status classification** (critical/low/adequate/overstocked)
+- **Sales trend tracking** (increasing/stable/decreasing)
+- **Inventory valuation** and dead stock alerts
+- **Predictive analytics** for optimal ordering
+
+### 🧪 **Advanced Testing**
+
+- **Creative Playwright testing** for business logic validation
+- **Cross-browser consistency** testing
+- **Performance monitoring** and accessibility auditing
+- **Component state exploration** for UI resilience
+
+## 🚀 Quick Start
+
+1. **Clone & Install**
+
+   ```bash
+   git clone <repository>
+   cd inventory-po-manager
+   npm install
+   ```
+
+2. **Database Setup**
+   - Follow `/docs/database-migration-guide.md`
+   - Run migrations in Supabase SQL Editor
+
+3. **Configure Environment**
+   - Set up environment variables in Vercel
+   - Configure Finale API credentials
+
+4. **Deploy**
+   - Auto-deploys to Vercel on push to main branch
+
+## 📁 Project Structure
+
+```text
+app/
+├── inventory/          # Main inventory management interface
+├── purchase-orders/    # PO management system
+├── settings/          # Configuration and sync controls
+├── api/               # Backend API routes
+└── lib/               # Core business logic and integrations
+
+tests/
+├── creative/          # Business intelligence testing
+├── e2e/              # End-to-end testing
+└── unit/             # Unit tests
+
+docs/                  # Documentation
+scripts/              # Database migrations and utilities
+```
+
+## 🛠 Tech Stack
+
+- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS
+- **Backend**: Supabase (PostgreSQL), Vercel serverless functions
+- **Testing**: Playwright (creative patterns), Jest (unit tests)
+- **Integration**: Finale Inventory API, Email notifications
+- **Deployment**: Vercel with automated CI/CD
+
+## 📖 Documentation
+
+- [Database Migration Guide](docs/database-migration-guide.md)
+- [Creative Playwright Testing](docs/playwright-creative-guide.md)
+- [Deployment Guide](docs/vercel_deployment_guide.md)
+
+## 🎯 Business Value
+
+- **Reduce stockouts** with predictive reordering
+- **Optimize inventory costs** through velocity analysis
+- **Automate manual processes** with intelligent PO generation
+- **Improve accuracy** with two-way system synchronization
+- **Save time** with real-time dashboards and alerts

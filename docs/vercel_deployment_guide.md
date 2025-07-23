@@ -2,52 +2,109 @@
 
 ## 🚀 Automatic Deployment (Recommended)
 
-Since you've already pushed to GitHub, Vercel will automatically detect and deploy your changes if:
-1. Your GitHub repository is connected to Vercel
-2. Auto-deployment is enabled (default)
+The application auto-deploys to Vercel when you push to the main branch.
 
-### Check Deployment Status:
+### Check Deployment Status
+
 1. Go to [Vercel Dashboard](https://vercel.com/dashboard)
-2. Find your `logistics-dashboard1969` project
-3. Check the "Deployments" tab
-4. You should see a deployment triggered by commit `076b369`
+2. Find your project
+3. Check the "Deployments" tab for recent deployments
+
+## 📝 Environment Variables Setup
+
+Required environment variables in Vercel:
+
+```bash
+# Supabase Configuration
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+
+# Database
+DATABASE_URL=your_postgresql_connection_string
+
+# Finale Integration
+FINALE_API_KEY=your_finale_api_key
+FINALE_API_SECRET=your_finale_api_secret
+FINALE_ACCOUNT_PATH=your_account_path
+
+# Email (Optional)
+SENDGRID_API_KEY=your_sendgrid_key
+FROM_EMAIL=noreply@yourcompany.com
+```
+
+### Setting Environment Variables
+
+1. Go to Project Settings → Environment Variables
+2. Add each variable for Production, Preview, and Development
+3. Click "Save"
 
 ## 🔧 Manual Deployment Options
 
-### Option 1: Vercel Dashboard
+### Option 1: Redeploy from Dashboard
+
 1. Go to your project in Vercel Dashboard
 2. Click "Redeploy" on the latest deployment
 3. Select "Production" environment
 
-### Option 2: Vercel CLI (Requires Login)
+### Option 2: Vercel CLI
+
 ```bash
-# First, login to Vercel
+# Install Vercel CLI
+npm i -g vercel
+
+# Login to Vercel
 vercel login
 
-# Then deploy to production
+# Deploy to production
 vercel --prod
 ```
 
-### Option 3: Deploy Hook
-Create a deploy hook in Vercel settings and trigger via:
-```bash
-curl -X POST https://api.vercel.com/v1/integrations/deploy/[YOUR-DEPLOY-HOOK-URL]
-```
+## 🏗️ Build Configuration
 
-## 📝 Environment Variables Setup in Vercel
+The project uses these build settings:
 
-1. Go to Project Settings → Environment Variables
-2. Add these REQUIRED variables:
+- **Framework**: Next.js
+- **Build Command**: `npm run build`
+- **Output Directory**: `.next`
+- **Install Command**: `npm install`
+- **Node.js Version**: 18.x
 
-```
-NODE_ENV=production
-NEXT_PUBLIC_SUPABASE_URL=[Your Supabase URL]
-NEXT_PUBLIC_SUPABASE_ANON_KEY=[Your Supabase Anon Key]
-SUPABASE_SERVICE_ROLE_KEY=[Your Service Role Key]
-DATABASE_URL=[Your PostgreSQL Connection String]
-NEXTAUTH_URL=https://[your-project].vercel.app
-NEXTAUTH_SECRET=[Generate with: openssl rand -base64 32]
-GOOGLE_CLIENT_ID=[Your Google OAuth Client ID]
+## � Troubleshooting
+
+### Build Failures
+
+- Check build logs in Vercel dashboard
+- Verify all environment variables are set
+- Ensure TypeScript compilation passes locally
+
+### Runtime Errors
+
+- Check Function Logs in Vercel dashboard
+- Verify database connection
+- Test API endpoints individually
+
+### Database Connection Issues
+
+- Ensure `DATABASE_URL` is correctly formatted
+- Check Supabase service role key permissions
+- Verify Row Level Security policies
+
+## 📊 Monitoring
+
+### Health Checks
+
+The application includes built-in health checks:
+
+- `/api/health` - Basic application health
+- `/api/sync-finale/test` - Finale API connectivity
+- Database connectivity validation
+
+### Performance Monitoring
+
+- Use Vercel Analytics for performance insights
+- Monitor API response times
+- Track database query performance
 GOOGLE_CLIENT_SECRET=[Your Google OAuth Secret]
 ENCRYPTION_KEY=[Generate with: openssl rand -hex 32]
 OPENAI_API_KEY=[Your OpenAI API Key]
