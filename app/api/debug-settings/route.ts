@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/app/lib/supabase'
+import { createApiHandler, apiResponse } from '@/app/lib/api-handler'
+import { PERMISSIONS } from '@/app/lib/auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-export async function GET() {
+export const GET = createApiHandler(async () => {
   try {
     // Get all settings records
     const { data: allSettings, error: allError } = await supabase
@@ -13,7 +15,7 @@ export async function GET() {
       .select('*')
     
     // Try the getFinaleConfig function
-    const { getFinaleConfig } = await import('@/lib/finale-api')
+    const { getFinaleConfig } = await import('@/app/lib/finale-api')
     const config = await getFinaleConfig()
     
     // Get environment variables (masked)
@@ -23,7 +25,7 @@ export async function GET() {
       FINALE_ACCOUNT_PATH: process.env.FINALE_ACCOUNT_PATH || 'not set'
     }
     
-    return NextResponse.json({
+    return apiResponse({
       settings: {
         count: allSettings?.length || 0,
         records: allSettings?.map(s => ({
@@ -45,9 +47,12 @@ export async function GET() {
       error: allError?.message
     })
   } catch (error) {
-    return NextResponse.json({
+    return apiResponse({
       error: 'Failed to debug settings',
       message: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
-}
+}, {
+  requireAuth: true,
+  requiredPermissions: [PERMISSIONS.ADMIN_ACCESS]
+})

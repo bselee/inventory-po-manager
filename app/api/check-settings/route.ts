@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/app/lib/supabase'
 import { getFinaleConfig } from '@/app/lib/finale-api'
+import { createApiHandler, apiResponse } from '@/app/lib/api-handler'
+import { PERMISSIONS } from '@/app/lib/auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-export async function GET() {
+export const GET = createApiHandler(async () => {
   try {
     // Get all settings records
     const { data: allSettings, error: allError } = await supabase
@@ -23,7 +25,7 @@ export async function GET() {
       .select('*')
       .single()
 
-    return NextResponse.json({
+    return apiResponse({
       allSettings: {
         count: allSettings?.length || 0,
         records: allSettings?.map(s => ({
@@ -46,13 +48,20 @@ export async function GET() {
       },
       finaleConfig: {
         found: !!config,
-        config
+        config: config ? {
+          hasApiKey: !!config.apiKey,
+          hasApiSecret: !!config.apiSecret,
+          accountPath: config.accountPath,
+          // Mask sensitive data
+          apiKey: config.apiKey ? `${config.apiKey.slice(0, 4)}...` : null,
+          apiSecret: config.apiSecret ? '***' : null
+        } : null
       }
     })
   } catch (error) {
-    return NextResponse.json({
-      error: 'Failed to check settings',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+    throw error
   }
-}
+}, {
+  requireAuth: true,
+  requiredPermissions: [PERMISSIONS.SETTINGS_READ]
+})

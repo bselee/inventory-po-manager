@@ -1,0 +1,17 @@
+{
+  "runCount": 1,
+  "successCount": 0,
+  "fixCount": 5,
+  "lastRun": "2025-07-25T19:24:59.664Z",
+  "healthScore": 90,
+  "recentFixes": [
+    {
+      "test": "responsive > mobile viewport",
+      "error": "Layout breaks at 375px",
+      "fix": "Auto-repair applied",
+      "time": "2025-07-25T19:24:59.664Z"
+    }
+  ],
+  "fixesPerHour": "17543.9",
+  "estimatedSavings": "$750"
+}

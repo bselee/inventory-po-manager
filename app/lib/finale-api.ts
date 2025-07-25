@@ -1131,14 +1131,30 @@ export class FinaleApiService {
 // Helper function to get API config from settings
 export async function getFinaleConfig(): Promise<FinaleApiConfig | null> {
   try {
-    // First try to get any settings record
+    // First try environment variables
+    const envApiKey = process.env.FINALE_API_KEY
+    const envApiSecret = process.env.FINALE_API_SECRET
+    const envAccountPath = process.env.FINALE_ACCOUNT_PATH
+
+    if (envApiKey && envApiSecret && envAccountPath) {
+      console.log('[getFinaleConfig] Using environment variables')
+      return {
+        apiKey: envApiKey,
+        apiSecret: envApiSecret,
+        accountPath: envAccountPath.replace('https://app.finaleinventory.com/', '').replace('/1', '')
+      }
+    }
+
+    console.log('[getFinaleConfig] Environment variables not found, checking database...')
+
+    // Fallback to database settings
     const { data: settings, error } = await supabase
       .from('settings')
       .select('finale_username, finale_password, finale_account_path')
       .limit(1)
       .maybeSingle() // Use maybeSingle instead of single to handle no records
 
-    console.log('[getFinaleConfig] Query result:', { settings, error })
+    console.log('[getFinaleConfig] Database query result:', { settings, error })
 
     if (error) {
       console.error('[getFinaleConfig] Database error:', error)
@@ -1146,12 +1162,12 @@ export async function getFinaleConfig(): Promise<FinaleApiConfig | null> {
     }
 
     if (!settings) {
-      console.log('[getFinaleConfig] No settings found')
+      console.log('[getFinaleConfig] No settings found in database')
       return null
     }
 
     if (!settings.finale_username || !settings.finale_password || !settings.finale_account_path) {
-      console.log('[getFinaleConfig] Missing required fields:', {
+      console.log('[getFinaleConfig] Missing required fields in database:', {
         hasUsername: !!settings.finale_username,
         hasPassword: !!settings.finale_password,
         hasAccountPath: !!settings.finale_account_path
@@ -1159,7 +1175,7 @@ export async function getFinaleConfig(): Promise<FinaleApiConfig | null> {
       return null
     }
 
-    console.log('[getFinaleConfig] Config found successfully')
+    console.log('[getFinaleConfig] Using database settings')
     return {
       apiKey: settings.finale_username,
       apiSecret: settings.finale_password,

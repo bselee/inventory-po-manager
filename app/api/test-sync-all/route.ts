@@ -1,11 +1,12 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { FinaleApiService, getFinaleConfig } from '@/app/lib/finale-api'
+import { createApiHandler, apiResponse, apiError } from '@/app/lib/api-handler'
+import { PERMISSIONS } from '@/app/lib/auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-export async function GET() {
+export const GET = createApiHandler(async () => {
   try {
     console.log('[Test Sync] Starting comprehensive sync test...')
     
@@ -13,7 +14,7 @@ export async function GET() {
     const config = await getFinaleConfig()
     
     if (!config) {
-      return NextResponse.json({ 
+      return apiResponse({ 
         success: false, 
         error: 'Finale API credentials not configured',
         recommendation: 'Please configure Finale API credentials in settings'
@@ -137,7 +138,7 @@ export async function GET() {
       vendors: results.vendors.success
     })
 
-    return NextResponse.json({
+    return apiResponse({
       success: allSuccess,
       summary: allSuccess 
         ? 'All Finale sync tests passed! You can now sync inventory and vendors.'
@@ -152,10 +153,9 @@ export async function GET() {
     
   } catch (error) {
     console.error('[Test Sync] Unexpected error:', error)
-    return NextResponse.json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Test failed',
-      message: 'An unexpected error occurred during testing'
-    }, { status: 500 })
+    return apiError(error)
   }
-}
+}, {
+  requireAuth: true,
+  requiredPermissions: [PERMISSIONS.ADMIN_ACCESS]
+})

@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createApiHandler, apiResponse } from '@/app/lib/api-handler'
+import { PERMISSIONS } from '@/app/lib/auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-export async function POST(request: NextRequest) {
+export const POST = createApiHandler(async ({ body }) => {
   try {
-    const settings = await request.json()
+    const settings = body
     
     // Validate required fields
     const missingFields = []
@@ -15,7 +17,7 @@ export async function POST(request: NextRequest) {
     if (!settings.finale_account_path) missingFields.push('finale_account_path')
     
     if (missingFields.length > 0) {
-      return NextResponse.json({ 
+      return apiResponse({ 
         success: false, 
         error: `Missing required fields: ${missingFields.join(', ')}`,
         debug: { missingFields }
@@ -66,7 +68,7 @@ export async function POST(request: NextRequest) {
       if (response.ok) {
         const data = await response.json()
         
-        return NextResponse.json({ 
+        return apiResponse({ 
           success: true, 
           message: 'Finale connection successful',
           debug: {
@@ -84,7 +86,7 @@ export async function POST(request: NextRequest) {
       } else {
         const errorText = await response.text()
         
-        return NextResponse.json({ 
+        return apiResponse({ 
           success: false, 
           error: `Finale API error: ${response.status} ${response.statusText}`,
           debug: {
@@ -94,10 +96,10 @@ export async function POST(request: NextRequest) {
             errorResponse: errorText,
             responseHeaders: responseHeaders
           }
-        })
+        }, { status: response.status })
       }
     } catch (fetchError: any) {
-      return NextResponse.json({ 
+      return apiResponse({ 
         success: false, 
         error: `Network error: ${fetchError.message}`,
         debug: {
@@ -109,7 +111,7 @@ export async function POST(request: NextRequest) {
       }, { status: 500 })
     }
   } catch (error) {
-    return NextResponse.json({ 
+    return apiResponse({ 
       success: false, 
       error: error instanceof Error ? error.message : 'Failed to test Finale connection',
       debug: {
@@ -118,4 +120,7 @@ export async function POST(request: NextRequest) {
       }
     }, { status: 500 })
   }
-}
+}, {
+  requireAuth: true,
+  requiredPermissions: [PERMISSIONS.ADMIN_ACCESS]
+})

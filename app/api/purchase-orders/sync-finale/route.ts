@@ -32,6 +32,7 @@ export async function POST(request: NextRequest) {
     const finaleApi = new FinaleApiService(config)
 
     // Get purchase order from database
+    // Note: Using vendor column directly until migration is complete
     const { data: purchaseOrder, error: poError } = await supabase
       .from('purchase_orders')
       .select(`
@@ -42,9 +43,6 @@ export async function POST(request: NextRequest) {
             sku,
             product_name
           )
-        ),
-        vendors (
-          name
         )
       `)
       .eq('id', purchaseOrderId)
@@ -62,10 +60,10 @@ export async function POST(request: NextRequest) {
       case 'create':
         // Create purchase order in Finale
         const finaleOrder = await finaleApi.createPurchaseOrder({
-          orderNumber: purchaseOrder.order_number,
-          vendorName: purchaseOrder.vendors?.name,
+          orderNumber: purchaseOrder.order_number || purchaseOrder.po_number,
+          vendorName: purchaseOrder.vendor, // Using vendor column directly
           orderDate: purchaseOrder.created_at,
-          expectedDate: purchaseOrder.expected_date,
+          expectedDate: purchaseOrder.expected_date || purchaseOrder.expected_delivery,
           status: 'draft',
           notes: purchaseOrder.notes,
           items: purchaseOrder.purchase_order_items.map((item: any) => ({

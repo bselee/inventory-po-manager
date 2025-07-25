@@ -1,0 +1,29 @@
+{
+  "mcp.servers": {
+    "serena": {
+      "command": "uvx",
+      "args": [
+        "--from", 
+        "git+https://github.com/oraios/serena", 
+        "serena-mcp-server",
+        "--project", 
+        ".",
+        "--transport",
+        "stdio"
+      ],
+      "cwd": ".",
+      "env": {}
+    },
+    "context7": {
+      "command": "node",
+      "args": [
+        "./context7/dist/index.js",
+        "--transport",
+        "stdio"
+      ],
+      "cwd": ".",
+      "env": {}
+    }
+  },
+  "mcp.enabled": true
+}

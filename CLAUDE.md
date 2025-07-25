@@ -12,11 +12,12 @@ npm run build      # Build for production
 npm run start      # Start production server
 npm run lint       # Run ESLint
 npm run type-check # Check TypeScript types
+npm run setup      # Run initial setup script
 
 # Testing - Jest
 npm run test              # Run all Jest tests
 npm run test:watch        # Run tests in watch mode
-npm run test:coverage     # Run tests with coverage report
+npm run test:coverage     # Run tests with coverage report (70% threshold)
 npm run test:api          # Run API-specific tests
 npm run test:unit         # Run unit tests
 npm run test:integration  # Run integration tests
@@ -34,6 +35,7 @@ npm run test:e2e:debug    # Run in debug mode
 npm run test:crawl        # Run application crawler test
 npm run test:health-e2e   # Run E2E health check
 npm run test:inventory    # Test inventory page
+npm run test:inventory:comprehensive  # Comprehensive inventory tests with HTML report
 npm run test:settings     # Test settings page
 npm run test:comprehensive # Run comprehensive test suite
 npm run test:all          # Run Jest + Playwright tests
@@ -49,7 +51,7 @@ npm run db:validate  # Validate database schema
 npm run db:backup    # Backup database
 
 # Deployment
-npm run deploy       # Deploy to Vercel
+npm run deploy       # Deploy to Vercel (runs scripts/deploy-vercel.sh)
 npm run deploy:check # Check Vercel deployment status
 ```
 
@@ -108,7 +110,35 @@ export async function GET/POST/PUT/DELETE(request: Request) {
 }
 ```
 
+### Enhanced API Pattern
+The project uses a centralized API handler utility for consistent error handling and validation:
+```typescript
+import { createApiHandler, apiResponse, apiError } from '@/app/lib/api-handler'
+import { z } from 'zod'
+
+// Define validation schema
+const schema = z.object({
+  name: z.string().min(1),
+  quantity: z.number().positive()
+})
+
+export const POST = createApiHandler(async ({ body, params, query }) => {
+  // Automatic error handling and validation
+  const validated = schema.parse(body)
+  
+  // Business logic here
+  const result = await someOperation(validated)
+  
+  // Success response
+  return apiResponse(result, { message: 'Success' })
+}, {
+  validateBody: schema // Optional Zod validation
+})
+```
+
 ### Database Operations
+
+#### Direct Supabase Access
 Use the Supabase client directly:
 ```typescript
 import { supabase } from '@/app/lib/supabase'
@@ -116,6 +146,27 @@ import { supabase } from '@/app/lib/supabase'
 const { data, error } = await supabase
   .from('table_name')
   .select('*')
+```
+
+#### Data Access Layer (Preferred)
+Use the centralized data access layer for common operations:
+```typescript
+import { 
+  getInventoryItems, 
+  updateInventoryItem,
+  getSettings,
+  updateSettings 
+} from '@/app/lib/data-access'
+
+// Inventory operations with built-in error handling
+const items = await getInventoryItems({ 
+  status: 'critical',
+  vendor: 'BuildASoil' 
+})
+
+// Settings operations (always uses id=1)
+const settings = await getSettings()
+await updateSettings({ sync_enabled: true })
 ```
 
 ### Environment Variables
@@ -166,9 +217,9 @@ Key sync features:
 ### Cron Jobs
 
 Configured in `vercel.json` (requires Vercel Pro plan or higher):
-- `/api/cron/sync-finale`: Runs every 6 hours
-- `/api/cron/check-inventory`: Daily inventory level checks
-- `/api/cron/cleanup`: Weekly cleanup tasks
+- `/api/cron/sync-finale`: Daily at 2 AM
+- `/api/cron/sync-inventory`: Every 6 hours
+- `/api/cron/sync-vendors`: Daily at 4 AM
 
 ### Email Alerts
 
@@ -183,9 +234,10 @@ Configure via settings page with SendGrid API key and alert email.
 ### Current State
 - API routes are fully implemented with comprehensive error handling
 - Robust sync system with multiple strategies and retry logic
-- Authentication/authorization is not yet implemented
+- Basic authentication system implemented with JWT tokens and CSRF protection
 - Playwright E2E tests implemented with creative testing patterns
 - Production-ready with extensive monitoring and alerting
+- Redis caching infrastructure available for performance optimization
 
 ### Settings Page Features
 The settings page (`/app/settings/page.tsx`) provides comprehensive configuration:
@@ -244,6 +296,20 @@ Creative testing patterns available (see `/docs/playwright-creative-guide.md`):
 - Visual regression testing
 - Accessibility auditing
 - Component state exploration
+
+## MCP Server Integration
+
+This workspace includes powerful MCP (Model Context Protocol) servers configured in `.vscode/settings.json`:
+
+### Serena MCP Server
+- **Purpose**: Advanced semantic code analysis and intelligent editing
+- **Capabilities**: Semantic code understanding, intelligent refactoring, codebase navigation
+- **Location**: Included in `/serena/` directory
+
+### Context7 MCP Server
+- **Purpose**: Up-to-date documentation and code examples for libraries
+- **Capabilities**: Current docs for popular libraries, code examples, integration patterns
+- **Location**: Included in `/context7/` directory
 
 ## Database Migrations
 
@@ -382,9 +448,112 @@ export default function ComponentName({ prop1, prop2 = 0 }: ComponentProps) {
 ## Security Considerations
 
 1. **API Key Storage**: Never commit API keys, use environment variables
-2. **Input Validation**: Always validate and sanitize user input
+2. **Input Validation**: Always validate and sanitize user input using Zod schemas
 3. **SQL Injection**: Use parameterized queries with Supabase
 4. **CORS**: Configure appropriate CORS headers for API routes
-5. **Rate Limiting**: Implement rate limiting for public endpoints
+5. **Rate Limiting**: Rate limiter utility available in `/app/lib/rate-limiter.ts`
+6. **Authentication**: JWT-based auth system with secure httpOnly cookies
+7. **CSRF Protection**: CSRF tokens required for state-changing operations
+8. **Error Handling**: Never expose sensitive error details to clients
+
+## Key Implementation Guidance from GitHub Copilot
+
+From `.github/copilot-instructions.md`:
+- Focus on performance and optimization using modern React patterns
+- Use server components where possible for better performance
+- Implement proper error boundaries and loading states
+- Follow accessibility best practices (WCAG 2.1 AA)
+- Ensure responsive design across all device sizes
+- Implement comprehensive error handling with user-friendly messages
+- Follow security best practices including input validation
+- Write maintainable code with clear naming conventions
+- Document complex business logic inline
+- Use environment variables for all configuration
+- Implement proper logging for debugging
+- Follow RESTful API design principles
+- Ensure all database queries are optimized
+- Implement proper caching strategies
+- Use TypeScript strictly for type safety
+
+## Authentication & CSRF Pattern
+
+### Authentication Flow
+```typescript
+// Login endpoint
+POST /api/auth/login
+Body: { email, password }
+Response: Sets httpOnly JWT cookie
+
+// Check authentication
+GET /api/auth/me
+Headers: Cookie with JWT token
+Response: User data or 401
+
+// Logout
+POST /api/auth/logout
+Response: Clears JWT cookie
+```
+
+### CSRF Protection
+```typescript
+// Client-side hook
+import { useCSRF } from '@/app/hooks/useCSRF'
+
+function MyComponent() {
+  const { csrfToken, isLoading } = useCSRF()
+  
+  const handleSubmit = async (data) => {
+    await fetch('/api/endpoint', {
+      method: 'POST',
+      headers: {
+        'X-CSRF-Token': csrfToken
+      },
+      body: JSON.stringify(data)
+    })
+  }
+}
+```
+
+## Additional Utilities
+
+### Client Fetch Wrapper
+Use the client fetch wrapper for automatic CSRF and error handling:
+```typescript
+import { clientFetch } from '@/app/lib/client-fetch'
+
+// Automatically includes CSRF token for mutations
+const data = await clientFetch('/api/inventory', {
+  method: 'POST',
+  body: { sku: 'TEST-001', quantity: 100 }
+})
+```
+
+### Error Types
+Consistent error handling across the application:
+```typescript
+import { 
+  ValidationError, 
+  AuthenticationError, 
+  NotFoundError 
+} from '@/app/lib/errors'
+
+// In API routes
+if (!isValid) {
+  throw new ValidationError('Invalid input data')
+}
+```
+
+### Caching (Redis)
+Optional Redis caching for performance:
+```typescript
+import { getCachedData, setCachedData } from '@/app/lib/cache/redis-client'
+
+// Cache inventory data
+const cached = await getCachedData('inventory:all')
+if (!cached) {
+  const data = await fetchInventory()
+  await setCachedData('inventory:all', data, 300) // 5 min TTL
+}
+```
 
 Detailed deployment guides and troubleshooting available in `/docs/`

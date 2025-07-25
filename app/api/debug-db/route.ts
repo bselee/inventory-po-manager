@@ -1,11 +1,13 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/app/lib/supabase'
+import { createApiHandler, apiResponse } from '@/app/lib/api-handler'
+import { PERMISSIONS } from '@/app/lib/auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-export async function GET() {
+export const GET = createApiHandler(async () => {
   try {
     // Check if environment variables are set
     const hasUrl = !!process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -31,7 +33,7 @@ export async function GET() {
       dbTest.error = e instanceof Error ? e.message : 'Unknown error'
     }
     
-    return NextResponse.json({
+    return apiResponse({
       environment: {
         hasUrl,
         hasKey,
@@ -52,9 +54,12 @@ export async function GET() {
       }
     })
   } catch (error) {
-    return NextResponse.json({
+    return apiResponse({
       error: 'Debug endpoint error',
       message: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
-}
+}, {
+  requireAuth: true,
+  requiredPermissions: [PERMISSIONS.ADMIN_ACCESS]
+})

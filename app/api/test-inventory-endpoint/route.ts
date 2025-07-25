@@ -1,10 +1,11 @@
-import { NextResponse } from 'next/server'
+import { createApiHandler, apiResponse, apiError } from '@/app/lib/api-handler'
+import { PERMISSIONS } from '@/app/lib/auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-export async function GET() {
+export const GET = createApiHandler(async () => {
   const apiKey = 'I9TVdRvblFod'
   const apiSecret = '63h4TCI62vlQUYM3btEA7bycoIflGQUz'
   const authString = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64')
@@ -58,8 +59,11 @@ export async function GET() {
     }
   }
   
-  return NextResponse.json({
+  return apiResponse({
     message: 'Testing various Finale endpoints for inventory data',
     results
   })
-}
+}, {
+  requireAuth: true,
+  requiredPermissions: [PERMISSIONS.ADMIN_ACCESS]
+})

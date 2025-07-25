@@ -92,6 +92,9 @@ jobs:
     - name: Run E2E inventory tests
       run: npm run test:inventory
       
+    - name: Run comprehensive inventory tests
+      run: npx playwright test tests/e2e/inventory-comprehensive.spec.ts --reporter=html
+      
     - name: Run E2E settings tests
       run: npm run test:settings
       

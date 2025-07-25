@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { supabase } from '@/app/lib/supabase'
 import { FinaleApiService, getFinaleConfig } from '@/app/lib/finale-api'
 import { emailAlerts } from '@/app/lib/email-alerts'
+import { createApiHandler, apiResponse, apiError } from '@/app/lib/api-handler'
+import { PERMISSIONS } from '@/app/lib/auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -14,7 +15,7 @@ interface TestResult {
   details?: any
 }
 
-export async function GET(request: NextRequest) {
+export const GET = createApiHandler(async () => {
   const results: TestResult[] = []
   
   try {
@@ -295,7 +296,7 @@ export async function GET(request: NextRequest) {
       .filter(r => ['Database Connectivity', 'Finale Configuration', 'Finale API Connection'].includes(r.test))
       .every(r => r.status === 'pass')
     
-    return NextResponse.json({
+    return apiResponse({
       timestamp: new Date().toISOString(),
       overall: {
         status: overallStatus,
@@ -311,13 +312,12 @@ export async function GET(request: NextRequest) {
       recommendations: getRecommendations(results)
     })
   } catch (error) {
-    return NextResponse.json({
-      error: 'System test failed',
-      message: error instanceof Error ? error.message : 'Unknown error',
-      results
-    }, { status: 500 })
+    return apiError(error)
   }
-}
+}, {
+  requireAuth: true,
+  requiredPermissions: [PERMISSIONS.ADMIN_ACCESS]
+})
 
 function getRecommendations(results: TestResult[]): string[] {
   const recommendations: string[] = []

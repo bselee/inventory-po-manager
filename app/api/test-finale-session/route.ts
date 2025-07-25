@@ -1,20 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { NextResponse } from 'next/server'
 import { FinaleSessionApiService } from '@/app/lib/finale-session-api'
+import { createApiHandler, apiResponse, apiError } from '@/app/lib/api-handler'
+import { PERMISSIONS } from '@/app/lib/auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-export async function POST(request: NextRequest) {
+export const POST = createApiHandler(async ({ body }) => {
   try {
-    const settings = await request.json()
+    const settings = body
     
     // Check which credentials are provided
     const hasApiKey = !!(settings.finale_api_key && settings.finale_api_secret)
     const hasUserPass = !!(settings.finale_username && settings.finale_password)
     
     if (!settings.finale_account_path) {
-      return NextResponse.json({ 
+      return apiResponse({ 
         success: false, 
         error: 'Missing Finale account path',
         debug: { hasApiKey, hasUserPass }
@@ -137,7 +139,7 @@ export async function POST(request: NextRequest) {
     // Determine overall success
     const overallSuccess = results.apiKeyAuth?.success || results.sessionAuth?.success
 
-    return NextResponse.json({ 
+    return apiResponse({ 
       success: overallSuccess,
       message: overallSuccess ? 'Finale connection successful' : 'All authentication methods failed',
       results,
@@ -152,13 +154,9 @@ export async function POST(request: NextRequest) {
       }
     })
   } catch (error) {
-    return NextResponse.json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to test Finale connection',
-      debug: {
-        errorType: error instanceof Error ? error.name : 'Unknown',
-        errorMessage: error instanceof Error ? error.message : String(error)
-      }
-    }, { status: 500 })
+    return apiError(error)
   }
-}
+}, {
+  requireAuth: true,
+  requiredPermissions: [PERMISSIONS.ADMIN_ACCESS]
+})

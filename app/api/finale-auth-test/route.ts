@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createApiHandler, apiResponse } from '@/app/lib/api-handler'
+import { PERMISSIONS } from '@/app/lib/auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -11,9 +13,9 @@ interface TestResult {
   error?: string
 }
 
-export async function POST(request: NextRequest) {
+export const POST = createApiHandler(async ({ body }) => {
   try {
-    const settings = await request.json()
+    const settings = body
     const results: TestResult[] = []
     
     // Extract and clean account path
@@ -218,7 +220,7 @@ export async function POST(request: NextRequest) {
       })
     }
 
-    return NextResponse.json({
+    return apiResponse({
       success: successfulMethods.length > 0,
       accountPath: {
         original: settings.finale_account_path,
@@ -235,7 +237,7 @@ export async function POST(request: NextRequest) {
     
   } catch (error) {
     console.error('Finale auth test error:', error)
-    return NextResponse.json({
+    return apiResponse({
       success: false,
       error: error instanceof Error ? error.message : 'Test failed',
       debug: { 
@@ -244,4 +246,7 @@ export async function POST(request: NextRequest) {
       }
     }, { status: 500 })
   }
-}
+}, {
+  requireAuth: true,
+  requiredPermissions: [PERMISSIONS.ADMIN_ACCESS]
+})

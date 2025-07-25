@@ -1,16 +1,17 @@
-import { NextResponse } from 'next/server'
 import { FinaleApiService, getFinaleConfig } from '@/app/lib/finale-api'
+import { createApiHandler, apiResponse, apiError } from '@/app/lib/api-handler'
+import { PERMISSIONS } from '@/app/lib/auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-export async function GET() {
+export const GET = createApiHandler(async () => {
   try {
     const config = await getFinaleConfig()
     
     if (!config) {
-      return NextResponse.json({ error: 'No config found' })
+      return apiResponse({ error: 'No config found' }, { status: 404 })
     }
     
     const finaleApi = new FinaleApiService(config)
@@ -29,7 +30,7 @@ export async function GET() {
     
     const responseText = await response.text()
     
-    return NextResponse.json({
+    return apiResponse({
       config: {
         accountPath: config.accountPath,
         hasApiKey: !!config.apiKey,
@@ -47,9 +48,9 @@ export async function GET() {
       }
     })
   } catch (error) {
-    return NextResponse.json({
-      error: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
-    }, { status: 500 })
+    return apiError(error)
   }
-}
+}, {
+  requireAuth: true,
+  requiredPermissions: [PERMISSIONS.ADMIN_ACCESS]
+})

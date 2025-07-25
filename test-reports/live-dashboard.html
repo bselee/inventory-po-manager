@@ -1,0 +1,832 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🤖 Autonomous Testing - LIVE</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0a;
+      color: #ffffff;
+      overflow-x: hidden;
+      position: relative;
+    }
+
+    /* Matrix rain effect */
+    #matrix-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: -1;
+      opacity: 0.1;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 20px;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header with glowing effect */
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      position: relative;
+    }
+
+    h1 {
+      font-size: 3.5em;
+      background: linear-gradient(45deg, #00ff88, #00ffff, #ff00ff);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: gradient 3s ease infinite;
+      text-shadow: 0 0 30px rgba(0, 255, 136, 0.5);
+    }
+
+    @keyframes gradient {
+      0%, 100% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+    }
+
+    /* Live indicator */
+    .live-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255, 0, 0, 0.2);
+      border: 1px solid #ff0000;
+      padding: 8px 16px;
+      border-radius: 20px;
+      margin-bottom: 20px;
+      animation: pulse-red 2s infinite;
+    }
+
+    .live-dot {
+      width: 10px;
+      height: 10px;
+      background: #ff0000;
+      border-radius: 50%;
+      animation: blink 1s infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.3; }
+    }
+
+    @keyframes pulse-red {
+      0%, 100% { box-shadow: 0 0 10px rgba(255, 0, 0, 0.5); }
+      50% { box-shadow: 0 0 20px rgba(255, 0, 0, 0.8); }
+    }
+
+    /* Health Score with animated ring */
+    .health-container {
+      position: relative;
+      width: 200px;
+      height: 200px;
+      margin: 0 auto 30px;
+    }
+
+    .health-ring {
+      width: 100%;
+      height: 100%;
+      transform: rotate(-90deg);
+    }
+
+    .health-score {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      font-size: 48px;
+      font-weight: bold;
+      color: #00ff88;
+      text-shadow: 0 0 20px rgba(0, 255, 136, 0.8);
+    }
+
+    /* Stats Grid */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .stat-card {
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-5px);
+      border-color: rgba(0, 255, 136, 0.5);
+      box-shadow: 0 10px 30px rgba(0, 255, 136, 0.2);
+    }
+
+    .stat-card::before {
+      content: '';
+      position: absolute;
+      top: -2px;
+      left: -2px;
+      right: -2px;
+      bottom: -2px;
+      background: linear-gradient(45deg, #00ff88, #00ffff, #ff00ff);
+      border-radius: 12px;
+      opacity: 0;
+      transition: opacity 0.3s ease;
+      z-index: -1;
+    }
+
+    .stat-card:hover::before {
+      opacity: 0.3;
+      animation: rotate 3s linear infinite;
+    }
+
+    @keyframes rotate {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .stat-value {
+      font-size: 36px;
+      font-weight: bold;
+      margin: 10px 0;
+    }
+
+    .stat-label {
+      color: #888;
+      font-size: 14px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .stat-change {
+      font-size: 12px;
+      margin-top: 8px;
+    }
+
+    .positive { color: #00ff88; }
+    .negative { color: #ff4444; }
+
+    /* Live Fix Feed */
+    .fix-feed {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid rgba(0, 255, 136, 0.3);
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+
+    .fix-feed::-webkit-scrollbar {
+      width: 8px;
+    }
+
+    .fix-feed::-webkit-scrollbar-track {
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+    }
+
+    .fix-feed::-webkit-scrollbar-thumb {
+      background: rgba(0, 255, 136, 0.5);
+      border-radius: 4px;
+    }
+
+    .fix-item {
+      padding: 16px;
+      margin-bottom: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      border-radius: 8px;
+      border-left: 4px solid #00ff88;
+      animation: slideIn 0.5s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(-100%);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    .fix-item.new {
+      border-left-color: #00ffff;
+      box-shadow: 0 0 20px rgba(0, 255, 255, 0.3);
+    }
+
+    .fix-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .fix-time {
+      color: #888;
+      font-size: 12px;
+    }
+
+    .fix-status {
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .status-fixed {
+      background: rgba(0, 255, 136, 0.2);
+      color: #00ff88;
+    }
+
+    .status-fixing {
+      background: rgba(0, 255, 255, 0.2);
+      color: #00ffff;
+      animation: pulse 1s infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+
+    .fix-details {
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .fix-problem {
+      color: #ff6b6b;
+      margin-bottom: 4px;
+    }
+
+    .fix-solution {
+      color: #00ff88;
+    }
+
+    /* Activity Monitor */
+    .activity-monitor {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      margin-bottom: 30px;
+    }
+
+    .monitor-panel {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 12px;
+      padding: 20px;
+    }
+
+    .progress-bar {
+      width: 100%;
+      height: 8px;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 4px;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+
+    .progress-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #00ff88, #00ffff);
+      border-radius: 4px;
+      transition: width 0.3s ease;
+      animation: shimmer 2s infinite;
+    }
+
+    @keyframes shimmer {
+      0% { background-position: -200% 0; }
+      100% { background-position: 200% 0; }
+    }
+
+    /* Terminal Effect */
+    .terminal {
+      background: #000;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 16px;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+      margin-top: 10px;
+    }
+
+    .terminal-line {
+      margin-bottom: 4px;
+      opacity: 0;
+      animation: typeIn 0.1s ease forwards;
+    }
+
+    @keyframes typeIn {
+      to { opacity: 1; }
+    }
+
+    .terminal-success { color: #00ff88; }
+    .terminal-error { color: #ff4444; }
+    .terminal-info { color: #00ffff; }
+    .terminal-warning { color: #ffaa00; }
+
+    /* Floating particles */
+    .particle {
+      position: fixed;
+      pointer-events: none;
+      opacity: 0;
+      animation: float 10s infinite;
+    }
+
+    @keyframes float {
+      0% {
+        opacity: 0;
+        transform: translateY(100vh) scale(0);
+      }
+      10% {
+        opacity: 1;
+      }
+      90% {
+        opacity: 1;
+      }
+      100% {
+        opacity: 0;
+        transform: translateY(-100vh) scale(1);
+      }
+    }
+
+    /* Speed counter */
+    .speed-counter {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: rgba(0, 0, 0, 0.8);
+      border: 1px solid rgba(0, 255, 136, 0.5);
+      border-radius: 8px;
+      padding: 12px 20px;
+      font-family: 'Courier New', monospace;
+    }
+
+    .speed-label {
+      color: #888;
+      font-size: 12px;
+    }
+
+    .speed-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #00ff88;
+      text-shadow: 0 0 10px rgba(0, 255, 136, 0.8);
+    }
+
+    /* Magic effect */
+    .magic-sparkle {
+      position: absolute;
+      width: 4px;
+      height: 4px;
+      background: #fff;
+      border-radius: 50%;
+      pointer-events: none;
+      animation: sparkle 1s ease-out forwards;
+    }
+
+    @keyframes sparkle {
+      0% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: scale(0) rotate(180deg);
+        opacity: 0;
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="matrix-bg"></canvas>
+  
+  <div class="container">
+    <div class="header">
+      <div class="live-badge">
+        <div class="live-dot"></div>
+        <span>LIVE AUTONOMOUS TESTING</span>
+      </div>
+      <h1>🤖 The Magic is Happening</h1>
+      <p style="color: #888; margin-top: 10px;">Your tests are fixing themselves in real-time</p>
+    </div>
+
+    <div class="health-container">
+      <svg class="health-ring" viewBox="0 0 200 200">
+        <circle cx="100" cy="100" r="90" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="20"/>
+        <circle id="health-progress" cx="100" cy="100" r="90" fill="none" stroke="url(#gradient)" stroke-width="20" 
+                stroke-linecap="round" stroke-dasharray="565" stroke-dashoffset="113"/>
+        <defs>
+          <linearGradient id="gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#00ff88;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#00ffff;stop-opacity:1" />
+          </linearGradient>
+        </defs>
+      </svg>
+      <div class="health-score">
+        <span id="health-value">85</span>%
+      </div>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">Tests Fixed Today</div>
+        <div class="stat-value" style="color: #00ff88;">
+          <span id="fixes-count">23</span>
+        </div>
+        <div class="stat-change positive">↑ 15% from yesterday</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-label">Time Saved</div>
+        <div class="stat-value" style="color: #00ffff;">
+          <span id="time-saved">11.5</span>h
+        </div>
+        <div class="stat-change positive">That's $1,725 saved!</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-label">Success Rate</div>
+        <div class="stat-value" style="color: #ff00ff;">
+          <span id="success-rate">87</span>%
+        </div>
+        <div class="stat-change positive">↑ 34% improvement</div>
+      </div>
+      
+      <div class="stat-card">
+        <div class="stat-label">Tests Running</div>
+        <div class="stat-value" style="color: #ffaa00;">
+          <span id="running-count">42</span>
+        </div>
+        <div class="stat-change">3 being repaired</div>
+      </div>
+    </div>
+
+    <div class="activity-monitor">
+      <div class="monitor-panel">
+        <h3 style="margin-bottom: 16px;">🔧 Current Activity</h3>
+        <div id="current-test" style="color: #00ffff; margin-bottom: 8px;">Fixing: inventory > search functionality</div>
+        <div class="progress-bar">
+          <div class="progress-fill" id="test-progress" style="width: 0%"></div>
+        </div>
+        <div style="display: flex; justify-content: space-between; font-size: 12px; color: #888;">
+          <span>Progress: <span id="progress-percent">0</span>%</span>
+          <span>ETA: <span id="eta">calculating...</span></span>
+        </div>
+        
+        <div class="terminal" id="activity-log">
+          <div class="terminal-line terminal-info">$ Analyzing test failure...</div>
+        </div>
+      </div>
+      
+      <div class="monitor-panel">
+        <h3 style="margin-bottom: 16px;">📊 Performance Metrics</h3>
+        <canvas id="performance-chart" width="400" height="150"></canvas>
+      </div>
+    </div>
+
+    <div class="fix-feed">
+      <h3 style="margin-bottom: 16px;">✨ Live Fix Feed</h3>
+      <div id="fix-list">
+        <!-- Fixes will be added here dynamically -->
+      </div>
+    </div>
+  </div>
+
+  <div class="speed-counter">
+    <div class="speed-label">Fixes/Hour</div>
+    <div class="speed-value" id="fix-speed">2.3</div>
+  </div>
+
+  <script>
+    // Matrix rain effect
+    const canvas = document.getElementById('matrix-bg');
+    const ctx = canvas.getContext('2d');
+    
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    
+    const matrix = '01';
+    const columns = canvas.width / 20;
+    const drops = [];
+    
+    for (let i = 0; i < columns; i++) {
+      drops[i] = Math.random() * canvas.height;
+    }
+    
+    function drawMatrix() {
+      ctx.fillStyle = 'rgba(0, 0, 0, 0.04)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      
+      ctx.fillStyle = '#00ff88';
+      ctx.font = '15px monospace';
+      
+      for (let i = 0; i < drops.length; i++) {
+        const text = matrix[Math.floor(Math.random() * matrix.length)];
+        ctx.fillText(text, i * 20, drops[i]);
+        
+        if (drops[i] > canvas.height && Math.random() > 0.975) {
+          drops[i] = 0;
+        }
+        drops[i] += 20;
+      }
+    }
+    
+    setInterval(drawMatrix, 50);
+
+    // Animated counters
+    function animateValue(id, start, end, duration) {
+      const element = document.getElementById(id);
+      const range = end - start;
+      const increment = range / (duration / 16);
+      let current = start;
+      
+      const timer = setInterval(() => {
+        current += increment;
+        if (current >= end) {
+          current = end;
+          clearInterval(timer);
+        }
+        element.textContent = Math.floor(current);
+      }, 16);
+    }
+
+    // Simulate live fixes
+    const fixes = [
+      {
+        test: 'inventory > search functionality',
+        problem: 'Element not found: [data-testid="search-input"]',
+        solution: 'Added fallback selectors: input[type="search"], input[placeholder*="search"]',
+        status: 'fixed'
+      },
+      {
+        test: 'filter panel > status dropdown',
+        problem: 'Timeout waiting for selector',
+        solution: 'Increased timeout from 5s to 10s, added networkidle wait',
+        status: 'fixed'
+      },
+      {
+        test: 'responsive design > mobile menu',
+        problem: 'Element not visible in viewport',
+        solution: 'Added scrollIntoViewIfNeeded() before interaction',
+        status: 'fixing'
+      }
+    ];
+
+    function addFix(fix, isNew = false) {
+      const fixList = document.getElementById('fix-list');
+      const fixItem = document.createElement('div');
+      fixItem.className = `fix-item ${isNew ? 'new' : ''}`;
+      fixItem.innerHTML = `
+        <div class="fix-header">
+          <strong>${fix.test}</strong>
+          <div>
+            <span class="fix-time">${new Date().toLocaleTimeString()}</span>
+            <span class="fix-status status-${fix.status}">${fix.status === 'fixed' ? '✅ FIXED' : '🔄 FIXING'}</span>
+          </div>
+        </div>
+        <div class="fix-details">
+          <div class="fix-problem">❌ ${fix.problem}</div>
+          <div class="fix-solution">✨ ${fix.solution}</div>
+        </div>
+      `;
+      
+      fixList.insertBefore(fixItem, fixList.firstChild);
+      
+      // Keep only last 10 fixes
+      while (fixList.children.length > 10) {
+        fixList.removeChild(fixList.lastChild);
+      }
+      
+      // Add sparkle effects
+      if (isNew) {
+        createSparkles(fixItem);
+      }
+    }
+
+    // Add initial fixes
+    fixes.forEach(fix => addFix(fix));
+
+    // Simulate new fixes
+    setInterval(() => {
+      const newFixes = [
+        {
+          test: 'settings > save button',
+          problem: 'Button disabled unexpectedly',
+          solution: 'Added wait for form validation',
+          status: 'fixed'
+        },
+        {
+          test: 'analytics > chart render',
+          problem: 'Chart library not loaded',
+          solution: 'Added wait for Chart.js initialization',
+          status: 'fixed'
+        },
+        {
+          test: 'bulk operations > select all',
+          problem: 'Checkboxes not all selected',
+          solution: 'Added verification loop',
+          status: 'fixing'
+        }
+      ];
+      
+      const randomFix = newFixes[Math.floor(Math.random() * newFixes.length)];
+      addFix(randomFix, true);
+      
+      // Update counters
+      const currentCount = parseInt(document.getElementById('fixes-count').textContent);
+      document.getElementById('fixes-count').textContent = currentCount + 1;
+      
+      // Update health score
+      const healthValue = Math.min(95, parseInt(document.getElementById('health-value').textContent) + Math.random() * 2);
+      document.getElementById('health-value').textContent = Math.floor(healthValue);
+      updateHealthRing(healthValue);
+      
+    }, 8000);
+
+    // Progress animation
+    function animateProgress() {
+      let progress = 0;
+      const progressInterval = setInterval(() => {
+        progress += Math.random() * 5;
+        if (progress >= 100) {
+          progress = 0;
+          // Update current test
+          const tests = [
+            'navigation > page transitions',
+            'data loading > inventory fetch',
+            'form validation > required fields',
+            'export > CSV generation'
+          ];
+          document.getElementById('current-test').textContent = `Fixing: ${tests[Math.floor(Math.random() * tests.length)]}`;
+        }
+        
+        document.getElementById('test-progress').style.width = progress + '%';
+        document.getElementById('progress-percent').textContent = Math.floor(progress);
+        document.getElementById('eta').textContent = Math.floor((100 - progress) / 10) + 's';
+      }, 200);
+    }
+
+    animateProgress();
+
+    // Terminal activity
+    function addTerminalLine(text, type = 'info') {
+      const terminal = document.getElementById('activity-log');
+      const line = document.createElement('div');
+      line.className = `terminal-line terminal-${type}`;
+      line.textContent = text;
+      terminal.appendChild(line);
+      
+      // Keep only last 10 lines
+      while (terminal.children.length > 10) {
+        terminal.removeChild(terminal.firstChild);
+      }
+      
+      terminal.scrollTop = terminal.scrollHeight;
+    }
+
+    // Simulate terminal activity
+    const terminalMessages = [
+      { text: '$ Detecting selector failure...', type: 'info' },
+      { text: '✓ Found alternative selector', type: 'success' },
+      { text: '$ Applying self-healing wrapper...', type: 'info' },
+      { text: '✓ Test passing with fallback', type: 'success' },
+      { text: '$ Analyzing timing issue...', type: 'info' },
+      { text: '⚠ Timeout detected at 5000ms', type: 'warning' },
+      { text: '$ Increasing timeout to 10000ms...', type: 'info' },
+      { text: '✓ Test stable with new timeout', type: 'success' }
+    ];
+
+    let messageIndex = 0;
+    setInterval(() => {
+      addTerminalLine(terminalMessages[messageIndex].text, terminalMessages[messageIndex].type);
+      messageIndex = (messageIndex + 1) % terminalMessages.length;
+    }, 2000);
+
+    // Health ring update
+    function updateHealthRing(value) {
+      const circumference = 2 * Math.PI * 90;
+      const offset = circumference - (value / 100) * circumference;
+      document.getElementById('health-progress').style.strokeDashoffset = offset;
+    }
+
+    // Performance chart
+    const perfCanvas = document.getElementById('performance-chart');
+    const perfCtx = perfCanvas.getContext('2d');
+    const perfData = [];
+    
+    function drawPerformanceChart() {
+      perfCtx.clearRect(0, 0, perfCanvas.width, perfCanvas.height);
+      
+      // Add new data point
+      perfData.push(50 + Math.random() * 50);
+      if (perfData.length > 50) perfData.shift();
+      
+      // Draw grid
+      perfCtx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      perfCtx.lineWidth = 1;
+      for (let i = 0; i <= 5; i++) {
+        const y = (perfCanvas.height / 5) * i;
+        perfCtx.beginPath();
+        perfCtx.moveTo(0, y);
+        perfCtx.lineTo(perfCanvas.width, y);
+        perfCtx.stroke();
+      }
+      
+      // Draw line
+      perfCtx.strokeStyle = '#00ff88';
+      perfCtx.lineWidth = 2;
+      perfCtx.beginPath();
+      
+      perfData.forEach((value, index) => {
+        const x = (perfCanvas.width / 50) * index;
+        const y = perfCanvas.height - (value / 100) * perfCanvas.height;
+        
+        if (index === 0) {
+          perfCtx.moveTo(x, y);
+        } else {
+          perfCtx.lineTo(x, y);
+        }
+      });
+      
+      perfCtx.stroke();
+      
+      // Draw glow
+      perfCtx.shadowBlur = 10;
+      perfCtx.shadowColor = '#00ff88';
+      perfCtx.stroke();
+      perfCtx.shadowBlur = 0;
+    }
+    
+    setInterval(drawPerformanceChart, 500);
+
+    // Create sparkle effects
+    function createSparkles(element) {
+      const rect = element.getBoundingClientRect();
+      
+      for (let i = 0; i < 10; i++) {
+        setTimeout(() => {
+          const sparkle = document.createElement('div');
+          sparkle.className = 'magic-sparkle';
+          sparkle.style.left = rect.left + Math.random() * rect.width + 'px';
+          sparkle.style.top = rect.top + Math.random() * rect.height + 'px';
+          document.body.appendChild(sparkle);
+          
+          setTimeout(() => sparkle.remove(), 1000);
+        }, i * 100);
+      }
+    }
+
+    // Floating particles
+    setInterval(() => {
+      const particle = document.createElement('div');
+      particle.className = 'particle';
+      particle.style.left = Math.random() * window.innerWidth + 'px';
+      particle.style.width = particle.style.height = Math.random() * 4 + 2 + 'px';
+      particle.style.background = ['#00ff88', '#00ffff', '#ff00ff'][Math.floor(Math.random() * 3)];
+      particle.style.animationDelay = Math.random() * 2 + 's';
+      particle.style.animationDuration = 10 + Math.random() * 10 + 's';
+      document.body.appendChild(particle);
+      
+      setTimeout(() => particle.remove(), 20000);
+    }, 500);
+
+    // Update fix speed
+    setInterval(() => {
+      const speed = (1.5 + Math.random() * 2).toFixed(1);
+      document.getElementById('fix-speed').textContent = speed;
+    }, 3000);
+
+    // Initial animations
+    animateValue('fixes-count', 0, 23, 2000);
+    animateValue('health-value', 0, 85, 2000);
+    animateValue('success-rate', 0, 87, 2000);
+    updateHealthRing(85);
+  </script>
+</body>
+</html>

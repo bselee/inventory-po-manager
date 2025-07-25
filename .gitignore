@@ -34,3 +34,7 @@ yarn-error.log*
 next-env.d.ts
 .vercel
 .env*.local
+
+# MCP servers (separate git repos)
+/context7/
+/serena/

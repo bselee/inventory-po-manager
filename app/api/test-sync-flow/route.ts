@@ -1,12 +1,13 @@
-import { NextRequest, NextResponse } from 'next/server'
 import { FinaleApiService, getFinaleConfig } from '@/app/lib/finale-api'
 import { supabase } from '@/app/lib/supabase'
+import { createApiHandler, apiResponse, apiError } from '@/app/lib/api-handler'
+import { PERMISSIONS } from '@/app/lib/auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-export async function GET(request: NextRequest) {
+export const GET = createApiHandler(async () => {
   try {
     const testResults = {
       timestamp: new Date().toISOString(),
@@ -42,7 +43,7 @@ export async function GET(request: NextRequest) {
         error: error instanceof Error ? error.message : 'Unknown error'
       }
       testResults.overall = 'failed'
-      return NextResponse.json(testResults)
+      return apiResponse(testResults)
     }
     
     // Step 2: Check Finale configuration
@@ -59,7 +60,7 @@ export async function GET(request: NextRequest) {
         error: 'Finale API credentials not configured in settings'
       }
       testResults.overall = 'failed'
-      return NextResponse.json(testResults)
+      return apiResponse(testResults)
     }
     
     testResults.steps[1] = {
@@ -85,7 +86,7 @@ export async function GET(request: NextRequest) {
         error: 'Cannot connect to Finale API'
       }
       testResults.overall = 'failed'
-      return NextResponse.json(testResults)
+      return apiResponse(testResults)
     }
     
     testResults.steps[2] = {
@@ -231,7 +232,7 @@ export async function GET(request: NextRequest) {
       recommendations.push('Check Finale API permissions and data access')
     }
     
-    return NextResponse.json({
+    return apiResponse({
       ...testResults,
       summary: {
         canSync: testResults.steps.slice(0, 4).every(s => s.status === 'success'),
@@ -240,9 +241,9 @@ export async function GET(request: NextRequest) {
     })
   } catch (error) {
     console.error('Test sync flow error:', error)
-    return NextResponse.json({
-      error: 'Test failed',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+    return apiError(error)
   }
-}
+}, {
+  requireAuth: true,
+  requiredPermissions: [PERMISSIONS.ADMIN_ACCESS]
+})

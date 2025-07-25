@@ -1,12 +1,14 @@
 import { NextResponse } from 'next/server'
 import { supabase } from '@/app/lib/supabase'
 import { FinaleApiService, getFinaleConfig } from '@/app/lib/finale-api'
+import { createApiHandler, apiResponse } from '@/app/lib/api-handler'
+import { PERMISSIONS } from '@/app/lib/auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-export async function GET() {
+export const GET = createApiHandler(async () => {
   try {
     // 1. Check database counts
     const { data: inventoryCount } = await supabase
@@ -77,7 +79,7 @@ export async function GET() {
       .limit(1)
       .single()
     
-    return NextResponse.json({
+    return apiResponse({
       database: {
         inventoryCount: inventoryCount || 0,
         vendorCount: vendorCount || 0,
@@ -98,9 +100,12 @@ export async function GET() {
       ].filter(Boolean)
     })
   } catch (error) {
-    return NextResponse.json({
+    return apiResponse({
       error: 'Failed to check sync status',
       message: error instanceof Error ? error.message : 'Unknown error'
     }, { status: 500 })
   }
-}
+}, {
+  requireAuth: true,
+  requiredPermissions: [PERMISSIONS.ADMIN_ACCESS]
+})

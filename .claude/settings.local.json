@@ -50,7 +50,22 @@
       "WebFetch(domain:developer.finaleinventory.com)",
       "Bash(npm run deploy:check:*)",
       "Bash(API_BASE_URL=https://inventory-po-manager.vercel.app ./test-api-endpoints.sh)",
-      "Bash(# Let''s test with more detail\nBASE_URL=\"\"https://inventory-po-manager.vercel.app/api\"\"\n\necho \"\"🔍 Detailed API Endpoint Testing...\"\"\necho \"\"====================================\"\"\necho \"\"\"\"\n\n# Test GET endpoints\necho \"\"📌 Testing GET endpoints:\"\"\nfor endpoint in \"\"health\"\" \"\"inventory\"\" \"\"purchase-orders\"\" \"\"settings\"\"; do\n  url=\"\"$BASE_URL/$endpoint\"\"\n  echo -n \"\"  GET /$endpoint: \"\"\n  response=$(curl -s -o /dev/null -w \"\"%{http_code}\"\" \"\"$url\"\")\n  echo \"\"$response\"\"\ndone\n\necho \"\"\"\"\necho \"\"📌 Testing sync endpoints:\"\"\n# Check if these routes exist\nfor endpoint in \"\"sync-finale\"\" \"\"sync-finale/status\"\" \"\"sync-logs\"\"; do\n  url=\"\"$BASE_URL/$endpoint\"\"\n  echo -n \"\"  GET /$endpoint: \"\"\n  response=$(curl -s -o /dev/null -w \"\"%{http_code}\"\" \"\"$url\"\")\n  echo \"\"$response\"\"\ndone\n\necho \"\"\"\"\necho \"\"📌 Testing POST endpoints:\"\"\n# Test POST for vendors (which failed with 405)\necho -n \"\"  POST /vendors: \"\"\ncurl -s -o /dev/null -w \"\"%{http_code}\"\" -X POST \"\"$BASE_URL/vendors\"\" -H \"\"Content-Type: application/json\"\" -d ''{}''\necho \"\"\"\"\n\necho -n \"\"  GET /vendors: \"\"\ncurl -s -o /dev/null -w \"\"%{http_code}\"\" \"\"$BASE_URL/vendors\"\"\necho \"\"\"\")"
+      "Bash(# Let''s test with more detail\nBASE_URL=\"\"https://inventory-po-manager.vercel.app/api\"\"\n\necho \"\"🔍 Detailed API Endpoint Testing...\"\"\necho \"\"====================================\"\"\necho \"\"\"\"\n\n# Test GET endpoints\necho \"\"📌 Testing GET endpoints:\"\"\nfor endpoint in \"\"health\"\" \"\"inventory\"\" \"\"purchase-orders\"\" \"\"settings\"\"; do\n  url=\"\"$BASE_URL/$endpoint\"\"\n  echo -n \"\"  GET /$endpoint: \"\"\n  response=$(curl -s -o /dev/null -w \"\"%{http_code}\"\" \"\"$url\"\")\n  echo \"\"$response\"\"\ndone\n\necho \"\"\"\"\necho \"\"📌 Testing sync endpoints:\"\"\n# Check if these routes exist\nfor endpoint in \"\"sync-finale\"\" \"\"sync-finale/status\"\" \"\"sync-logs\"\"; do\n  url=\"\"$BASE_URL/$endpoint\"\"\n  echo -n \"\"  GET /$endpoint: \"\"\n  response=$(curl -s -o /dev/null -w \"\"%{http_code}\"\" \"\"$url\"\")\n  echo \"\"$response\"\"\ndone\n\necho \"\"\"\"\necho \"\"📌 Testing POST endpoints:\"\"\n# Test POST for vendors (which failed with 405)\necho -n \"\"  POST /vendors: \"\"\ncurl -s -o /dev/null -w \"\"%{http_code}\"\" -X POST \"\"$BASE_URL/vendors\"\" -H \"\"Content-Type: application/json\"\" -d ''{}''\necho \"\"\"\"\n\necho -n \"\"  GET /vendors: \"\"\ncurl -s -o /dev/null -w \"\"%{http_code}\"\" \"\"$BASE_URL/vendors\"\"\necho \"\"\"\")",
+      "Bash(git clone:*)",
+      "Bash(uv:*)",
+      "Bash(npx:*)",
+      "mcp__context7__resolve-library-id",
+      "mcp__context7__get-library-docs",
+      "Bash(npm run:*)",
+      "Bash(PORT=3001 npx playwright test \"inventory page loads successfully\" --project=chromium --reporter=list)",
+      "Bash(PORT=3001 npx playwright test tests/e2e/inventory-page.spec.ts -g \"inventory page loads successfully\" --project=chromium)",
+      "Bash(sudo apt-get:*)",
+      "Bash(sudo apt-get install:*)",
+      "Bash(PORT=3001 npx playwright test tests/e2e/inventory-page.spec.ts -g \"inventory page loads successfully\" --project=chromium --reporter=list)",
+      "Bash(npm test:*)",
+      "Bash(timeout:*)",
+      "Bash(git rm:*)",
+      "Bash(git pull:*)"
     ],
     "deny": []
   }

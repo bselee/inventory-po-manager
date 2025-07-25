@@ -1,8 +1,27 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
-import { Package, AlertTriangle, TrendingDown, Search, Filter, RefreshCw, Plus, Edit2, Loader2 } from 'lucide-react'
+import { 
+  getInventoryItems, 
+  getInventorySummary,
+  updateInventoryStock,
+  updateInventoryCost
+} from '@/app/lib/data-access/inventory'
+import { Package, AlertTriangle, TrendingDown, TrendingUp, Search, Filter, RefreshCw, Plus, Edit2, Loader2, Clock, DollarSign, BarChart3, Zap, AlertCircle, Archive } from 'lucide-react'
+import useInventoryFiltering from '@/app/hooks/useOptimizedInventoryFilter'
+import SafeFilteredInventory from '@/app/components/SafeFilteredInventory'
+import { useDebounce } from '@/app/hooks/useDebounce'
+import type { InventoryItem as ImportedInventoryItem } from '@/app/types'
+import {
+  calculateSalesVelocity,
+  calculateDaysUntilStockout,
+  determineStockStatus,
+  calculateTrend,
+  enhanceItemsWithCalculations,
+  getStockStatusDisplay,
+  formatInventoryValue,
+  shouldReorder
+} from '@/app/lib/inventory-calculations'
 
 interface InventoryItem {
   id: string
@@ -21,7 +40,7 @@ interface InventoryItem {
   sales_last_30_days?: number
   sales_last_90_days?: number
   last_sales_update?: string
-  last_updated: string
+  last_updated?: string
   // Calculated fields for planning
   sales_velocity?: number
   days_until_stockout?: number
@@ -45,12 +64,24 @@ interface SortConfig {
 }
 
 interface FilterConfig {
-  status: 'all' | 'out-of-stock' | 'low-stock' | 'critical' | 'adequate' | 'overstocked'
+  status: 'all' | 'out-of-stock' | 'low-stock' | 'critical' | 'adequate' | 'overstocked' | 'in-stock'
   vendor: string
   location: string
   priceRange: { min: number; max: number }
   salesVelocity: 'all' | 'fast' | 'medium' | 'slow' | 'dead'
-  stockDays: 'all' | '0-7' | '8-30' | '31-60' | '60+'
+  stockDays: 'all' | 'under-30' | '30-60' | '60-90' | 'over-90' | 'over-180'
+  reorderNeeded: boolean
+  hasValue: boolean
+}
+
+interface PresetFilter {
+  id: string
+  label: string
+  icon: any
+  color: string
+  bgColor: string
+  borderColor: string
+  config: FilterConfig
 }
 
 export default function InventoryPage() {
@@ -60,6 +91,8 @@ export default function InventoryPage() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
+  const [filteringInProgress, setFilteringInProgress] = useState(false)
+  const debouncedSearchTerm = useDebounce(searchTerm, 300) // 300ms delay
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'product_name', direction: 'asc' })
   const [filterConfig, setFilterConfig] = useState<FilterConfig>({
     status: 'all',
@@ -67,8 +100,12 @@ export default function InventoryPage() {
     location: '',
     priceRange: { min: 0, max: 999999 }, // Set to very high value to include all items
     salesVelocity: 'all',
-    stockDays: 'all'
+    stockDays: 'all',
+    reorderNeeded: false,
+    hasValue: false
   })
+  const [activePresetFilter, setActivePresetFilter] = useState<string | null>(null)
+  const [showAdvancedFilters, setShowAdvancedFilters] = useState(false)
   const [viewMode, setViewMode] = useState<'table' | 'planning' | 'analytics'>('table')
   const [editingItem, setEditingItem] = useState<string | null>(null)
   const [editStock, setEditStock] = useState(0)
@@ -83,16 +120,113 @@ export default function InventoryPage() {
     loadSummary()
   }, [])
 
+  // Preset filters configuration
+  const presetFilters: PresetFilter[] = [
+    {
+      id: 'out-of-stock',
+      label: 'Out of Stock',
+      icon: AlertCircle,
+      color: 'text-red-600',
+      bgColor: 'bg-red-50 hover:bg-red-100',
+      borderColor: 'border-red-200',
+      config: { status: 'out-of-stock', vendor: '', location: '', priceRange: { min: 0, max: 999999 }, salesVelocity: 'all', stockDays: 'all', reorderNeeded: false, hasValue: false }
+    },
+    {
+      id: 'reorder-needed',
+      label: 'Reorder Needed',
+      icon: Zap,
+      color: 'text-orange-600',
+      bgColor: 'bg-orange-50 hover:bg-orange-100',
+      borderColor: 'border-orange-200',
+      config: { status: 'all', vendor: '', location: '', priceRange: { min: 0, max: 999999 }, salesVelocity: 'all', stockDays: 'all', reorderNeeded: true, hasValue: false }
+    },
+    {
+      id: 'dead-stock',
+      label: 'Dead Stock',
+      icon: Archive,
+      color: 'text-gray-600',
+      bgColor: 'bg-gray-50 hover:bg-gray-100',
+      borderColor: 'border-gray-200',
+      config: { status: 'all', vendor: '', location: '', priceRange: { min: 0, max: 999999 }, salesVelocity: 'slow', stockDays: 'over-180', reorderNeeded: false, hasValue: true }
+    },
+    {
+      id: 'overstocked',
+      label: 'Overstocked',
+      icon: BarChart3,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50 hover:bg-purple-100',
+      borderColor: 'border-purple-200',
+      config: { status: 'all', vendor: '', location: '', priceRange: { min: 0, max: 999999 }, salesVelocity: 'all', stockDays: 'over-90', reorderNeeded: false, hasValue: true }
+    },
+    {
+      id: 'fast-moving',
+      label: 'Fast Moving',
+      icon: TrendingUp,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50 hover:bg-green-100',
+      borderColor: 'border-green-200',
+      config: { status: 'in-stock', vendor: '', location: '', priceRange: { min: 0, max: 999999 }, salesVelocity: 'fast', stockDays: 'all', reorderNeeded: false, hasValue: false }
+    },
+    {
+      id: 'low-value',
+      label: 'Low Value',
+      icon: DollarSign,
+      color: 'text-blue-600',
+      bgColor: 'bg-blue-50 hover:bg-blue-100',
+      borderColor: 'border-blue-200',
+      config: { status: 'all', vendor: '', location: '', priceRange: { min: 0, max: 50 }, salesVelocity: 'all', stockDays: 'all', reorderNeeded: false, hasValue: false }
+    },
+    {
+      id: 'critical-stock',
+      label: 'Critical Stock',
+      icon: Clock,
+      color: 'text-red-700',
+      bgColor: 'bg-red-100 hover:bg-red-200',
+      borderColor: 'border-red-300',
+      config: { status: 'low-stock', vendor: '', location: '', priceRange: { min: 0, max: 999999 }, salesVelocity: 'all', stockDays: 'under-30', reorderNeeded: false, hasValue: false }
+    }
+  ]
+
+  // Apply preset filter
+  const applyPresetFilter = (presetId: string) => {
+    const preset = presetFilters.find(p => p.id === presetId)
+    if (preset) {
+      setFilterConfig(preset.config)
+      setActivePresetFilter(presetId)
+    }
+  }
+
+  // Clear all filters
+  const clearAllFilters = () => {
+    setFilterConfig({
+      status: 'all',
+      vendor: '',
+      location: '',
+      priceRange: { min: 0, max: 999999 },
+      salesVelocity: 'all',
+      stockDays: 'all',
+      reorderNeeded: false,
+      hasValue: false
+    })
+    setActivePresetFilter(null)
+    setSearchTerm('')
+  }
+
+  // Use optimized filtering hook with debounced search
+  const filteredItems = useInventoryFiltering(allItems, debouncedSearchTerm, filterConfig, sortConfig)
+
   // Update displayed items when filters, search, or pagination changes
   useEffect(() => {
-    if (allItems.length > 0) {
-      const filteredAndSorted = getFilteredAndSortedItems()
+    if (filteredItems.length > 0) {
       const startIndex = (currentPage - 1) * itemsPerPage
       const endIndex = startIndex + itemsPerPage
-      setItems(filteredAndSorted.slice(startIndex, endIndex))
-      setTotalItems(filteredAndSorted.length)
+      setItems(filteredItems.slice(startIndex, endIndex))
+      setTotalItems(filteredItems.length)
+    } else {
+      setItems([])
+      setTotalItems(0)
     }
-  }, [allItems, searchTerm, filterConfig, sortConfig, currentPage, itemsPerPage])
+  }, [filteredItems, currentPage, itemsPerPage])
 
   // Reset to first page when filters change
   useEffect(() => {
@@ -106,93 +240,24 @@ export default function InventoryPage() {
     setCurrentPage(Math.max(1, Math.min(page, totalPages)))
   }
 
-  // Enhanced calculation functions for planning
-  const calculateSalesVelocity = (item: InventoryItem): number => {
-    const sales30 = item.sales_last_30_days || 0
-    return sales30 / 30 // units per day
-  }
-
-  const calculateDaysUntilStockout = (item: InventoryItem): number => {
-    const velocity = calculateSalesVelocity(item)
-    if (velocity === 0) return Infinity
-    return Math.floor(item.current_stock / velocity)
-  }
-
-  const determineStockStatus = (item: InventoryItem): 'critical' | 'low' | 'adequate' | 'overstocked' => {
-    if (item.current_stock === 0) return 'critical'
-    
-    const velocity = calculateSalesVelocity(item)
-    const daysLeft = calculateDaysUntilStockout(item)
-    const minStock = item.minimum_stock || item.reorder_point || 0
-    
-    if (daysLeft <= 7) return 'critical'
-    if (item.current_stock <= minStock || daysLeft <= 30) return 'low'
-    if (item.maximum_stock && item.current_stock > item.maximum_stock * 0.8) return 'overstocked'
-    return 'adequate'
-  }
-
-  const calculateTrend = (item: InventoryItem): 'increasing' | 'decreasing' | 'stable' => {
-    const sales30 = item.sales_last_30_days || 0
-    const sales90 = item.sales_last_90_days || 0
-    const recent30DayAvg = sales30 / 30
-    const previous60DayAvg = (sales90 - sales30) / 60
-    
-    const changeRatio = previous60DayAvg === 0 ? 0 : (recent30DayAvg - previous60DayAvg) / previous60DayAvg
-    
-    if (changeRatio > 0.1) return 'increasing'
-    if (changeRatio < -0.1) return 'decreasing'
-    return 'stable'
-  }
-
-  const enhanceItemsWithCalculations = (rawItems: InventoryItem[]): InventoryItem[] => {
-    return rawItems.map(item => ({
-      ...item,
-      sales_velocity: calculateSalesVelocity(item),
-      days_until_stockout: calculateDaysUntilStockout(item),
-      stock_status_level: determineStockStatus(item),
-      trend: calculateTrend(item),
-      reorder_recommended: determineStockStatus(item) === 'critical' || 
-                          (determineStockStatus(item) === 'low' && calculateDaysUntilStockout(item) <= 14)
-    }))
-  }
+  // Removed duplicate calculation functions - now imported from inventory-calculations.ts
 
   const loadInventory = async () => {
     try {
-      // First get the total count
-      const { count } = await supabase
-        .from('inventory_items')
-        .select('*', { count: 'exact', head: true })
-
-      console.log(`Total inventory items in database: ${count}`)
-      setTotalItems(count || 0)
-
-      // Then fetch all items with a high limit to ensure we get everything
-      const { data, error } = await supabase
-        .from('inventory_items')
-        .select('*')
-        .order('product_name', { ascending: true })
-        .limit(5000) // Set high limit to ensure we get all items
-
-      if (error) throw error
+      // Use data access layer to fetch all items
+      const result = await getInventoryItems(
+        {}, // No filters for initial load
+        { limit: 5000 } // High limit to get all items
+      )
       
-      console.log(`Loaded ${data?.length || 0} items from database`)
-      
-      // Transform database fields to match frontend expectations
-      const transformedData = (data || []).map(item => ({
-        ...item,
-        current_stock: item.stock || 0,
-        minimum_stock: item.reorder_point || 0,
-        unit_price: item.cost || 0,
-        name: item.product_name || item.name || ''
-      }))
-      
-      const enhancedItems = enhanceItemsWithCalculations(transformedData)
-      setAllItems(enhancedItems) // Store all items
+      console.log(`Loaded ${result.items.length} items from database`)
+      setTotalItems(result.total)
+      setAllItems(result.items as InventoryItem[]) // Items are already enhanced by the data access layer
       
       // Set initial page items
       const startIndex = (currentPage - 1) * itemsPerPage
       const endIndex = startIndex + itemsPerPage
-      setItems(enhancedItems.slice(startIndex, endIndex))
+      setItems(result.items.slice(startIndex, endIndex) as InventoryItem[])
       
     } catch (error) {
       console.error('Error loading inventory:', error)
@@ -203,13 +268,8 @@ export default function InventoryPage() {
 
   const loadSummary = async () => {
     try {
-      const { data, error } = await supabase
-        .from('inventory_summary')
-        .select('*')
-        .single()
-
-      if (error) throw error
-      setSummary(data)
+      const summaryData = await getInventorySummary()
+      setSummary(summaryData)
     } catch (error) {
       console.error('Error loading summary:', error)
     }
@@ -222,14 +282,7 @@ export default function InventoryPage() {
   }
 
   const getStockStatus = (item: InventoryItem) => {
-    const status = item.stock_status_level || 'adequate'
-    const statusMap = {
-      critical: { text: 'Critical', color: 'red' },
-      low: { text: 'Low Stock', color: 'yellow' },
-      adequate: { text: 'In Stock', color: 'green' },
-      overstocked: { text: 'Overstocked', color: 'blue' }
-    }
-    return statusMap[status] || statusMap.adequate
+    return getStockStatusDisplay(item as ImportedInventoryItem)
   }
 
   // Enhanced sorting function
@@ -240,80 +293,6 @@ export default function InventoryPage() {
     }
     setSortConfig({ key, direction })
   }
-
-  // Enhanced filtering function
-  const getFilteredAndSortedItems = () => {
-    let filtered = allItems.filter(item => {
-      // Search filter
-      const matchesSearch = 
-        (item.product_name || item.name || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
-        item.sku.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        (item.vendor && item.vendor.toLowerCase().includes(searchTerm.toLowerCase()))
-
-      // Status filter
-      const statusLevel = item.stock_status_level || 'adequate'
-      const matchesStatus = 
-        filterConfig.status === 'all' ||
-        (filterConfig.status === 'out-of-stock' && item.current_stock === 0) ||
-        (filterConfig.status === 'critical' && statusLevel === 'critical') ||
-        (filterConfig.status === 'low-stock' && statusLevel === 'low') ||
-        (filterConfig.status === 'adequate' && statusLevel === 'adequate') ||
-        (filterConfig.status === 'overstocked' && statusLevel === 'overstocked')
-
-      // Vendor filter
-      const matchesVendor = !filterConfig.vendor || 
-        (item.vendor && item.vendor.toLowerCase().includes(filterConfig.vendor.toLowerCase()))
-
-      // Location filter
-      const matchesLocation = !filterConfig.location || 
-        (item.location && item.location.toLowerCase().includes(filterConfig.location.toLowerCase()))
-
-      // Price range filter
-      const price = item.unit_price || item.cost || 0
-      const matchesPrice = price >= filterConfig.priceRange.min && price <= filterConfig.priceRange.max
-
-      // Sales velocity filter
-      const velocity = item.sales_velocity || 0
-      const matchesVelocity = filterConfig.salesVelocity === 'all' ||
-        (filterConfig.salesVelocity === 'fast' && velocity > 1) ||
-        (filterConfig.salesVelocity === 'medium' && velocity > 0.1 && velocity <= 1) ||
-        (filterConfig.salesVelocity === 'slow' && velocity > 0 && velocity <= 0.1) ||
-        (filterConfig.salesVelocity === 'dead' && velocity === 0)
-
-      return matchesSearch && matchesStatus && matchesVendor && matchesLocation && matchesPrice && matchesVelocity
-    })
-
-    // Apply sorting
-    if (sortConfig.key) {
-      filtered.sort((a, b) => {
-        let aValue = a[sortConfig.key]
-        let bValue = b[sortConfig.key]
-
-        // Handle null/undefined values
-        if (aValue == null) aValue = 0
-        if (bValue == null) bValue = 0
-
-        // Convert to numbers for numeric columns
-        if (typeof aValue === 'number' && typeof bValue === 'number') {
-          return sortConfig.direction === 'asc' ? aValue - bValue : bValue - aValue
-        }
-
-        // String comparison
-        const aStr = String(aValue).toLowerCase()
-        const bStr = String(bValue).toLowerCase()
-        
-        if (sortConfig.direction === 'asc') {
-          return aStr < bStr ? -1 : aStr > bStr ? 1 : 0
-        } else {
-          return aStr > bStr ? -1 : aStr < bStr ? 1 : 0
-        }
-      })
-    }
-
-    return filtered
-  }
-
-  const filteredItems = getFilteredAndSortedItems()
 
   const startEditingStock = (item: InventoryItem) => {
     setEditingItem(item.id)
@@ -328,21 +307,14 @@ export default function InventoryPage() {
 
   const handleStockUpdate = async (itemId: string) => {
     try {
-      const { error } = await supabase
-        .from('inventory_items')
-        .update({ 
-          stock: editStock,
-          last_updated: new Date().toISOString()
-        })
-        .eq('id', itemId)
-
-      if (error) throw error
+      const updatedItem = await updateInventoryStock(itemId, editStock)
 
       // Update local state
       setItems(items.map(item =>
-        item.id === itemId
-          ? { ...item, current_stock: editStock, stock: editStock, last_updated: new Date().toISOString() }
-          : item
+        item.id === itemId ? (updatedItem as InventoryItem) : item
+      ))
+      setAllItems(allItems.map(item =>
+        item.id === itemId ? (updatedItem as InventoryItem) : item
       ))
       setEditingItem(null)
       loadSummary() // Refresh summary
@@ -353,21 +325,14 @@ export default function InventoryPage() {
 
   const handleCostUpdate = async (itemId: string) => {
     try {
-      const { error } = await supabase
-        .from('inventory_items')
-        .update({ 
-          cost: editCost,
-          last_updated: new Date().toISOString()
-        })
-        .eq('id', itemId)
-
-      if (error) throw error
+      const updatedItem = await updateInventoryCost(itemId, editCost)
 
       // Update local state
       setItems(items.map(item => 
-        item.id === itemId 
-          ? { ...item, unit_price: editCost, cost: editCost, last_updated: new Date().toISOString() }
-          : item
+        item.id === itemId ? (updatedItem as InventoryItem) : item
+      ))
+      setAllItems(allItems.map(item =>
+        item.id === itemId ? (updatedItem as InventoryItem) : item
       ))
       setEditingItem(null)
       setShowCostEdit(false)
@@ -388,11 +353,12 @@ export default function InventoryPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold">Inventory</h1>
+        <h1 className="text-2xl font-bold" data-testid="inventory-heading">Inventory</h1>
         <button
           onClick={handleRefresh}
           disabled={refreshing}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+          data-testid="refresh-button"
         >
           <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
           Refresh
@@ -456,18 +422,26 @@ export default function InventoryPage() {
                 placeholder="Search by name, SKU, or vendor..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                data-testid="search-input"
               />
+              {searchTerm !== debouncedSearchTerm && (
+                <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                  <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+                </div>
+              )}
             </div>
           </div>
 
           {/* View Mode Toggle */}
-          <div className="flex bg-gray-100 rounded-md p-1">
+          <div className="flex bg-gray-100 rounded-md p-1" data-testid="view-mode-toggle">
             <button
               onClick={() => setViewMode('table')}
               className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
                 viewMode === 'table' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:text-gray-900'
               }`}
+              data-testid="table-view-button"
+              aria-selected={viewMode === 'table'}
             >
               Table View
             </button>
@@ -476,6 +450,8 @@ export default function InventoryPage() {
               className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
                 viewMode === 'planning' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:text-gray-900'
               }`}
+              data-testid="planning-view-button"
+              aria-selected={viewMode === 'planning'}
             >
               Planning
             </button>
@@ -484,6 +460,8 @@ export default function InventoryPage() {
               className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
                 viewMode === 'analytics' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:text-gray-900'
               }`}
+              data-testid="analytics-view-button"
+              aria-selected={viewMode === 'analytics'}
             >
               Analytics
             </button>
@@ -539,19 +517,110 @@ export default function InventoryPage() {
             <option value="dead">Dead Stock (0/day)</option>
           </select>
 
+          <select
+            value={filterConfig.stockDays}
+            onChange={(e) => setFilterConfig({...filterConfig, stockDays: e.target.value as any})}
+            className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            aria-label="Filter by stock days"
+          >
+            <option value="all">All Stock Days</option>
+            <option value="under-30">Under 30 Days</option>
+            <option value="30-60">30-60 Days</option>
+            <option value="60-90">60-90 Days</option>
+            <option value="over-90">Over 90 Days</option>
+            <option value="over-180">Over 180 Days</option>
+          </select>
+
           <button
-            onClick={() => setFilterConfig({
-              status: 'all',
-              vendor: '',
-              location: '',
-              priceRange: { min: 0, max: 999999 },
-              salesVelocity: 'all',
-              stockDays: 'all'
-            })}
+            onClick={clearAllFilters}
             className="px-3 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md"
           >
             Clear Filters
           </button>
+
+          <button
+            onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+            className="px-3 py-2 text-sm text-blue-600 hover:text-blue-800 border border-blue-300 rounded-md"
+          >
+            {showAdvancedFilters ? 'Hide' : 'Show'} Advanced
+          </button>
+        </div>
+
+        {/* Advanced Filters Panel */}
+        {showAdvancedFilters && (
+          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
+            <div className="flex flex-wrap gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-gray-600">Price Range:</label>
+                <input
+                  type="number"
+                  placeholder="Min"
+                  value={filterConfig.priceRange.min}
+                  onChange={(e) => setFilterConfig({
+                    ...filterConfig, 
+                    priceRange: { ...filterConfig.priceRange, min: Number(e.target.value) || 0 }
+                  })}
+                  className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                />
+                <span className="text-gray-500">-</span>
+                <input
+                  type="number"
+                  placeholder="Max"
+                  value={filterConfig.priceRange.max === 999999 ? '' : filterConfig.priceRange.max}
+                  onChange={(e) => setFilterConfig({
+                    ...filterConfig, 
+                    priceRange: { ...filterConfig.priceRange, max: Number(e.target.value) || 999999 }
+                  })}
+                  className="w-20 px-2 py-1 border border-gray-300 rounded text-sm"
+                />
+              </div>
+
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={filterConfig.reorderNeeded}
+                  onChange={(e) => setFilterConfig({...filterConfig, reorderNeeded: e.target.checked})}
+                  className="rounded"
+                />
+                <span className="text-sm text-gray-600">Reorder Needed</span>
+              </label>
+
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={filterConfig.hasValue}
+                  onChange={(e) => setFilterConfig({...filterConfig, hasValue: e.target.checked})}
+                  className="rounded"
+                />
+                <span className="text-sm text-gray-600">Has Value (Price &gt; 0)</span>
+              </label>
+            </div>
+          </div>
+        )}
+
+        {/* Preset Filters */}
+        <div className="mt-4">
+          <h3 className="text-sm font-medium text-gray-700 mb-3">Quick Filters</h3>
+          <div className="flex flex-wrap gap-2">
+            {presetFilters.map((preset) => {
+              const IconComponent = preset.icon
+              const isActive = activePresetFilter === preset.id
+              return (
+                <button
+                  key={preset.id}
+                  onClick={() => applyPresetFilter(preset.id)}
+                  className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md border transition-colors ${
+                    isActive 
+                      ? `${preset.bgColor} ${preset.color} ${preset.borderColor} border-2` 
+                      : `bg-white text-gray-600 border-gray-300 hover:${preset.bgColor} hover:${preset.color}`
+                  }`}
+                >
+                  <IconComponent className="h-4 w-4" />
+                  {preset.label}
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
 
@@ -559,7 +628,7 @@ export default function InventoryPage() {
       {viewMode === 'table' && (
         <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full" data-testid="inventory-table">
               <thead className="bg-gray-50">
                 <tr>
                   {[
@@ -829,7 +898,7 @@ export default function InventoryPage() {
               {totalPages > 1 && (
                 <div className="flex items-center space-x-2">
                   <button
-                    onClick={() => handlePageChange(currentPage - 1)}
+                    onClick={() => goToPage(currentPage - 1)}
                     disabled={currentPage === 1}
                     className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed border border-gray-300 rounded-md hover:bg-gray-50"
                   >
@@ -852,7 +921,7 @@ export default function InventoryPage() {
                     return (
                       <button
                         key={pageNum}
-                        onClick={() => handlePageChange(pageNum)}
+                        onClick={() => goToPage(pageNum)}
                         className={`px-3 py-2 text-sm border rounded-md ${
                           currentPage === pageNum
                             ? 'bg-blue-600 text-white border-blue-600'
@@ -865,7 +934,7 @@ export default function InventoryPage() {
                   })}
                   
                   <button
-                    onClick={() => handlePageChange(currentPage + 1)}
+                    onClick={() => goToPage(currentPage + 1)}
                     disabled={currentPage === totalPages}
                     className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed border border-gray-300 rounded-md hover:bg-gray-50"
                   >

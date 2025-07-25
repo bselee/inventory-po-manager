@@ -1,11 +1,12 @@
-import { NextResponse } from 'next/server'
 import { supabase } from '@/app/lib/supabase'
+import { createApiHandler, apiResponse, apiError } from '@/app/lib/api-handler'
+import { PERMISSIONS } from '@/app/lib/auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-export async function GET() {
+export const GET = createApiHandler(async () => {
   try {
     // Get inventory items
     const { data: items, error: itemsError } = await supabase
@@ -19,7 +20,7 @@ export async function GET() {
       .select('*')
       .single()
     
-    return NextResponse.json({
+    return apiResponse({
       inventory: {
         count: items?.length || 0,
         items: items?.map(item => ({
@@ -39,9 +40,9 @@ export async function GET() {
       }
     })
   } catch (error) {
-    return NextResponse.json({
-      error: 'Failed to get inventory data',
-      message: error instanceof Error ? error.message : 'Unknown error'
-    }, { status: 500 })
+    return apiError(error)
   }
-}
+}, {
+  requireAuth: true,
+  requiredPermissions: [PERMISSIONS.ADMIN_ACCESS]
+})

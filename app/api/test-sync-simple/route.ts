@@ -1,16 +1,17 @@
-import { NextResponse } from 'next/server'
 import { FinaleApiService, getFinaleConfig } from '@/app/lib/finale-api'
+import { createApiHandler, apiResponse, apiError } from '@/app/lib/api-handler'
+import { PERMISSIONS } from '@/app/lib/auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-export async function GET() {
+export const GET = createApiHandler(async () => {
   try {
     // Step 1: Get config
     const config = await getFinaleConfig()
     if (!config) {
-      return NextResponse.json({ error: 'No config', step: 1 })
+      return apiResponse({ error: 'No config', step: 1 }, { status: 400 })
     }
     
     // Step 2: Create service
@@ -28,11 +29,11 @@ export async function GET() {
     })
     
     if (!response.ok) {
-      return NextResponse.json({ 
+      return apiResponse({ 
         error: 'Connection failed', 
         step: 3,
         status: response.status 
-      })
+      }, { status: 400 })
     }
     
     // Step 4: Try to get products without year filter
@@ -43,7 +44,7 @@ export async function GET() {
       // Then try with current year
       const currentYearProducts = await finaleApi.getInventoryData(new Date().getFullYear())
       
-      return NextResponse.json({
+      return apiResponse({
         success: true,
         allProductsCount: allProducts.length,
         currentYearCount: currentYearProducts.length,
@@ -52,16 +53,16 @@ export async function GET() {
         oldestYear: allProducts.length > 0 ? new Date(allProducts[0].lastModifiedDate || '').getFullYear() : null
       })
     } catch (err) {
-      return NextResponse.json({
+      return apiResponse({
         error: 'Failed to get products',
         step: 4,
         details: err instanceof Error ? err.message : 'Unknown error'
-      })
+      }, { status: 400 })
     }
   } catch (error) {
-    return NextResponse.json({
-      error: 'Unexpected error',
-      message: error instanceof Error ? error.message : 'Unknown'
-    })
+    return apiError(error)
   }
-}
+}, {
+  requireAuth: true,
+  requiredPermissions: [PERMISSIONS.ADMIN_ACCESS]
+})

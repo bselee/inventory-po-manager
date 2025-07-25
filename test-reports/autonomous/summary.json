@@ -1,0 +1,13 @@
+{
+  "summary": {
+    "totalRuns": 1,
+    "successfulRuns": 0,
+    "failedRuns": 1,
+    "repairedTests": 0,
+    "successRate": "0.0%",
+    "runtime": "0.1 minutes",
+    "averageRunTime": "0.1 minutes"
+  },
+  "failures": {},
+  "timestamp": "2025-07-25T19:15:50.160Z"
+}

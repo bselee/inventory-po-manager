@@ -1,15 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server'
+import { createApiHandler, apiResponse, apiError } from '@/app/lib/api-handler'
+import { PERMISSIONS } from '@/app/lib/auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-export async function POST(request: NextRequest) {
+export const POST = createApiHandler(async ({ body }) => {
   try {
-    const settings = await request.json()
+    const settings = body
     
     if (!settings.sendgrid_api_key || !settings.from_email) {
-      return NextResponse.json({ 
+      return apiResponse({ 
         success: false, 
         error: 'Missing SendGrid credentials' 
       }, { status: 400 })
@@ -29,21 +30,21 @@ export async function POST(request: NextRequest) {
 
     if (response.ok) {
       const data = await response.json()
-      return NextResponse.json({ 
+      return apiResponse({ 
         success: true, 
         message: `SendGrid connected with ${data.scopes?.length || 0} permission scopes` 
       })
     } else {
       const error = await response.json()
-      return NextResponse.json({ 
+      return apiResponse({ 
         success: false, 
         error: `SendGrid API error: ${error.errors?.[0]?.message || 'Invalid API key'}` 
-      })
+      }, { status: 400 })
     }
   } catch (error) {
-    return NextResponse.json({ 
-      success: false, 
-      error: error instanceof Error ? error.message : 'Failed to test SendGrid connection' 
-    }, { status: 500 })
+    return apiError(error)
   }
-}
+}, {
+  requireAuth: true,
+  requiredPermissions: [PERMISSIONS.ADMIN_ACCESS]
+})

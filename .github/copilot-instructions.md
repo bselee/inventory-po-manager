@@ -11,6 +11,50 @@ This is a Next.js application for managing inventory and purchase orders with:
 - **Testing**: Jest (unit/integration), Playwright (E2E)
 - **Deployment**: Vercel
 - **External Integration**: Finale Inventory API
+- **MCP Servers**: Serena (semantic code analysis) and Context7 (documentation)
+
+## Enhanced MCP Integration
+
+This workspace includes powerful MCP (Model Context Protocol) servers:
+
+### Serena MCP Server
+- **Purpose**: Advanced semantic code analysis and intelligent editing
+- **Capabilities**: 
+  - Semantic code understanding and analysis
+  - Intelligent code refactoring and transformations
+  - Complex codebase navigation and insights
+  - Pattern recognition and code optimization suggestions
+- **Usage**: Automatically available through VS Code MCP integration
+- **Command**: `uvx --from git+https://github.com/oraios/serena serena-mcp-server`
+
+### Context7 MCP Server  
+- **Purpose**: Up-to-date documentation and code examples for libraries
+- **Capabilities**:
+  - Current documentation for popular libraries and frameworks
+  - Code examples and best practices
+  - Integration patterns and API usage
+- **Usage**: Add "use context7" to requests for enhanced documentation assistance
+- **Examples**:
+  - "Create a Next.js middleware that checks for JWT in cookies. use context7"
+  - "Configure a Cloudflare Worker to cache JSON responses. use context7"
+  - "Implement Supabase real-time subscriptions with TypeScript. use context7"
+
+### MCP Configuration
+Located in `.vscode/settings.json`:
+```json
+{
+  "mcp.servers": {
+    "serena": {
+      "command": "uvx",
+      "args": ["--from", "git+https://github.com/oraios/serena", "serena-mcp-server", "--project", ".", "--transport", "stdio"]
+    },
+    "context7": {
+      "command": "node", 
+      "args": ["./context7/dist/index.js", "--transport", "stdio"]
+    }
+  }
+}
+```
 
 ## Code Standards & Patterns
 

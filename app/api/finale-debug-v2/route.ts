@@ -1,15 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { createApiHandler, apiResponse } from '@/app/lib/api-handler'
+import { PERMISSIONS } from '@/app/lib/auth'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-export async function POST(request: NextRequest) {
+export const POST = createApiHandler(async ({ body }) => {
   const startTime = Date.now()
   const results = []
   
   try {
-    const settings = await request.json()
+    const settings = body
     
     console.log('=== FINALE DEBUG V2 ===')
     console.log('Received settings:', {
@@ -248,7 +250,7 @@ export async function POST(request: NextRequest) {
       console.log(`${r.success ? '✓' : '✗'} ${r.test}:`, r.message || r.error)
     })
     
-    return NextResponse.json({
+    return apiResponse({
       success: successCount > 0,
       summary: {
         testsRun: totalTests,
@@ -267,10 +269,13 @@ export async function POST(request: NextRequest) {
     
   } catch (error) {
     console.error('Debug endpoint error:', error)
-    return NextResponse.json({
+    return apiResponse({
       success: false,
       error: error.message,
       results
     }, { status: 500 })
   }
-}
+}, {
+  requireAuth: true,
+  requiredPermissions: [PERMISSIONS.ADMIN_ACCESS]
+})

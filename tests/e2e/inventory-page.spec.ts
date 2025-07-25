@@ -8,10 +8,10 @@ test.describe('Inventory Page Tests', () => {
 
   test('inventory page loads successfully', async ({ page }) => {
     // Check for main heading
-    await expect(page.locator('h1')).toContainText(/inventory/i);
+    await expect(page.locator('[data-testid="inventory-heading"]')).toContainText(/inventory/i);
     
     // Check for refresh button
-    await expect(page.locator('button:has-text("Refresh")')).toBeVisible();
+    await expect(page.locator('[data-testid="refresh-button"]')).toBeVisible();
     
     // Wait for data to load (either items or loading state)
     await page.waitForSelector('[data-testid="inventory-table"], .animate-spin', { timeout: 10000 });
@@ -19,7 +19,7 @@ test.describe('Inventory Page Tests', () => {
 
   test('search functionality works', async ({ page }) => {
     // Wait for any existing search input
-    const searchInput = page.locator('input[placeholder*="search" i], input[type="search"]').first();
+    const searchInput = page.locator('[data-testid="search-input"]');
     
     if (await searchInput.isVisible()) {
       await searchInput.fill('test search');
@@ -34,7 +34,7 @@ test.describe('Inventory Page Tests', () => {
 
   test('tab navigation works', async ({ page }) => {
     // Look for tab buttons
-    const tabs = page.locator('button').filter({ hasText: /table|planning|analytics/i });
+    const tabs = page.locator('[data-testid="view-mode-toggle"] button');
     const tabCount = await tabs.count();
     
     if (tabCount > 0) {
@@ -46,12 +46,7 @@ test.describe('Inventory Page Tests', () => {
         await page.waitForTimeout(300);
         
         // Tab should be active/selected
-        const isActive = await tab.evaluate(el => 
-          el.classList.contains('active') || 
-          el.getAttribute('aria-selected') === 'true' ||
-          el.classList.contains('bg-blue-600') ||
-          el.classList.contains('border-blue-500')
-        );
+        const isActive = await tab.getAttribute('aria-selected') === 'true';
         
         expect(isActive).toBeTruthy();
       }
@@ -59,7 +54,7 @@ test.describe('Inventory Page Tests', () => {
   });
 
   test('refresh button works', async ({ page }) => {
-    const refreshButton = page.locator('button:has-text("Refresh")');
+    const refreshButton = page.locator('[data-testid="refresh-button"]');
     await expect(refreshButton).toBeVisible();
     
     // Click refresh
