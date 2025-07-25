@@ -65,7 +65,8 @@
       "Bash(npm test:*)",
       "Bash(timeout:*)",
       "Bash(git rm:*)",
-      "Bash(git pull:*)"
+      "Bash(git pull:*)",
+      "Bash(npm audit:*)"
     ],
     "deny": []
   }
