@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { jwtVerify } from 'jose'
 
 const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'development-secret-change-in-production')
-const PUBLIC_PATHS = ['/api/auth/login', '/api/health', '/health']
+const PUBLIC_PATHS = ['/api/auth/login', '/api/health', '/health', '/inventory', '/settings', '/']
+const AUTH_ENABLED = process.env.AUTH_ENABLED === 'true' // Only enable auth if explicitly set
 
 /**
  * Apply security headers to response
@@ -43,6 +44,11 @@ export async function middleware(request: NextRequest) {
   
   // Apply security headers
   applySecurityHeaders(response)
+
+  // Skip authentication if not enabled
+  if (!AUTH_ENABLED) {
+    return response
+  }
 
   // Allow public paths
   if (PUBLIC_PATHS.includes(path)) {
