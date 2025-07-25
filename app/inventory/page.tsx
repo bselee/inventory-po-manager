@@ -353,14 +353,14 @@ export default function InventoryPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold" data-testid="inventory-heading">Inventory</h1>
+        <h1 className="text-2xl font-bold" data-testid="inventory-heading" role="heading" aria-level="1">Inventory</h1>
         <button
           onClick={handleRefresh}
           disabled={refreshing}
           className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
           data-testid="refresh-button"
         >
-          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
           Refresh
         </button>
       </div>
@@ -411,12 +411,12 @@ export default function InventoryPage() {
       )}
 
       {/* Enhanced Filters & View Controls */}
-      <div className="bg-white p-4 rounded-lg shadow mb-6">
+      <div className="bg-white p-4 rounded-lg shadow mb-6" data-testid="filter-panel">
         <div className="flex flex-col lg:flex-row gap-4">
           {/* Search */}
           <div className="flex-1">
             <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" aria-hidden="true" />
               <input
                 type="text"
                 placeholder="Search by name, SKU, or vendor..."
@@ -471,7 +471,7 @@ export default function InventoryPage() {
         {/* Advanced Filters Row */}
         <div className="flex flex-wrap gap-4 mt-4">
           <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-gray-600" />
+            <Filter className="h-4 w-4 text-gray-600" aria-hidden="true" />
             <select
               value={filterConfig.status}
               onChange={(e) => setFilterConfig({...filterConfig, status: e.target.value as any})}

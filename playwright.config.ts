@@ -13,6 +13,10 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
+  /* Global timeout - increase for CI environments */
+  timeout: process.env.CI ? 60000 : 30000,
+  /* Global test timeout */
+  globalTimeout: process.env.CI ? 15 * 60 * 1000 : 10 * 60 * 1000,
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [
     ['html'],
@@ -32,6 +36,17 @@ export default defineConfig({
     
     /* Video recording */
     video: 'retain-on-failure',
+    
+    /* Timeout for each action */
+    actionTimeout: process.env.CI ? 15000 : 10000,
+    
+    /* Navigation timeout */
+    navigationTimeout: process.env.CI ? 30000 : 20000,
+  },
+  
+  /* Expect timeout configuration */
+  expect: {
+    timeout: process.env.CI ? 10000 : 5000,
   },
 
   /* Configure projects for major browsers */
