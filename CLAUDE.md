@@ -137,36 +137,13 @@ export const POST = createApiHandler(async ({ body, params, query }) => {
 ```
 
 ### Database Operations
-
-#### Direct Supabase Access
-Use the Supabase client directly:
+Always use the Supabase client directly:
 ```typescript
 import { supabase } from '@/app/lib/supabase'
 
 const { data, error } = await supabase
   .from('table_name')
   .select('*')
-```
-
-#### Data Access Layer (Preferred)
-Use the centralized data access layer for common operations:
-```typescript
-import { 
-  getInventoryItems, 
-  updateInventoryItem,
-  getSettings,
-  updateSettings 
-} from '@/app/lib/data-access'
-
-// Inventory operations with built-in error handling
-const items = await getInventoryItems({ 
-  status: 'critical',
-  vendor: 'BuildASoil' 
-})
-
-// Settings operations (always uses id=1)
-const settings = await getSettings()
-await updateSettings({ sync_enabled: true })
 ```
 
 ### Environment Variables

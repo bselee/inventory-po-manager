@@ -6,12 +6,18 @@
 import { supabase } from '@/app/lib/supabase'
 
 export interface Settings {
-  id: number
+  id: string // Changed to string to handle UUID
   finale_api_key: string | null
   finale_api_secret: string | null
   finale_account_path: string | null
+  finale_username?: string | null
+  finale_password?: string | null
+  google_sheet_id?: string | null
+  google_sheets_api_key?: string | null
+  from_email?: string | null
   last_sync_date: string | null
   sync_enabled: boolean
+  sync_frequency_minutes?: number
   alert_email: string | null
   sendgrid_api_key: string | null
   email_alerts_enabled: boolean
@@ -22,13 +28,13 @@ export interface Settings {
 }
 
 /**
- * Get application settings (single row with id=1)
+ * Get application settings (single row)
  */
 export async function getSettings(): Promise<Settings | null> {
   const { data, error } = await supabase
     .from('settings')
     .select('*')
-    .eq('id', 1)
+    .limit(1)
     .maybeSingle()
 
   if (error) {
@@ -42,11 +48,19 @@ export async function getSettings(): Promise<Settings | null> {
  * Create or update settings (upsert)
  */
 export async function upsertSettings(settings: Partial<Settings>): Promise<Settings> {
+  // First, try to get existing settings to get the UUID
+  const existingSettings = await getSettings()
+  
   const updateData = {
     ...settings,
-    id: 1, // Always use id=1 for settings
     updated_at: new Date().toISOString()
   }
+  
+  // If settings exist, use the existing ID
+  if (existingSettings) {
+    updateData.id = existingSettings.id
+  }
+  // Otherwise, let the database generate a new UUID
 
   const { data, error } = await supabase
     .from('settings')
@@ -65,13 +79,21 @@ export async function upsertSettings(settings: Partial<Settings>): Promise<Setti
  * Update specific setting fields
  */
 export async function updateSettings(updates: Partial<Settings>): Promise<Settings> {
+  // First get existing settings to get the ID
+  const existing = await getSettings()
+  
+  if (!existing) {
+    // No settings exist, create them
+    return upsertSettings(updates)
+  }
+  
   const { data, error } = await supabase
     .from('settings')
     .update({
       ...updates,
       updated_at: new Date().toISOString()
     })
-    .eq('id', 1)
+    .eq('id', existing.id)
     .select()
     .single()
 

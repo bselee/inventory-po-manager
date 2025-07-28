@@ -13,13 +13,26 @@ export const maxDuration = 60
 
 // Validation schema for settings update
 const updateSettingsSchema = z.object({
+  // Finale API fields
   finale_api_key: z.string().optional().nullable(),
   finale_api_secret: z.string().optional().nullable(),
   finale_account_path: z.string().optional().nullable(),
-  sync_enabled: z.boolean().optional(),
+  finale_username: z.string().optional().nullable(),
+  finale_password: z.string().optional().nullable(),
+  
+  // Google Sheets fields
+  google_sheet_id: z.string().optional().nullable(),
+  google_sheets_api_key: z.string().optional().nullable(),
+  
+  // Email fields
   alert_email: z.string().email().optional().nullable(),
+  from_email: z.string().email().optional().nullable(),
   sendgrid_api_key: z.string().optional().nullable(),
   email_alerts_enabled: z.boolean().optional(),
+  
+  // Sync settings
+  sync_enabled: z.boolean().optional(),
+  sync_frequency_minutes: z.number().min(1).optional(),
   low_stock_threshold: z.number().min(0).optional(),
   auto_generate_po: z.boolean().optional()
 })

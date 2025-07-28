@@ -95,21 +95,22 @@ export default function SettingsPage() {
 
   const loadSettings = async () => {
     try {
-      const { data, error } = await supabase
+      // First try to load from database via Supabase (for now, keep this for backward compatibility)
+      const { data: dbSettings, error } = await supabase
         .from('settings')
         .select('*')
         .limit(1)
         .single()
 
       if (error && error.code !== 'PGRST116') {
-        throw error
+        console.error('Database load error:', error)
       }
 
-      if (data) {
-        setSettings(data)
+      if (dbSettings) {
+        setSettings(dbSettings)
         // Set the Google Sheet URL if we have an ID
-        if (data.google_sheet_id) {
-          setGoogleSheetUrl(data.google_sheet_id)
+        if (dbSettings.google_sheet_id) {
+          setGoogleSheetUrl(dbSettings.google_sheet_id)
         }
       } else {
         // No settings found, try to load from env and auto-save
@@ -133,33 +134,28 @@ export default function SettingsPage() {
           if (envData.envSettings.finale_api_key) {
             console.log('Auto-saving environment credentials...')
             
-            try {
-              // First try to get existing settings
-              const { data: existingSettings } = await supabase
-                .from('settings')
-                .select('*')
-                .limit(1)
-                .single()
-              
-              const upsertPayload = existingSettings 
-                ? { id: existingSettings.id, ...initialSettings }
-                : { ...initialSettings }
-              
-              const { data, error } = await supabase
-                .from('settings')
-                .upsert(upsertPayload)
-                .select()
-                .single()
-              
-              if (!error && data) {
-                setSettings(data)
-                setMessage({ 
-                  type: 'success', 
-                  text: 'Environment credentials loaded and saved automatically!' 
-                })
+            // Use the API route to save settings
+            const saveResponse = await fetch('/api/settings', {
+              method: 'PUT',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(initialSettings)
+            })
+            
+            if (saveResponse.ok) {
+              const result = await saveResponse.json()
+              if (result.data?.settings) {
+                setSettings(prev => ({
+                  ...prev,
+                  ...result.data.settings,
+                  id: prev.id
+                }))
               }
-            } catch (autoSaveError) {
-              console.error('Auto-save failed:', autoSaveError)
+              setMessage({ 
+                type: 'success', 
+                text: 'Environment credentials loaded and saved automatically!' 
+              })
+            } else {
+              console.error('Auto-save failed')
               setMessage({ 
                 type: 'success', 
                 text: 'Loaded credentials from environment. Click Save to store them.' 
@@ -181,42 +177,51 @@ export default function SettingsPage() {
     setMessage(null)
 
     try {
-      console.log('Saving settings:', settings)
+      console.log('Saving settings via API:', settings)
       
-      // Use upsert to handle both insert and update
-      const upsertData: any = {
-        finale_api_key: settings.finale_api_key || '',
-        finale_api_secret: settings.finale_api_secret || '',
-        finale_account_path: settings.finale_account_path || '',
-        finale_username: settings.finale_username || '',
-        finale_password: settings.finale_password || '',
-        google_sheet_id: settings.google_sheet_id || '',
-        google_sheets_api_key: settings.google_sheets_api_key || '',
-        sendgrid_api_key: settings.sendgrid_api_key || '',
-        from_email: settings.from_email || '',
+      // Prepare the settings data for the API
+      const settingsData = {
+        finale_api_key: settings.finale_api_key || null,
+        finale_api_secret: settings.finale_api_secret || null,
+        finale_account_path: settings.finale_account_path || null,
+        finale_username: settings.finale_username || null,
+        finale_password: settings.finale_password || null,
+        google_sheet_id: settings.google_sheet_id || null,
+        google_sheets_api_key: settings.google_sheets_api_key || null,
+        sendgrid_api_key: settings.sendgrid_api_key || null,
+        from_email: settings.from_email || null,
+        alert_email: settings.from_email || null, // Using from_email as alert_email
         low_stock_threshold: settings.low_stock_threshold || 10,
         sync_frequency_minutes: settings.sync_frequency_minutes || 60,
-        sync_enabled: settings.sync_enabled !== false
+        sync_enabled: settings.sync_enabled !== false,
+        email_alerts_enabled: !!settings.sendgrid_api_key,
+        auto_generate_po: false // Default value, can be made configurable later
       }
       
-      // Add id if it exists
-      if (settings.id) {
-        upsertData.id = settings.id
+      // Use the API route instead of direct Supabase access
+      const response = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settingsData)
+      })
+
+      const result = await response.json()
+
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to save settings')
+      }
+
+      console.log('Settings saved successfully via API:', result)
+      
+      // Update local state with the returned settings
+      if (result.data?.settings) {
+        setSettings(prev => ({
+          ...prev,
+          ...result.data.settings,
+          id: prev.id // Preserve the ID
+        }))
       }
       
-      const { data, error } = await supabase
-        .from('settings')
-        .upsert(upsertData)
-        .select()
-        .single()
-
-      if (error) {
-        console.error('Supabase error:', error)
-        throw error
-      }
-
-      console.log('Settings saved successfully:', data)
-      setSettings(data)
       setMessage({ type: 'success', text: 'Settings saved successfully!' })
       
       // Refresh sync status after saving settings
@@ -381,7 +386,32 @@ export default function SettingsPage() {
   return (
     <div className="max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">Settings</h1>
-      
+
+      {/* Error/Success Message for Playwright */}
+      {message && (
+        <div
+          data-testid={message.type === 'error' ? 'error-message' : 'success-message'}
+          className={`mb-6 p-4 rounded-md flex items-start gap-3 ${
+            message.type === 'success' ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+          }`}
+        >
+          {message.type === 'success' ? (
+            <CheckCircle className="h-5 w-5 text-green-600 mt-0.5 flex-shrink-0" />
+          ) : (
+            <AlertCircle className="h-5 w-5 text-red-600 mt-0.5 flex-shrink-0" />
+          )}
+          <div className={message.type === 'success' ? 'text-green-800' : 'text-red-800'}>
+            <p className="font-medium">{message.text}</p>
+            {message.type === 'error' && message.text.includes('fetch failed') && (
+              <p className="text-sm mt-1">
+                This usually means the credentials are incorrect or the account path is wrong. 
+                Please double-check your API settings in Finale.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
       {/* Real-time Sync Status */}
       {syncStatus && (
         <div className="bg-white p-6 rounded-lg shadow mb-6">
@@ -875,6 +905,7 @@ export default function SettingsPage() {
             </label>
             <input
               id="low_stock_threshold"
+              data-testid="setting-input"
               type="number"
               value={settings.low_stock_threshold}
               onChange={(e) => handleChange('low_stock_threshold', parseInt(e.target.value) || 10)}
@@ -891,6 +922,7 @@ export default function SettingsPage() {
         {/* Save Button */}
         <div className="flex justify-end">
           <button
+            data-testid="save-settings"
             onClick={saveSettings}
             disabled={saving}
             className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed"
