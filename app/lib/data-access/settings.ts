@@ -15,25 +15,32 @@ export interface Settings {
   google_sheet_id?: string | null
   google_sheets_api_key?: string | null
   from_email?: string | null
-  last_sync_date: string | null
+  last_sync_date?: string | null
+  last_sync_time?: string | null
   sync_enabled: boolean
   sync_frequency_minutes?: number
   alert_email: string | null
   sendgrid_api_key: string | null
-  email_alerts_enabled: boolean
+  sendgrid_from_email?: string | null
   low_stock_threshold: number
-  auto_generate_po: boolean
+  sync_inventory?: boolean
+  sync_vendors?: boolean
+  sync_purchase_orders?: boolean
+  sync_schedule?: string
+  sync_time?: string
   created_at: string
   updated_at: string
 }
 
 /**
  * Get application settings (single row)
+ * Always gets the first row ordered by created_at to ensure consistency
  */
 export async function getSettings(): Promise<Settings | null> {
   const { data, error } = await supabase
     .from('settings')
     .select('*')
+    .order('created_at', { ascending: true })
     .limit(1)
     .maybeSingle()
 
@@ -46,6 +53,7 @@ export async function getSettings(): Promise<Settings | null> {
 
 /**
  * Create or update settings (upsert)
+ * Ensures only one settings row exists
  */
 export async function upsertSettings(settings: Partial<Settings>): Promise<Settings> {
   // First, try to get existing settings to get the UUID
@@ -56,23 +64,34 @@ export async function upsertSettings(settings: Partial<Settings>): Promise<Setti
     updated_at: new Date().toISOString()
   }
   
-  // If settings exist, use the existing ID
+  // If settings exist, use the existing ID and update
   if (existingSettings) {
-    updateData.id = existingSettings.id
+    const { data, error } = await supabase
+      .from('settings')
+      .update(updateData)
+      .eq('id', existingSettings.id)
+      .select()
+      .single()
+
+    if (error) {
+      throw new Error(`Failed to update settings: ${error.message}`)
+    }
+
+    return data
+  } else {
+    // No settings exist, create new row
+    const { data, error } = await supabase
+      .from('settings')
+      .insert(updateData)
+      .select()
+      .single()
+
+    if (error) {
+      throw new Error(`Failed to create settings: ${error.message}`)
+    }
+
+    return data
   }
-  // Otherwise, let the database generate a new UUID
-
-  const { data, error } = await supabase
-    .from('settings')
-    .upsert(updateData)
-    .select()
-    .single()
-
-  if (error) {
-    throw new Error(`Failed to update settings: ${error.message}`)
-  }
-
-  return data
 }
 
 /**
@@ -134,16 +153,17 @@ export async function getEmailConfig() {
   
   const sendgridApiKey = process.env.SENDGRID_API_KEY || settings?.sendgrid_api_key
   const alertEmail = settings?.alert_email
-  const emailAlertsEnabled = settings?.email_alerts_enabled ?? false
+  const fromEmail = settings?.sendgrid_from_email || settings?.from_email
 
-  if (!sendgridApiKey || !alertEmail || !emailAlertsEnabled) {
+  if (!sendgridApiKey || !alertEmail) {
     return null
   }
 
   return {
     sendgridApiKey,
     alertEmail,
-    emailAlertsEnabled
+    fromEmail,
+    emailAlertsEnabled: true
   }
 }
 
@@ -152,7 +172,7 @@ export async function getEmailConfig() {
  */
 export async function updateLastSyncDate(date: Date = new Date()): Promise<void> {
   await updateSettings({
-    last_sync_date: date.toISOString()
+    last_sync_time: date.toISOString()
   })
 }
 

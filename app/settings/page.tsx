@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { supabase } from '@/app/lib/supabase'
+import { api } from '@/app/lib/client-fetch'
 import { Save, TestTube, Check, X, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import FinaleSyncManager from '@/app/components/FinaleSyncManager'
 import SalesDataUploader from '@/app/components/SalesDataUploader'
@@ -47,8 +48,16 @@ export default function SettingsPage() {
 
   // Load settings on mount
   useEffect(() => {
-    loadSettings()
-    loadSyncStatus()
+    // Ensure we have a CSRF token before making any requests
+    const initializePage = async () => {
+      // Get CSRF token first
+      await api.get('/api/auth/csrf')
+      // Then load settings
+      await loadSettings()
+      await loadSyncStatus()
+    }
+    
+    initializePage()
     
     // Set up auto-refresh for sync status
     if (autoRefresh) {
@@ -60,9 +69,8 @@ export default function SettingsPage() {
   // Load sync status
   const loadSyncStatus = async () => {
     try {
-      const response = await fetch('/api/sync-status-monitor')
-      if (response.ok) {
-        const data = await response.json()
+      const { data, error } = await api.get('/api/sync-status-monitor')
+      if (!error && data) {
         setSyncStatus(data)
       }
     } catch (error) {
@@ -75,8 +83,7 @@ export default function SettingsPage() {
     try {
       setMessage({ type: 'success', text: 'Checking for stuck sync operations...' })
       
-      const response = await fetch('/api/sync-status-monitor', { method: 'POST' })
-      const result = await response.json()
+      const { data: result, error } = await api.post('/api/sync-status-monitor')
       
       if (result.success) {
         setMessage({ 
@@ -114,8 +121,11 @@ export default function SettingsPage() {
         }
       } else {
         // No settings found, try to load from env and auto-save
-        const envResponse = await fetch('/api/load-env-settings')
-        const envData = await envResponse.json()
+        const { data: envData, error: envError } = await api.get('/api/load-env-settings')
+        if (envError) {
+          console.error('Failed to load env settings:', envError)
+          return
+        }
         
         if (!envData.hasSettings && envData.envSettings) {
           // Use env settings as defaults
@@ -134,19 +144,14 @@ export default function SettingsPage() {
           if (envData.envSettings.finale_api_key) {
             console.log('Auto-saving environment credentials...')
             
-            // Use the API route to save settings
-            const saveResponse = await fetch('/api/settings', {
-              method: 'PUT',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(initialSettings)
-            })
+            // Use the API route with CSRF protection to save settings
+            const { data: saveResult, error: saveError } = await api.put('/api/settings', initialSettings)
             
-            if (saveResponse.ok) {
-              const result = await saveResponse.json()
-              if (result.data?.settings) {
+            if (!saveError && saveResult) {
+              if (saveResult?.settings) {
                 setSettings(prev => ({
                   ...prev,
-                  ...result.data.settings,
+                  ...saveResult.settings,
                   id: prev.id
                 }))
               }
@@ -198,26 +203,20 @@ export default function SettingsPage() {
         auto_generate_po: false // Default value, can be made configurable later
       }
       
-      // Use the API route instead of direct Supabase access
-      const response = await fetch('/api/settings', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settingsData)
-      })
+      // Use the API route with CSRF protection
+      const { data: result, error: apiError } = await api.put('/api/settings', settingsData)
 
-      const result = await response.json()
-
-      if (!response.ok) {
-        throw new Error(result.error || 'Failed to save settings')
+      if (apiError) {
+        throw new Error(apiError || 'Failed to save settings')
       }
 
       console.log('Settings saved successfully via API:', result)
       
       // Update local state with the returned settings
-      if (result.data?.settings) {
+      if (result?.settings) {
         setSettings(prev => ({
           ...prev,
-          ...result.data.settings,
+          ...result.settings,
           id: prev.id // Preserve the ID
         }))
       }
@@ -254,23 +253,17 @@ export default function SettingsPage() {
         'sendgrid': '/api/test-sendgrid'
       }
 
-      const response = await fetch(endpointMap[service] || `/api/test-connection/${service}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(settings)
-      })
+      const { data, error } = await api.post(
+        endpointMap[service] || `/api/test-connection/${service}`,
+        settings
+      )
 
-      // Handle non-JSON responses
-      const contentType = response.headers.get('content-type')
-      let result
-      
-      if (contentType && contentType.includes('application/json')) {
-        result = await response.json()
-      } else {
-        const text = await response.text()
+      // Handle the result
+      let result = data
+      if (error) {
         result = {
           success: false,
-          error: `Server returned non-JSON response (${response.status}): ${text.substring(0, 200)}...`
+          error: error
         }
       }
 
@@ -342,13 +335,11 @@ export default function SettingsPage() {
     setMessage({ type: 'success', text: 'Starting manual sync...' })
 
     try {
-      const response = await fetch('/api/sync/manual', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ force: true })
-      })
-
-      const result = await response.json()
+      const { data: result, error } = await api.post('/api/sync/manual', { force: true })
+      
+      if (error) {
+        throw new Error(error)
+      }
 
       if (result.success) {
         setMessage({ 
@@ -567,9 +558,8 @@ export default function SettingsPage() {
           <button
             onClick={async () => {
               try {
-                const response = await fetch('/api/fix-settings', { method: 'POST' })
-                const data = await response.json()
-                if (data.success) {
+                const { data, error } = await api.post('/api/fix-settings')
+                if (!error && data?.success) {
                   setMessage({ type: 'success', text: 'Settings fixed! Please reload the page.' })
                   setTimeout(() => window.location.reload(), 2000)
                 } else {

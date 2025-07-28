@@ -28,13 +28,17 @@ const updateSettingsSchema = z.object({
   alert_email: z.string().email().optional().nullable(),
   from_email: z.string().email().optional().nullable(),
   sendgrid_api_key: z.string().optional().nullable(),
-  email_alerts_enabled: z.boolean().optional(),
+  sendgrid_from_email: z.string().email().optional().nullable(),
   
   // Sync settings
   sync_enabled: z.boolean().optional(),
   sync_frequency_minutes: z.number().min(1).optional(),
   low_stock_threshold: z.number().min(0).optional(),
-  auto_generate_po: z.boolean().optional()
+  sync_inventory: z.boolean().optional(),
+  sync_vendors: z.boolean().optional(),
+  sync_purchase_orders: z.boolean().optional(),
+  sync_schedule: z.string().optional(),
+  sync_time: z.string().optional()
 })
 
 // GET /api/settings - Fetch application settings
@@ -53,14 +57,16 @@ export const GET = createApiHandler(async () => {
       lastSync: settings?.last_sync_date || null
     },
     email: {
-      enabled: settings?.email_alerts_enabled || false,
+      enabled: !!settings?.sendgrid_api_key && !!settings?.alert_email,
       alertEmail: settings?.alert_email || '',
       sendgridApiKey: settings?.sendgrid_api_key ? '***' : ''
     },
     sync: {
       enabled: settings?.sync_enabled || false,
       lowStockThreshold: settings?.low_stock_threshold || 10,
-      autoGeneratePO: settings?.auto_generate_po || false
+      inventory: settings?.sync_inventory !== false,
+      vendors: settings?.sync_vendors !== false,
+      purchaseOrders: settings?.sync_purchase_orders !== false
     },
     general: {
       companyName: 'BuildASoil',

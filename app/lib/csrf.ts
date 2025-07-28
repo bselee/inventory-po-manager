@@ -13,7 +13,7 @@ const TOKEN_EXPIRY = 24 * 60 * 60 * 1000 // 24 hours
 
 // Secret for token encryption (should be in env vars)
 const getSecret = () => {
-  const secret = process.env.CSRF_SECRET || process.env.JWT_SECRET
+  const secret = process.env.CSRF_SECRET || process.env.JWT_SECRET || process.env.SUPABASE_JWT_SECRET
   if (!secret || secret.length < 32) {
     throw new Error('CSRF_SECRET must be at least 32 characters')
   }

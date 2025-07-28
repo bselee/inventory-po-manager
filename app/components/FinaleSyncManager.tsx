@@ -110,7 +110,7 @@ export default function FinaleSyncManager() {
     <div className="bg-white p-6 rounded-lg shadow">
       <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
         <RefreshCw className="h-5 w-5" />
-        Finale Inventory Sync
+        Sync Control Center - Import Inventory from Finale
       </h2>
 
       {/* Status Information */}
@@ -167,7 +167,7 @@ export default function FinaleSyncManager() {
                 onChange={(e) => setFilterMode('all')}
                 className="text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-sm">All records (no date filter) - Recommended for initial sync</span>
+              <span className="text-sm font-semibold text-green-700">All records (no date filter) - ✓ USE THIS FOR INITIAL SYNC OF 2000+ ITEMS</span>
             </label>
             <label className="flex items-center gap-2">
               <input
@@ -227,10 +227,12 @@ export default function FinaleSyncManager() {
             </button>
           </div>
 
-          <p className="text-sm text-gray-500">
-            Dry Run will show what would be synced without making changes. 
-            Use Sync Now to update your inventory data.
-          </p>
+          <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
+            <p className="text-sm text-blue-800">
+              <strong>To sync your 2000+ items:</strong> Select "All records" above, then click "Sync Now". 
+              The sync will run in the background and may take 5-10 minutes. Check the Sync Status Monitor above for progress.
+            </p>
+          </div>
         </div>
       ) : (
         <div className="bg-yellow-50 border border-yellow-200 rounded-md p-4">

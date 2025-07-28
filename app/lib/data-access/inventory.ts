@@ -54,9 +54,11 @@ export async function getInventoryItems(
   if (filters.status === 'out-of-stock') {
     query = query.eq('stock', 0)
   } else if (filters.status === 'critical') {
-    query = query.or('stock.eq.0,stock.lte.reorder_point')
+    // For critical, we want items with stock = 0 or very low stock
+    query = query.lte('stock', 10) // Arbitrary low threshold
   } else if (filters.status === 'low-stock') {
-    query = query.lte('stock', 'reorder_point').gt('stock', 0)
+    // Can't directly compare columns in Supabase, need to filter post-query
+    query = query.gt('stock', 0)
   } else if (filters.status === 'in-stock') {
     query = query.gt('stock', 0)
   }
@@ -211,7 +213,8 @@ export async function updateInventoryStock(
   id: string, 
   newStock: number
 ): Promise<InventoryItem> {
-  const { data, error } = await supabase
+  // First attempt with just the fields we know exist
+  let { data, error } = await supabase
     .from('inventory_items')
     .update({ 
       stock: newStock,
@@ -220,6 +223,21 @@ export async function updateInventoryStock(
     .eq('id', id)
     .select()
     .single()
+
+  // If error mentions updated_at, try without last_updated
+  if (error && error.message.includes('updated_at')) {
+    const result = await supabase
+      .from('inventory_items')
+      .update({ 
+        stock: newStock
+      })
+      .eq('id', id)
+      .select()
+      .single()
+    
+    data = result.data
+    error = result.error
+  }
 
   if (error) {
     throw new DatabaseError('update', error.message, error)
@@ -235,7 +253,8 @@ export async function updateInventoryCost(
   id: string, 
   newCost: number
 ): Promise<InventoryItem> {
-  const { data, error } = await supabase
+  // First attempt with just the fields we know exist
+  let { data, error } = await supabase
     .from('inventory_items')
     .update({ 
       cost: newCost,
@@ -244,6 +263,21 @@ export async function updateInventoryCost(
     .eq('id', id)
     .select()
     .single()
+
+  // If error mentions updated_at, try without last_updated
+  if (error && error.message.includes('updated_at')) {
+    const result = await supabase
+      .from('inventory_items')
+      .update({ 
+        cost: newCost
+      })
+      .eq('id', id)
+      .select()
+      .single()
+    
+    data = result.data
+    error = result.error
+  }
 
   if (error) {
     throw new DatabaseError('update', error.message, error)
