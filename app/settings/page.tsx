@@ -8,7 +8,6 @@ import FinaleSyncManager from '@/app/components/FinaleSyncManager'
 import SalesDataUploader from '@/app/components/SalesDataUploader'
 import VendorSyncManager from '@/app/components/VendorSyncManager'
 import FinaleDebugPanel from '@/app/components/FinaleDebugPanel'
-import SyncControlPanel from '@/app/components/SyncControlPanel'
 
 interface Settings {
   id?: string
@@ -21,6 +20,8 @@ interface Settings {
   google_sheets_api_key?: string
   sendgrid_api_key?: string
   from_email?: string
+  alert_email?: string
+  sendgrid_from_email?: string
   low_stock_threshold: number
   sync_frequency_minutes?: number
   sync_enabled?: boolean
@@ -28,6 +29,18 @@ interface Settings {
 
 export default function SettingsPage() {
   const [settings, setSettings] = useState<Settings>({
+    id: undefined,
+    finale_api_key: '',
+    finale_api_secret: '',
+    finale_username: '',
+    finale_password: '',
+    finale_account_path: '',
+    google_sheet_id: '',
+    google_sheets_api_key: '',
+    sendgrid_api_key: '',
+    from_email: '',
+    alert_email: '',
+    sendgrid_from_email: '',
     low_stock_threshold: 10,
     sync_frequency_minutes: 60,
     sync_enabled: true
@@ -183,7 +196,7 @@ export default function SettingsPage() {
 
     try {
       console.log('Saving settings via API:', settings)
-      
+
       // Prepare the settings data for the API
       const settingsData = {
         finale_api_key: settings.finale_api_key || null,
@@ -196,13 +209,15 @@ export default function SettingsPage() {
         sendgrid_api_key: settings.sendgrid_api_key || null,
         from_email: settings.from_email || null,
         alert_email: settings.from_email || null, // Using from_email as alert_email
+        sendgrid_from_email: settings.from_email || null,
         low_stock_threshold: settings.low_stock_threshold || 10,
         sync_frequency_minutes: settings.sync_frequency_minutes || 60,
         sync_enabled: settings.sync_enabled !== false,
-        email_alerts_enabled: !!settings.sendgrid_api_key,
-        auto_generate_po: false // Default value, can be made configurable later
+        sync_inventory: true,
+        sync_vendors: true,
+        sync_purchase_orders: true
       }
-      
+
       // Use the API route with CSRF protection
       const { data: result, error: apiError } = await api.put('/api/settings', settingsData)
 
@@ -210,19 +225,17 @@ export default function SettingsPage() {
         throw new Error(apiError || 'Failed to save settings')
       }
 
-      console.log('Settings saved successfully via API:', result)
-      
-      // Update local state with the returned settings
+      // Always update local state with the returned settings (replace, not merge)
       if (result?.settings) {
-        setSettings(prev => ({
-          ...prev,
-          ...result.settings,
-          id: prev.id // Preserve the ID
-        }))
+        setSettings(result.settings)
       }
-      
+
+      // Always show the success message for at least 2 seconds for Playwright reliability
       setMessage({ type: 'success', text: 'Settings saved successfully!' })
-      
+      setTimeout(() => {
+        setMessage(null)
+      }, 2000)
+
       // Refresh sync status after saving settings
       setTimeout(loadSyncStatus, 1000)
     } catch (error) {
@@ -696,10 +709,7 @@ export default function SettingsPage() {
           </div>
         </div>
 
-        {/* Sync Control Panel - Master Sync Controls */}
-        <SyncControlPanel />
-
-        {/* Finale Sync Manager */}
+        {/* Finale Sync Manager - Main Sync Control */}
         <FinaleSyncManager />
 
         {/* Vendor Sync Manager */}
