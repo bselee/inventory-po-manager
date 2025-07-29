@@ -1,12 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { 
-  getInventoryItems, 
-  getInventorySummary,
-  updateInventoryStock,
-  updateInventoryCost
-} from '@/app/lib/data-access/inventory'
+// Removed direct database access - now using API calls
 import { Package, AlertTriangle, TrendingDown, TrendingUp, Search, Filter, RefreshCw, Plus, Edit2, Loader2, Clock, DollarSign, BarChart3, Zap, AlertCircle, Archive } from 'lucide-react'
 import useInventoryFiltering from '@/app/hooks/useOptimizedInventoryFilter'
 import SafeFilteredInventory from '@/app/components/SafeFilteredInventory'
@@ -253,11 +248,19 @@ export default function InventoryPage() {
 
   const loadInventory = async () => {
     try {
-      // Use data access layer to fetch all items
-      const result = await getInventoryItems(
-        {}, // No filters for initial load
-        { limit: 5000 } // High limit to get all items
-      )
+      // Use API to fetch inventory
+      const response = await fetch('/api/inventory')
+      const data = await response.json()
+      
+      if (data.error) {
+        throw new Error(data.error)
+      }
+      
+      const items = data.data?.inventory || []
+      const result = {
+        items,
+        total: items.length
+      }
       
       console.log(`Loaded ${result.items.length} items from database`)
       setTotalItems(result.total)
@@ -309,8 +312,14 @@ export default function InventoryPage() {
 
   const loadSummary = async () => {
     try {
-      const summaryData = await getInventorySummary()
-      setSummary(summaryData)
+      const response = await fetch('/api/inventory/summary')
+      const data = await response.json()
+      
+      if (data.error) {
+        throw new Error(data.error)
+      }
+      
+      setSummary(data.data)
     } catch (error) {
       console.error('Error loading summary:', error)
     }
@@ -349,7 +358,14 @@ export default function InventoryPage() {
   const handleStockUpdate = async (itemId: string, newStock?: number) => {
     try {
       const stockValue = newStock !== undefined ? newStock : editStock
-      const updatedItem = await updateInventoryStock(itemId, stockValue)
+      const response = await fetch(`/api/inventory/${itemId}/stock`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ stock: stockValue })
+      })
+      const data = await response.json()
+      if (data.error) throw new Error(data.error)
+      const updatedItem = data.data
 
       // Update local state
       setItems(items.map(item =>
@@ -367,7 +383,14 @@ export default function InventoryPage() {
 
   const handleCostUpdate = async (itemId: string) => {
     try {
-      const updatedItem = await updateInventoryCost(itemId, editCost)
+      const response = await fetch(`/api/inventory/${itemId}/cost`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ cost: editCost })
+      })
+      const data = await response.json()
+      if (data.error) throw new Error(data.error)
+      const updatedItem = data.data
 
       // Update local state
       setItems(items.map(item => 
