@@ -1,6 +1,7 @@
 // lib/finale-api.ts
 import { supabase } from './supabase'
 import { emailAlerts } from './email-alerts'
+import { rateLimitedFetch } from './finale-rate-limiter'
 
 interface FinaleProduct {
   productId: string
@@ -16,7 +17,7 @@ interface FinaleProduct {
   lastModifiedDate?: string
 }
 
-interface FinaleApiConfig {
+export interface FinaleApiConfig {
   apiKey: string
   apiSecret: string
   accountPath: string
@@ -42,9 +43,9 @@ interface FinalePurchaseOrderItem {
 }
 
 export class FinaleApiService {
-  private config: FinaleApiConfig
-  private baseUrl: string
-  private authHeader: string
+  protected config: FinaleApiConfig
+  protected baseUrl: string
+  protected authHeader: string
 
   constructor(config: FinaleApiConfig) {
     this.config = config
@@ -68,7 +69,7 @@ export class FinaleApiService {
   // Test connection
   async testConnection(): Promise<boolean> {
     try {
-      const response = await fetch(`${this.baseUrl}/product?limit=1`, {
+      const response = await rateLimitedFetch(`${this.baseUrl}/product?limit=1`, {
         headers: {
           'Authorization': this.authHeader,
           'Content-Type': 'application/json'
@@ -104,7 +105,7 @@ export class FinaleApiService {
       
       while (hasMore) {
         const productUrl = `${this.baseUrl}/product?limit=${limit}&offset=${offset}`
-        const response = await fetch(productUrl, {
+        const response = await rateLimitedFetch(productUrl, {
           headers: {
             'Authorization': this.authHeader,
             'Accept': 'application/json'
@@ -143,7 +144,7 @@ export class FinaleApiService {
       // Step 2: Get inventory items with stock levels
       console.log('[Finale Sync] Step 2: Fetching inventory quantities...')
       const inventoryUrl = `${this.baseUrl}/inventoryitem/?limit=1000`
-      const inventoryResponse = await fetch(inventoryUrl, {
+      const inventoryResponse = await rateLimitedFetch(inventoryUrl, {
         headers: {
           'Authorization': this.authHeader,
           'Accept': 'application/json'
@@ -259,7 +260,7 @@ export class FinaleApiService {
   // Get inventory by facility/location
   async getInventoryByFacility(): Promise<any> {
     try {
-      const response = await fetch(
+      const response = await rateLimitedFetch(
         `${this.baseUrl}/facility/inventory`, 
         {
           headers: {
@@ -553,7 +554,7 @@ export class FinaleApiService {
   // Create a purchase order in Finale
   async createPurchaseOrder(purchaseOrder: FinalePurchaseOrder): Promise<any> {
     try {
-      const response = await fetch(`${this.baseUrl}/purchaseOrder`, {
+      const response = await rateLimitedFetch(`${this.baseUrl}/purchaseOrder`, {
         method: 'POST',
         headers: {
           'Authorization': this.authHeader,
@@ -606,7 +607,7 @@ export class FinaleApiService {
       
       // Fetch inventory data only
       const inventoryUrl = `${this.baseUrl}/inventoryitem/?limit=5000`
-      const response = await fetch(inventoryUrl, {
+      const response = await rateLimitedFetch(inventoryUrl, {
         headers: {
           'Authorization': this.authHeader,
           'Accept': 'application/json'
@@ -895,7 +896,7 @@ export class FinaleApiService {
   // Get purchase order status from Finale
   async getPurchaseOrder(orderNumber: string): Promise<any> {
     try {
-      const response = await fetch(`${this.baseUrl}/purchaseOrder/${orderNumber}`, {
+      const response = await rateLimitedFetch(`${this.baseUrl}/purchaseOrder/${orderNumber}`, {
         headers: {
           'Authorization': this.authHeader,
           'Content-Type': 'application/json'
@@ -938,7 +939,7 @@ export class FinaleApiService {
         console.log(`[Finale Sync] Trying ${endpoint} endpoint...`)
         
         const testUrl = `${this.baseUrl}/${endpoint}?limit=1`
-        const testResponse = await fetch(testUrl, {
+        const testResponse = await rateLimitedFetch(testUrl, {
           headers: {
             'Authorization': this.authHeader,
             'Content-Type': 'application/json',
@@ -978,7 +979,7 @@ export class FinaleApiService {
         const url = `${this.baseUrl}/${successfulEndpoint}?limit=${limit}&offset=${offset}`
         console.log(`[Finale Sync] Fetching vendors from URL: ${url}`)
         
-        const response = await fetch(url, {
+        const response = await rateLimitedFetch(url, {
           headers: {
             'Authorization': this.authHeader,
             'Content-Type': 'application/json',
@@ -1045,7 +1046,7 @@ export class FinaleApiService {
   // Update purchase order status in Finale
   async updatePurchaseOrderStatus(orderNumber: string, status: string): Promise<any> {
     try {
-      const response = await fetch(`${this.baseUrl}/purchaseOrder/${orderNumber}`, {
+      const response = await rateLimitedFetch(`${this.baseUrl}/purchaseOrder/${orderNumber}`, {
         method: 'PATCH',
         headers: {
           'Authorization': this.authHeader,
@@ -1068,7 +1069,7 @@ export class FinaleApiService {
   // Create a new vendor in Finale
   async createVendor(vendor: any): Promise<any> {
     try {
-      const response = await fetch(`${this.baseUrl}/vendors`, {
+      const response = await rateLimitedFetch(`${this.baseUrl}/vendors`, {
         method: 'POST',
         headers: {
           'Authorization': this.authHeader,
@@ -1099,7 +1100,7 @@ export class FinaleApiService {
   // Update an existing vendor in Finale
   async updateVendor(vendorId: string, vendor: any): Promise<any> {
     try {
-      const response = await fetch(`${this.baseUrl}/vendors/${vendorId}`, {
+      const response = await rateLimitedFetch(`${this.baseUrl}/vendors/${vendorId}`, {
         method: 'PUT',
         headers: {
           'Authorization': this.authHeader,
@@ -1126,6 +1127,126 @@ export class FinaleApiService {
       throw error
     }
   }
+
+  // MISSING METHODS NEEDED BY SYNC SERVICE
+
+  // Get all products (wrapper for getInventoryData)
+  async getAllProducts(options: { filterYear?: number } = {}): Promise<any[]> {
+    console.log('[Finale API] Getting all products with options:', options)
+    try {
+      const products = await this.getInventoryData(options.filterYear)
+      
+      // Transform to format expected by sync service
+      return products.map(product => ({
+        itemSKU: product.productSku,
+        itemName: product.productName,
+        itemID: product.productId,
+        quantityOnHand: product.quantityOnHand,
+        quantityAvailable: product.quantityAvailable,
+        unitPrice: product.averageCost || 0,
+        supplier: product.primarySupplierName,
+        location: product.facilityName || 'Main',
+        reorderPoint: product.reorderPoint,
+        reorderQuantity: product.reorderQuantity,
+        lastModified: product.lastModifiedDate
+      }))
+    } catch (error) {
+      console.error('[Finale API] Error getting all products:', error)
+      throw error
+    }
+  }
+
+  // Get inventory levels only (lightweight)
+  async getInventoryLevels(): Promise<any[]> {
+    console.log('[Finale API] Getting inventory levels only')
+    try {
+      const inventoryUrl = `${this.baseUrl}/inventoryitem/?limit=5000`
+      const response = await rateLimitedFetch(inventoryUrl, {
+        headers: {
+          'Authorization': this.authHeader,
+          'Accept': 'application/json'
+        }
+      })
+      
+      if (!response.ok) {
+        throw new Error(`Inventory API error: ${response.status}`)
+      }
+      
+      const data = await response.json()
+      const inventoryItems: any[] = []
+      
+      // Handle Finale's parallel array format
+      if (data.productId && Array.isArray(data.productId)) {
+        const itemCount = data.productId.length
+        
+        for (let i = 0; i < itemCount; i++) {
+          inventoryItems.push({
+            sku: data.productId[i],
+            quantity: parseFloat(data.quantityOnHand?.[i] || '0'),
+            reserved: parseFloat(data.quantityReserved?.[i] || '0'),
+            available: parseFloat(data.quantityOnHand?.[i] || '0') - parseFloat(data.quantityReserved?.[i] || '0')
+          })
+        }
+      }
+      
+      return inventoryItems
+    } catch (error) {
+      console.error('[Finale API] Error getting inventory levels:', error)
+      throw error
+    }
+  }
+
+  // Get active products only (non-discontinued)
+  async getActiveProducts(options: { filterYear?: number } = {}): Promise<any[]> {
+    console.log('[Finale API] Getting active products only')
+    try {
+      const allProducts = await this.getAllProducts(options)
+      
+      // Filter out discontinued/inactive products
+      return allProducts.filter(product => {
+        // Check various fields that might indicate inactive status
+        if (product.statusId === 'INACTIVE') return false
+        if (product.discontinued === true) return false
+        if (product.active === false) return false
+        
+        // Also filter by last modified date if very old
+        if (product.lastModified) {
+          const lastModifiedDate = new Date(product.lastModified)
+          const daysSinceModified = (Date.now() - lastModifiedDate.getTime()) / (1000 * 60 * 60 * 24)
+          if (daysSinceModified > 365) return false // Skip if not modified in over a year
+        }
+        
+        return true
+      })
+    } catch (error) {
+      console.error('[Finale API] Error getting active products:', error)
+      throw error
+    }
+  }
+
+  // Get products by SKUs (batch lookup)
+  async getProductsBySKUs(skus: string[]): Promise<any[]> {
+    console.log(`[Finale API] Getting products for ${skus.length} SKUs`)
+    if (skus.length === 0) return []
+    
+    try {
+      // Get all products (unfortunately Finale doesn't have a SKU filter endpoint)
+      const allProducts = await this.getAllProducts()
+      
+      // Filter to only requested SKUs
+      const skuSet = new Set(skus)
+      return allProducts.filter(product => skuSet.has(product.itemSKU))
+    } catch (error) {
+      console.error('[Finale API] Error getting products by SKUs:', error)
+      throw error
+    }
+  }
+
+  // Import sales data (placeholder - needs implementation based on Finale's format)
+  async importSalesData(csvData: string): Promise<any> {
+    console.log('[Finale API] Import sales data not yet implemented')
+    throw new Error('Sales data import not yet implemented')
+  }
 }
 
 // Helper function to get API config from settings
@@ -1147,14 +1268,19 @@ export async function getFinaleConfig(): Promise<FinaleApiConfig | null> {
 
     console.log('[getFinaleConfig] Environment variables not found, checking database...')
 
-    // Fallback to database settings
+    // Fallback to database settings - check for both API keys and username/password
     const { data: settings, error } = await supabase
       .from('settings')
-      .select('finale_username, finale_password, finale_account_path')
+      .select('finale_api_key, finale_api_secret, finale_username, finale_password, finale_account_path')
       .limit(1)
       .maybeSingle() // Use maybeSingle instead of single to handle no records
 
-    console.log('[getFinaleConfig] Database query result:', { settings, error })
+    console.log('[getFinaleConfig] Database query result:', { 
+      hasSettings: !!settings, 
+      error,
+      hasApiKey: !!settings?.finale_api_key,
+      hasUsername: !!settings?.finale_username 
+    })
 
     if (error) {
       console.error('[getFinaleConfig] Database error:', error)
@@ -1166,21 +1292,34 @@ export async function getFinaleConfig(): Promise<FinaleApiConfig | null> {
       return null
     }
 
-    if (!settings.finale_username || !settings.finale_password || !settings.finale_account_path) {
-      console.log('[getFinaleConfig] Missing required fields in database:', {
-        hasUsername: !!settings.finale_username,
-        hasPassword: !!settings.finale_password,
-        hasAccountPath: !!settings.finale_account_path
-      })
-      return null
+    // Try API key/secret first (preferred method)
+    if (settings.finale_api_key && settings.finale_api_secret && settings.finale_account_path) {
+      console.log('[getFinaleConfig] Using API key/secret from database')
+      return {
+        apiKey: settings.finale_api_key,
+        apiSecret: settings.finale_api_secret,
+        accountPath: settings.finale_account_path
+      }
     }
 
-    console.log('[getFinaleConfig] Using database settings')
-    return {
-      apiKey: settings.finale_username,
-      apiSecret: settings.finale_password,
-      accountPath: settings.finale_account_path
+    // Fallback to username/password if available
+    if (settings.finale_username && settings.finale_password && settings.finale_account_path) {
+      console.log('[getFinaleConfig] Using username/password from database (legacy)')
+      return {
+        apiKey: settings.finale_username,
+        apiSecret: settings.finale_password,
+        accountPath: settings.finale_account_path
+      }
     }
+
+    console.log('[getFinaleConfig] Missing required fields in database:', {
+      hasApiKey: !!settings.finale_api_key,
+      hasApiSecret: !!settings.finale_api_secret,
+      hasUsername: !!settings.finale_username,
+      hasPassword: !!settings.finale_password,
+      hasAccountPath: !!settings.finale_account_path
+    })
+    return null
   } catch (error) {
     console.error('[getFinaleConfig] Unexpected error:', error)
     return null

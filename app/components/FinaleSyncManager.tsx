@@ -3,6 +3,7 @@
 
 import { useState, useEffect } from 'react'
 import { RefreshCw, CheckCircle, AlertCircle, Info, Play, Loader2 } from 'lucide-react'
+import { api } from '@/app/lib/client-fetch'
 
 interface SyncStatus {
   configured: boolean
@@ -26,9 +27,10 @@ export default function FinaleSyncManager() {
   const [syncing, setSyncing] = useState(false)
   const [syncResult, setSyncResult] = useState<SyncResult | null>(null)
   const [showDetails, setShowDetails] = useState(false)
-  const [filterMode, setFilterMode] = useState<'current' | 'all' | 'custom'>('current')
+  const [filterMode, setFilterMode] = useState<'current' | 'all' | 'custom' | 'two-years'>('two-years')
   const [customYear, setCustomYear] = useState(new Date().getFullYear())
   const [refreshKey, setRefreshKey] = useState(0)
+  const [syncProgress, setSyncProgress] = useState<string>('')
 
   useEffect(() => {
     checkSyncStatus()
@@ -45,37 +47,72 @@ export default function FinaleSyncManager() {
 
   const checkSyncStatus = async () => {
     try {
-      const response = await fetch('/api/sync-finale')
-      const data = await response.json()
-      setStatus(data)
+      // Check if Finale is configured by verifying credentials
+      const verifyResponse = await fetch('/api/finale-verify')
+      const verifyData = await verifyResponse.json()
+      
+      if (verifyData.credentials?.hasKey && verifyData.credentials?.hasSecret && verifyData.credentials?.accountPath) {
+        setStatus({
+          configured: true,
+          accountPath: verifyData.credentials.accountPath,
+          lastSync: null
+        })
+      } else {
+        setStatus({
+          configured: false,
+          error: 'Missing credentials'
+        })
+      }
     } catch (error) {
       console.error('Error checking sync status:', error)
+      setStatus({
+        configured: false,
+        error: 'Failed to check status'
+      })
     }
   }
 
   const performSync = async (dryRun = false) => {
     setSyncing(true)
     setSyncResult(null)
+    setSyncProgress(dryRun ? 'Starting dry run...' : 'Connecting to Finale...')
 
     // Determine filter year based on mode
     let filterYear: number | null | undefined
     if (filterMode === 'current') {
-      filterYear = undefined // Use default (current year)
+      filterYear = new Date().getFullYear() // Current year only
+    } else if (filterMode === 'two-years') {
+      filterYear = new Date().getFullYear() - 1 // Last 2 years (will get current year - 1 and newer)
     } else if (filterMode === 'all') {
-      filterYear = null // No filtering
+      filterYear = null // No filtering (all historical data)
     } else {
       filterYear = customYear // Use custom year
     }
 
     try {
-      const response = await fetch('/api/sync-finale', {
+      setSyncProgress(dryRun ? 'Testing connection...' : 'Starting background sync...')
+      
+      // Use the background sync endpoint
+      const response = await fetch('/api/sync-finale-background', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ dryRun, filterYear })
       })
 
       const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Sync failed')
+      }
+
       setSyncResult(result)
+      setSyncProgress('')
+      
+      // For non-dry runs, start polling for status
+      if (!dryRun && result.success) {
+        setSyncProgress('Sync running in background...')
+        pollSyncStatus()
+      }
 
       // Refresh status after successful sync
       if (result.success && !dryRun) {
@@ -84,11 +121,68 @@ export default function FinaleSyncManager() {
     } catch (error) {
       setSyncResult({
         success: false,
-        error: 'Failed to perform sync. Check console for details.'
+        error: error instanceof Error ? error.message : 'Failed to perform sync. Check console for details.'
       })
+      setSyncProgress('')
     } finally {
       setSyncing(false)
+      setSyncProgress('')
     }
+  }
+
+  const pollSyncStatus = async () => {
+    let pollCount = 0
+    const maxPolls = 60 // Poll for up to 5 minutes (every 5 seconds)
+    
+    const interval = setInterval(async () => {
+      try {
+        const response = await fetch('/api/sync-finale-background')
+        const status = await response.json()
+        
+        if (!status.hasRunningSync || pollCount >= maxPolls) {
+          clearInterval(interval)
+          setSyncProgress('')
+          
+          if (status.lastSync?.status === 'success') {
+            const itemsProcessed = status.lastSync.items_processed || 0
+            const itemsUpdated = status.lastSync.items_updated || 0
+            
+            setSyncResult({
+              success: true,
+              totalProducts: itemsProcessed,
+              processed: itemsUpdated,
+              message: itemsUpdated > 0 
+                ? `Sync completed! ${itemsUpdated} items imported.`
+                : 'Sync completed. No new items found for the selected time period.'
+            })
+            
+            // Only redirect if items were actually imported
+            if (itemsUpdated > 0) {
+              setTimeout(() => {
+                window.location.href = '/inventory'
+              }, 2000)
+            }
+          } else if (status.lastSync?.status === 'error') {
+            setSyncResult({
+              success: false,
+              error: `Sync failed: ${status.lastSync.errors?.[0] || 'Unknown error'}`
+            })
+          } else if (pollCount >= maxPolls) {
+            setSyncResult({
+              success: false,
+              error: 'Sync is taking longer than expected. Check back later.'
+            })
+          }
+        } else {
+          setSyncProgress(`Sync running in background... (${Math.floor(pollCount * 5 / 60)}:${String((pollCount * 5) % 60).padStart(2, '0')})`)
+        }
+        
+        pollCount++
+      } catch (error) {
+        clearInterval(interval)
+        setSyncProgress('')
+      }
+    }, 5000) // Poll every 5 seconds
   }
 
   const formatDate = (dateString?: string) => {
@@ -151,12 +245,23 @@ export default function FinaleSyncManager() {
               <input
                 type="radio"
                 name="filterMode"
+                value="two-years"
+                checked={filterMode === 'two-years'}
+                onChange={(e) => setFilterMode('two-years')}
+                className="text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm font-semibold text-green-700">Last 2 years ({new Date().getFullYear() - 1}-{new Date().getFullYear()}) - ✓ RECOMMENDED FOR INITIAL SYNC</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="filterMode"
                 value="current"
                 checked={filterMode === 'current'}
                 onChange={(e) => setFilterMode('current')}
                 className="text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-sm">Current year records only ({new Date().getFullYear()})</span>
+              <span className="text-sm">Current year only ({new Date().getFullYear()})</span>
             </label>
             <label className="flex items-center gap-2">
               <input
@@ -167,7 +272,7 @@ export default function FinaleSyncManager() {
                 onChange={(e) => setFilterMode('all')}
                 className="text-blue-600 focus:ring-blue-500"
               />
-              <span className="text-sm font-semibold text-green-700">All records (no date filter) - ✓ USE THIS FOR INITIAL SYNC OF 2000+ ITEMS</span>
+              <span className="text-sm">All historical records (no date filter) - May be very large</span>
             </label>
             <label className="flex items-center gap-2">
               <input
@@ -191,8 +296,9 @@ export default function FinaleSyncManager() {
             </label>
           </div>
           <p className="text-xs text-gray-500 mt-2">
-            Note: This filters inventory records by their last modified date in Finale. 
-            Use "Current year records only" for regular syncs to avoid overwhelming the system.
+            Note: This filters products by their last modified date in Finale. 
+            The "Last 2 years" option provides enough historical data for calculations and forecasting
+            while keeping sync times reasonable.
           </p>
         </div>
       )}
@@ -227,10 +333,20 @@ export default function FinaleSyncManager() {
             </button>
           </div>
 
+          {syncProgress && (
+            <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-3">
+              <div className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin text-yellow-600" />
+                <p className="text-sm text-yellow-800 font-medium">{syncProgress}</p>
+              </div>
+            </div>
+          )}
+          
           <div className="bg-blue-50 border border-blue-200 rounded-md p-3">
             <p className="text-sm text-blue-800">
-              <strong>To sync your 2000+ items:</strong> Select "All records" above, then click "Sync Now". 
-              The sync will run in the background and may take 5-10 minutes. Check the Sync Status Monitor above for progress.
+              <strong>To sync your inventory:</strong> Select "Last 2 years" (recommended) and click "Sync Now". 
+              This will import 2 years of data for sales calculations and forecasting. 
+              The sync typically takes 1-3 minutes.
             </p>
           </div>
         </div>

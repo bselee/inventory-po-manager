@@ -8,6 +8,7 @@ import FinaleSyncManager from '@/app/components/FinaleSyncManager'
 import SalesDataUploader from '@/app/components/SalesDataUploader'
 import VendorSyncManager from '@/app/components/VendorSyncManager'
 import FinaleDebugPanel from '@/app/components/FinaleDebugPanel'
+import { validateFinaleCredentials, getValidationErrorMessage } from '@/app/lib/validation/finale-credentials'
 
 interface Settings {
   id?: string
@@ -52,6 +53,8 @@ export default function SettingsPage() {
   const [googleSheetUrl, setGoogleSheetUrl] = useState('')
   const [syncStatus, setSyncStatus] = useState<any>(null)
   const [autoRefresh, setAutoRefresh] = useState(true)
+  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
+  const [validationWarnings, setValidationWarnings] = useState<Record<string, string>>({})
 
   // Parse Google Sheet ID from URL
   const parseGoogleSheetId = (url: string): string | null => {
@@ -194,6 +197,23 @@ export default function SettingsPage() {
     setSaving(true)
     setMessage(null)
 
+    // Validate Finale credentials before saving
+    const validation = validateFinaleCredentials(settings)
+    if (!validation.isValid) {
+      setMessage({ 
+        type: 'error', 
+        text: `Please fix the following errors: ${getValidationErrorMessage(validation.errors)}` 
+      })
+      setSaving(false)
+      return
+    }
+
+    // Show warnings if any
+    if (Object.keys(validation.warnings).length > 0) {
+      const warningMessages = Object.values(validation.warnings).join(' | ')
+      console.warn('Credential warnings:', warningMessages)
+    }
+
     try {
       console.log('Saving settings via API:', settings)
 
@@ -248,20 +268,40 @@ export default function SettingsPage() {
   }
 
   const handleChange = (field: keyof Settings, value: any) => {
-    setSettings(prev => ({
-      ...prev,
+    const newSettings = {
+      ...settings,
       [field]: value
-    }))
+    }
+    setSettings(newSettings)
+    
+    // Perform real-time validation for Finale fields
+    if (field.startsWith('finale_')) {
+      const validation = validateFinaleCredentials(newSettings)
+      setValidationErrors(validation.errors)
+      setValidationWarnings(validation.warnings)
+    }
   }
 
   const testConnection = async (service: string) => {
+    // Validate credentials before testing (only for Finale)
+    if (service === 'finale') {
+      const validation = validateFinaleCredentials(settings)
+      if (!validation.isValid) {
+        setMessage({ 
+          type: 'error', 
+          text: `Cannot test connection: ${getValidationErrorMessage(validation.errors)}` 
+        })
+        return
+      }
+    }
+
     setTestResults(prev => ({ ...prev, [service]: 'testing' }))
     setMessage(null) // Clear previous messages
 
     try {
       // Map service names to their specific endpoints
       const endpointMap: Record<string, string> = {
-        'finale': '/api/finale-auth-test', // Comprehensive auth testing
+        'finale': '/api/test-finale-simple', // Simple connection test without auth
         'google-sheets': '/api/test-sheets',
         'sendgrid': '/api/test-sendgrid'
       }
@@ -603,6 +643,16 @@ export default function SettingsPage() {
             <li><strong>Automated Updates:</strong> Hourly sync keeps data current</li>
           </ul>
           <div className="space-y-4">
+            {validationErrors.credentials && (
+              <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                <p className="text-sm text-red-800">{validationErrors.credentials}</p>
+              </div>
+            )}
+            {!validationErrors.credentials && validationWarnings.credentials && (
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-md">
+                <p className="text-sm text-yellow-800">{validationWarnings.credentials}</p>
+              </div>
+            )}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 API Key
@@ -614,9 +664,16 @@ export default function SettingsPage() {
                 type="password"
                 value={settings.finale_api_key || ''}
                 onChange={(e) => handleChange('finale_api_key', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                  validationErrors.finale_api_key 
+                    ? 'border-red-300 focus:ring-red-500' 
+                    : 'border-gray-300 focus:ring-blue-500'
+                }`}
                 placeholder="e.g., 1234567890abcdef"
               />
+              {validationErrors.finale_api_key && (
+                <p className="mt-1 text-xs text-red-600">{validationErrors.finale_api_key}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -629,9 +686,16 @@ export default function SettingsPage() {
                 type="password"
                 value={settings.finale_api_secret || ''}
                 onChange={(e) => handleChange('finale_api_secret', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                  validationErrors.finale_api_secret 
+                    ? 'border-red-300 focus:ring-red-500' 
+                    : 'border-gray-300 focus:ring-blue-500'
+                }`}
                 placeholder="e.g., abcdef1234567890"
               />
+              {validationErrors.finale_api_secret && (
+                <p className="mt-1 text-xs text-red-600">{validationErrors.finale_api_secret}</p>
+              )}
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -646,9 +710,21 @@ export default function SettingsPage() {
                 type="text"
                 value={settings.finale_account_path || ''}
                 onChange={(e) => handleChange('finale_account_path', e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 ${
+                  validationErrors.finale_account_path 
+                    ? 'border-red-300 focus:ring-red-500' 
+                    : validationWarnings.finale_account_path
+                    ? 'border-yellow-300 focus:ring-yellow-500'
+                    : 'border-gray-300 focus:ring-blue-500'
+                }`}
                 placeholder="e.g., yourcompany"
               />
+              {validationErrors.finale_account_path && (
+                <p className="mt-1 text-xs text-red-600">{validationErrors.finale_account_path}</p>
+              )}
+              {!validationErrors.finale_account_path && validationWarnings.finale_account_path && (
+                <p className="mt-1 text-xs text-yellow-600">{validationWarnings.finale_account_path}</p>
+              )}
             </div>
             
             {/* Alternative Authentication Section */}

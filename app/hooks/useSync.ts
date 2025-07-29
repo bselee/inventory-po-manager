@@ -9,7 +9,7 @@ import {
   getSyncStats,
   isAnySyncRunning,
   SyncLog
-} from '@/lib/data-access'
+} from '@/app/lib/data-access'
 
 /**
  * Hook for monitoring sync status

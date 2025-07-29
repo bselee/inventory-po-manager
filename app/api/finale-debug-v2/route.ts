@@ -91,7 +91,7 @@ export const POST = createApiHandler(async ({ body }) => {
               details: {
                 url: apiUrl,
                 status: response.status,
-                parseError: e.message
+                parseError: e instanceof Error ? e.message : String(e)
               }
             })
           }

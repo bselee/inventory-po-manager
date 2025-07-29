@@ -18,6 +18,7 @@ import {
   syncVendorFromFinale
 } from './data-access'
 import { SyncError, ExternalServiceError, retryWithBackoff } from './errors'
+import { SyncLogger } from './sync-logger'
 
 export type SyncStrategy = 'smart' | 'full' | 'inventory' | 'critical' | 'active'
 
@@ -42,6 +43,7 @@ export interface SyncResult {
  */
 export class SyncService {
   private finaleApi: FinaleApiService | null = null
+  private logger: SyncLogger | null = null
 
   async initialize(): Promise<void> {
     const config = await getFinaleConfig()
@@ -83,11 +85,22 @@ export class SyncService {
     // Create sync log
     const syncLog = await createSyncLog(strategy)
     const startTime = Date.now()
+    
+    // Initialize logger
+    this.logger = new SyncLogger(strategy)
+    await this.logger.startSync({
+      dryRun,
+      filterYear,
+      batchSize,
+      maxRetries
+    })
 
     try {
       // Initialize if needed
       if (!this.finaleApi) {
+        this.logger.log('initialization', 'started')
         await this.initialize()
+        this.logger.log('initialization', 'success')
       }
 
       let result: SyncResult
@@ -115,11 +128,27 @@ export class SyncService {
 
       // Complete sync log
       await completeSyncLog(syncLog.id, result.itemsSynced)
+      
+      // Log completion
+      const duration = Date.now() - startTime
+      await this.logger.completeSync(true, {
+        itemsProcessed: result.itemsSynced,
+        itemsFailed: result.itemsFailed,
+        duration
+      })
 
       return result
     } catch (error) {
       // Fail sync log
       await failSyncLog(syncLog.id, error)
+      
+      // Log failure
+      const duration = Date.now() - startTime
+      await this.logger.completeSync(false, {
+        duration,
+        error: error instanceof Error ? error.message : 'Unknown error'
+      })
+      
       throw error
     }
   }
@@ -181,14 +210,40 @@ export class SyncService {
 
       // Process in batches
       const batchSize = options.batchSize || 50
+      const totalBatches = Math.ceil(products.length / batchSize)
+      
       for (let i = 0; i < products.length; i += batchSize) {
         const batch = products.slice(i, i + batchSize)
+        const batchNumber = Math.floor(i / batchSize) + 1
+        
+        if (this.logger) {
+          this.logger.logBatch(batchNumber, totalBatches, batch.length, 'started')
+        }
         
         await retryWithBackoff(async () => {
           await this.processBatch(batch, options)
-        }, { maxRetries: options.maxRetries || 3 })
+        }, {
+          maxRetries: options.maxRetries || 3,
+          shouldRetry: (error, attempt) => {
+            const shouldRetry = error instanceof ExternalServiceError || 
+                              (error instanceof Error && error.message.includes('rate limit'))
+            
+            if (shouldRetry && this.logger) {
+              this.logger.logRetry('processBatch', attempt + 1, options.maxRetries || 3, 
+                error instanceof Error ? error.message : 'Unknown error',
+                Math.min(1000 * Math.pow(2, attempt), 10000)
+              )
+            }
+            
+            return shouldRetry
+          }
+        })
 
         itemsSynced += batch.length
+        
+        if (this.logger) {
+          this.logger.logBatch(batchNumber, totalBatches, batch.length, 'completed')
+        }
         
         // Log progress
         const progress = Math.round((i + batch.length) / products.length * 100)
@@ -312,8 +367,15 @@ export class SyncService {
 
       // Process in batches
       const batchSize = options.batchSize || 50
+      const totalBatches = Math.ceil(products.length / batchSize)
+      
       for (let i = 0; i < products.length; i += batchSize) {
         const batch = products.slice(i, i + batchSize)
+        const batchNumber = Math.floor(i / batchSize) + 1
+        
+        if (this.logger) {
+          this.logger.logBatch(batchNumber, totalBatches, batch.length, 'started')
+        }
         await this.processBatch(batch, options)
         itemsSynced += batch.length
       }

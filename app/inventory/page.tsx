@@ -10,6 +10,7 @@ import {
 import { Package, AlertTriangle, TrendingDown, TrendingUp, Search, Filter, RefreshCw, Plus, Edit2, Loader2, Clock, DollarSign, BarChart3, Zap, AlertCircle, Archive } from 'lucide-react'
 import useInventoryFiltering from '@/app/hooks/useOptimizedInventoryFilter'
 import SafeFilteredInventory from '@/app/components/SafeFilteredInventory'
+import InventoryDataWarning from '@/app/components/inventory/InventoryDataWarning'
 import { useDebounce } from '@/app/hooks/useDebounce'
 import type { InventoryItem as ImportedInventoryItem } from '@/app/types'
 import {
@@ -114,6 +115,12 @@ export default function InventoryPage() {
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(100) // Default to 100 items per page
   const [totalItems, setTotalItems] = useState(0)
+  const [dataQualityMetrics, setDataQualityMetrics] = useState({
+    itemsWithSalesData: 0,
+    itemsWithCost: 0,
+    itemsWithVendor: 0,
+    lastSyncDate: null as string | null
+  })
 
   useEffect(() => {
     loadInventory()
@@ -253,6 +260,38 @@ export default function InventoryPage() {
       console.log(`Loaded ${result.items.length} items from database`)
       setTotalItems(result.total)
       setAllItems(result.items as InventoryItem[]) // Items are already enhanced by the data access layer
+      
+      // Calculate data quality metrics
+      const metrics = {
+        itemsWithSalesData: result.items.filter(item => 
+          (item.sales_last_30_days && item.sales_last_30_days > 0) || 
+          (item.sales_last_90_days && item.sales_last_90_days > 0)
+        ).length,
+        itemsWithCost: result.items.filter(item => 
+          item.cost && item.cost > 0
+        ).length,
+        itemsWithVendor: result.items.filter(item => 
+          item.vendor && item.vendor.trim() !== ''
+        ).length,
+        lastSyncDate: result.items.length > 0 && result.items[0].last_updated 
+          ? result.items[0].last_updated 
+          : null
+      }
+      setDataQualityMetrics(metrics)
+      
+      // Log data quality warnings
+      if (result.items.length === 0) {
+        console.warn('⚠️ No inventory data found - sync may be needed')
+      } else if (result.items.length < 10) {
+        console.warn(`⚠️ Only ${result.items.length} items in inventory - this seems low`)
+      }
+      
+      const salesDataPercent = result.items.length > 0 
+        ? (metrics.itemsWithSalesData / result.items.length * 100).toFixed(1)
+        : 0
+      if (Number(salesDataPercent) < 20) {
+        console.warn(`⚠️ Only ${salesDataPercent}% of items have sales data`)
+      }
       
       // Set initial page items
       const startIndex = (currentPage - 1) * itemsPerPage
@@ -623,6 +662,15 @@ export default function InventoryPage() {
           </div>
         </div>
       </div>
+
+      {/* Data Quality Warnings */}
+      <InventoryDataWarning
+        totalItems={totalItems}
+        itemsWithSalesData={dataQualityMetrics.itemsWithSalesData}
+        itemsWithCost={dataQualityMetrics.itemsWithCost}
+        itemsWithVendor={dataQualityMetrics.itemsWithVendor}
+        lastSyncDate={dataQualityMetrics.lastSyncDate}
+      />
 
       {/* Enhanced Inventory Table */}
       {viewMode === 'table' && (

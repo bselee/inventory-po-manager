@@ -51,7 +51,18 @@ export class AuthTokens {
   static async verifyToken(token: string): Promise<JWTPayload | null> {
     try {
       const { payload } = await jwtVerify(token, JWT_SECRET)
-      return payload as JWTPayload
+      // Ensure the payload has all required fields
+      if (!payload.userId || !payload.email || !payload.role || !payload.permissions) {
+        return null
+      }
+      return {
+        userId: payload.userId as string,
+        email: payload.email as string,
+        role: payload.role as string,
+        permissions: payload.permissions as string[],
+        exp: payload.exp as number,
+        iat: payload.iat as number
+      }
     } catch (error) {
       console.error('Token verification failed:', error)
       return null

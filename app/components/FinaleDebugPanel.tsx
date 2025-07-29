@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { AlertCircle, CheckCircle, XCircle, Loader2 } from 'lucide-react'
+import { AlertCircle, CheckCircle, XCircle, Loader2, Copy, Download } from 'lucide-react'
 
 interface DebugResult {
   test: string
@@ -16,6 +16,7 @@ export default function FinaleDebugPanel({ settings }: { settings: any }) {
   const [debugging, setDebugging] = useState(false)
   const [results, setResults] = useState<DebugResult[]>([])
   const [summary, setSummary] = useState<any>(null)
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied'>('idle')
 
   const runDebug = async () => {
     setDebugging(true)
@@ -56,22 +57,94 @@ export default function FinaleDebugPanel({ settings }: { settings: any }) {
     }
   }
 
+  const copyDebugInfo = async () => {
+    const debugInfo = {
+      timestamp: new Date().toISOString(),
+      settings: {
+        account_path: settings.finale_account_path,
+        has_api_key: !!settings.finale_api_key,
+        has_api_secret: !!settings.finale_api_secret,
+        has_username: !!settings.finale_username,
+        has_password: !!settings.finale_password
+      },
+      results: results,
+      summary: summary
+    }
+
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(debugInfo, null, 2))
+      setCopyStatus('copied')
+      setTimeout(() => setCopyStatus('idle'), 2000)
+    } catch (error) {
+      console.error('Failed to copy:', error)
+    }
+  }
+
+  const downloadDebugInfo = () => {
+    const debugInfo = {
+      timestamp: new Date().toISOString(),
+      settings: {
+        account_path: settings.finale_account_path,
+        has_api_key: !!settings.finale_api_key,
+        has_api_secret: !!settings.finale_api_secret,
+        has_username: !!settings.finale_username,
+        has_password: !!settings.finale_password
+      },
+      results: results,
+      summary: summary,
+      userAgent: navigator.userAgent,
+      url: window.location.href
+    }
+
+    const blob = new Blob([JSON.stringify(debugInfo, null, 2)], { type: 'application/json' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `finale-debug-${new Date().toISOString().split('T')[0]}.json`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="mt-6 border-t pt-6">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-semibold text-gray-700">Debug Finale Connection</h3>
-        <button
-          onClick={runDebug}
-          disabled={debugging}
-          className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:bg-gray-400 text-sm"
-        >
-          {debugging ? (
-            <Loader2 className="h-4 w-4 animate-spin" />
-          ) : (
-            <AlertCircle className="h-4 w-4" />
+        <div className="flex items-center gap-2">
+          {results.length > 0 && (
+            <>
+              <button
+                onClick={copyDebugInfo}
+                className="flex items-center gap-2 px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 text-sm"
+                title="Copy debug info to clipboard"
+              >
+                <Copy className="h-4 w-4" />
+                {copyStatus === 'copied' ? 'Copied!' : 'Copy'}
+              </button>
+              <button
+                onClick={downloadDebugInfo}
+                className="flex items-center gap-2 px-3 py-2 bg-gray-500 text-white rounded-md hover:bg-gray-600 text-sm"
+                title="Download debug info as JSON"
+              >
+                <Download className="h-4 w-4" />
+                Download
+              </button>
+            </>
           )}
-          Run Detailed Debug
-        </button>
+          <button
+            onClick={runDebug}
+            disabled={debugging}
+            className="flex items-center gap-2 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700 disabled:bg-gray-400 text-sm"
+          >
+            {debugging ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <AlertCircle className="h-4 w-4" />
+            )}
+            Run Detailed Debug
+          </button>
+        </div>
       </div>
 
       {results.length > 0 && (
@@ -130,13 +203,28 @@ export default function FinaleDebugPanel({ settings }: { settings: any }) {
         </div>
       )}
 
-      <div className="mt-4 p-3 bg-blue-50 rounded-md">
-        <p className="text-sm text-blue-800">
-          <strong>Current Account Path:</strong> {settings.finale_account_path || '(not set)'}
-        </p>
-        <p className="text-xs text-blue-600 mt-1">
-          Should be your account identifier like "buildasoilorganics" from your Finale URL
-        </p>
+      <div className="mt-4 space-y-3">
+        <div className="p-3 bg-blue-50 rounded-md">
+          <p className="text-sm text-blue-800">
+            <strong>Current Account Path:</strong> {settings.finale_account_path || '(not set)'}
+          </p>
+          <p className="text-xs text-blue-600 mt-1">
+            Should be your account identifier like "buildasoilorganics" from your Finale URL
+          </p>
+        </div>
+        
+        {results.length > 0 && (
+          <div className="p-3 bg-gray-50 rounded-md">
+            <p className="text-sm font-medium text-gray-700 mb-2">Debug Summary</p>
+            <div className="text-xs space-y-1">
+              <p><strong>Tests Run:</strong> {results.length}</p>
+              <p><strong>Passed:</strong> {results.filter(r => r.success).length}</p>
+              <p><strong>Failed:</strong> {results.filter(r => !r.success).length}</p>
+              {summary?.duration && <p><strong>Duration:</strong> {summary.duration}ms</p>}
+              <p><strong>Timestamp:</strong> {new Date().toLocaleString()}</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

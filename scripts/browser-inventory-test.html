@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Inventory Frontend Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .test { margin: 10px 0; padding: 10px; border: 1px solid #ddd; }
+        .success { background: #d4edda; }
+        .error { background: #f8d7da; }
+        button { margin: 5px; padding: 5px 10px; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>Inventory Frontend Test</h1>
+    <p>Open this file in your browser while the dev server is running on port 3001</p>
+    
+    <div id="results"></div>
+    
+    <script>
+        const results = document.getElementById('results');
+        const baseUrl = 'http://localhost:3001';
+        
+        async function addResult(test, success, details) {
+            const div = document.createElement('div');
+            div.className = `test ${success ? 'success' : 'error'}`;
+            div.innerHTML = `
+                <strong>${test}</strong><br>
+                ${details}
+            `;
+            results.appendChild(div);
+        }
+        
+        async function runTests() {
+            // Test 1: API Health Check
+            try {
+                const health = await fetch(`${baseUrl}/api/health`);
+                addResult('API Health Check', health.ok, `Status: ${health.status}`);
+            } catch (e) {
+                addResult('API Health Check', false, `Error: ${e.message}`);
+            }
+            
+            // Test 2: Get Inventory
+            try {
+                const inventory = await fetch(`${baseUrl}/api/inventory`);
+                const data = await inventory.json();
+                const items = data?.data?.inventory || [];
+                addResult('Get Inventory', inventory.ok, 
+                    `Status: ${inventory.status}, Items: ${items.length}`);
+                
+                if (items.length > 0) {
+                    const sample = items[0];
+                    addResult('Sample Item', true, 
+                        `<pre>${JSON.stringify(sample, null, 2)}</pre>`);
+                }
+            } catch (e) {
+                addResult('Get Inventory', false, `Error: ${e.message}`);
+            }
+            
+            // Test 3: Get Summary
+            try {
+                const summary = await fetch(`${baseUrl}/api/inventory/summary`);
+                const data = await summary.json();
+                addResult('Get Summary', summary.ok, 
+                    `<pre>${JSON.stringify(data.data, null, 2)}</pre>`);
+            } catch (e) {
+                addResult('Get Summary', false, `Error: ${e.message}`);
+            }
+            
+            // Test 4: Test Filters
+            const filters = [
+                { name: 'Low Stock', query: '?status=low-stock' },
+                { name: 'Out of Stock', query: '?status=out-of-stock' },
+                { name: 'Search', query: '?search=test' },
+                { name: 'Pagination', query: '?page=2&limit=10' }
+            ];
+            
+            for (const filter of filters) {
+                try {
+                    const response = await fetch(`${baseUrl}/api/inventory${filter.query}`);
+                    const data = await response.json();
+                    const items = data?.data?.inventory || [];
+                    addResult(`Filter: ${filter.name}`, response.ok, 
+                        `Status: ${response.status}, Items: ${items.length}`);
+                } catch (e) {
+                    addResult(`Filter: ${filter.name}`, false, `Error: ${e.message}`);
+                }
+            }
+            
+            // Test 5: CSRF Token
+            try {
+                const csrf = await fetch(`${baseUrl}/api/auth/csrf`);
+                const cookies = csrf.headers.get('set-cookie');
+                addResult('CSRF Token', csrf.ok, 
+                    `Status: ${csrf.status}, Cookie: ${cookies ? 'Set' : 'Not Set'}`);
+            } catch (e) {
+                addResult('CSRF Token', false, `Error: ${e.message}`);
+            }
+            
+            // Add manual test instructions
+            const manual = document.createElement('div');
+            manual.innerHTML = `
+                <h2>Manual UI Tests</h2>
+                <p>Now open <a href="${baseUrl}/inventory" target="_blank">${baseUrl}/inventory</a> and check:</p>
+                <ul>
+                    <li>Does the page load without errors?</li>
+                    <li>Are inventory items displayed in the table?</li>
+                    <li>Do the filter buttons work?</li>
+                    <li>Can you search for items?</li>
+                    <li>Can you sort by clicking column headers?</li>
+                    <li>Do the edit buttons show inline editors?</li>
+                    <li>Do the view mode buttons (Table/Planning/Analytics) work?</li>
+                </ul>
+                <p>Check the browser console (F12) for any JavaScript errors.</p>
+            `;
+            results.appendChild(manual);
+        }
+        
+        // Run tests on load
+        runTests();
+    </script>
+</body>
+</html>

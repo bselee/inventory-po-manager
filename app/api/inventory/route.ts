@@ -44,7 +44,7 @@ const updateInventorySchema = createInventorySchema.partial()
 // GET /api/inventory - Fetch inventory items with enhanced data
 export const GET = createApiHandler(async ({ query }) => {
   // Parse and validate query parameters
-  const params = inventoryQuerySchema.parse(Object.fromEntries(query))
+  const params = inventoryQuerySchema.parse(Object.fromEntries(query || []))
   
   // Fetch inventory with filters
   const result = await getInventoryItems(

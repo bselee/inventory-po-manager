@@ -50,7 +50,7 @@ test.describe('Settings Page - Backend/API Integration', () => {
     
     // Save and wait for response
     const savePromise = page.waitForResponse(
-      res => res.url().includes('/api/settings') && res.method() === 'PUT'
+      res => res.url().includes('/api/settings') && res.request().method() === 'PUT'
     );
     await page.click('[data-testid="save-settings"]');
     await savePromise;

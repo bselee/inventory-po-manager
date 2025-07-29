@@ -215,6 +215,8 @@ export interface InventoryFilters {
   status?: 'all' | 'out-of-stock' | 'critical' | 'low-stock' | 'adequate' | 'overstocked' | 'in-stock'
   vendor?: string
   location?: string
+  minPrice?: number
+  maxPrice?: number
   priceRange?: { min: number; max: number }
   salesVelocity?: 'all' | 'fast' | 'medium' | 'slow' | 'dead'
   stockDays?: 'all' | 'under-30' | '30-60' | '60-90' | 'over-90' | 'over-180'
@@ -226,6 +228,13 @@ export interface InventoryFilters {
 export interface SortConfig {
   key: keyof InventoryItem
   direction: 'asc' | 'desc'
+}
+
+export interface PaginationOptions {
+  page: number
+  limit: number
+  sortBy?: keyof InventoryItem
+  sortDirection?: 'asc' | 'desc'
 }
 
 // =============================================================================
@@ -298,11 +307,3 @@ export function isInventoryItem(item: any): item is InventoryItem {
 export function isSyncLog(log: any): log is SyncLog {
   return log && typeof log.sync_type === 'string' && typeof log.status === 'string'
 }
-
-// Export all types for convenience
-export type {
-  CreateInventoryItem,
-  UpdateInventoryItem,
-  CreatePurchaseOrder,
-  UpdatePurchaseOrder
-} from './index'

@@ -9,7 +9,7 @@ import {
   getFinaleConfig,
   setSyncEnabled,
   Settings
-} from '@/lib/data-access'
+} from '@/app/lib/data-access'
 
 /**
  * Hook for managing application settings

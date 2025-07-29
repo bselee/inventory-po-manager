@@ -9,13 +9,13 @@ import {
   getInventorySummary,
   updateInventoryStock,
   updateInventoryCost
-} from '@/lib/data-access'
+} from '@/app/lib/data-access'
 import {
   InventoryItem,
   InventorySummary,
   InventoryFilters,
   SortConfig
-} from '@/types'
+} from '@/app/types'
 
 /**
  * Main inventory data hook

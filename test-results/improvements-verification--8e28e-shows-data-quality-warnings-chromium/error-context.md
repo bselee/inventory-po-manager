@@ -1,0 +1,1343 @@
+# Page snapshot
+
+```yaml
+- navigation:
+  - img
+  - heading "Inventory & PO Manager" [level=1]
+  - link "Inventory":
+    - /url: /inventory
+    - img
+    - text: Inventory
+  - link "Purchase Orders":
+    - /url: /purchase-orders
+    - img
+    - text: Purchase Orders
+  - link "Vendors":
+    - /url: /vendors
+    - img
+    - text: Vendors
+  - link "Settings":
+    - /url: /settings
+    - img
+    - text: Settings
+  - text: "Current Page: Inventory • View stock levels and out-of-stock items Tue, Jul 29, 2025"
+- main:
+  - heading "Inventory" [level=1]
+  - button "Refresh"
+  - paragraph: Total Items
+  - paragraph: "58"
+  - img
+  - paragraph: Out of Stock
+  - paragraph: "52"
+  - img
+  - paragraph: Low Stock
+  - paragraph: "5"
+  - img
+  - paragraph: Total Value
+  - paragraph: $1454.99
+  - img
+  - textbox "Search by name, SKU, or vendor..."
+  - button "Table View"
+  - button "Planning"
+  - button "Analytics"
+  - combobox "Filter by stock status":
+    - option "All Stock Levels" [selected]
+    - option "Critical (Out/Emergency)"
+    - option "Low Stock"
+    - option "Adequate Stock"
+    - option "Overstocked"
+  - textbox "Filter by vendor"
+  - textbox "Filter by location"
+  - combobox "Filter by sales velocity":
+    - option "All Velocities" [selected]
+    - option "Fast Moving (>1/day)"
+    - option "Medium (0.1-1/day)"
+    - option "Slow (>0-0.1/day)"
+    - option "Dead Stock (0/day)"
+  - combobox "Filter by stock days":
+    - option "All Stock Days" [selected]
+    - option "Under 30 Days"
+    - option "30-60 Days"
+    - option "60-90 Days"
+    - option "Over 90 Days"
+    - option "Over 180 Days"
+  - button "Clear Filters"
+  - button "Show Advanced"
+  - heading "Quick Filters" [level=3]
+  - button "Out of Stock":
+    - img
+    - text: Out of Stock
+  - button "Reorder Needed":
+    - img
+    - text: Reorder Needed
+  - button "Dead Stock":
+    - img
+    - text: Dead Stock
+  - button "Overstocked":
+    - img
+    - text: Overstocked
+  - button "Fast Moving":
+    - img
+    - text: Fast Moving
+  - button "Low Value":
+    - img
+    - text: Low Value
+  - button "Critical Stock":
+    - img
+    - text: Critical Stock
+  - img
+  - paragraph: 100% of items missing sales data
+  - paragraph: Sales velocity calculations will be inaccurate without sales data.
+  - paragraph: "Action: Upload sales data from Finale Excel reports to enable accurate analytics."
+  - img
+  - paragraph: 88% of items missing cost data
+  - paragraph: Inventory value calculations may be incomplete.
+  - paragraph: "Action: Sync vendor data or update costs manually."
+  - img
+  - paragraph: 88% of items missing vendor information
+  - paragraph: Vendor filtering and purchase order creation may be limited.
+  - paragraph: "Action: Run vendor sync or update vendor information in Finale."
+  - img
+  - paragraph: Data is 8 days old
+  - paragraph: Last sync was on 7/21/2025 at 11:34:41 AM
+  - paragraph: "Action: Run a sync to get the latest inventory data."
+  - table:
+    - rowgroup:
+      - row "SKU ▲▼ Product Name ▲ Stock ▲▼ Status ▲▼ Velocity/Day ▲▼ Days Left ▲▼ Location ▲▼ Vendor ▲▼ Cost ▲▼ 30d Sales ▲▼ Trend ▲▼ Value ▲▼ Actions":
+        - cell "SKU ▲▼"
+        - cell "Product Name ▲"
+        - cell "Stock ▲▼"
+        - cell "Status ▲▼"
+        - cell "Velocity/Day ▲▼"
+        - cell "Days Left ▲▼"
+        - cell "Location ▲▼"
+        - cell "Vendor ▲▼"
+        - cell "Cost ▲▼"
+        - cell "30d Sales ▲▼"
+        - cell "Trend ▲▼"
+        - cell "Value ▲▼"
+        - cell "Actions"
+    - rowgroup:
+      - row "10004 10004 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "10004"
+        - cell "10004"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "AL118 200x Aloe Vera Powder/Flakes Certified Organic (1 Kilo Powder (35 Ounces)) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "AL118"
+        - cell "200x Aloe Vera Powder/Flakes Certified Organic (1 Kilo Powder (35 Ounces))"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "AL115 200x Aloe Vera Powder/Flakes Certified Organic (1 Ounce Powder) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "AL115"
+        - cell "200x Aloe Vera Powder/Flakes Certified Organic (1 Ounce Powder)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "AL117 200x Aloe Vera Powder/Flakes Certified Organic (16 Ounce Powder) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "AL117"
+        - cell "200x Aloe Vera Powder/Flakes Certified Organic (16 Ounce Powder)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "AL116 200x Aloe Vera Powder/Flakes Certified Organic (4 Ounce Powder) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "AL116"
+        - cell "200x Aloe Vera Powder/Flakes Certified Organic (4 Ounce Powder)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "AS106 Alfalfa Seed - For Organic Sprouted Seed Tea (1 lb) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "AS106"
+        - cell "Alfalfa Seed - For Organic Sprouted Seed Tea (1 lb)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "BTE103 Big Time Exterminator (Big Time Exterminator - 2.5 Gallon) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "BTE103"
+        - cell "Big Time Exterminator (Big Time Exterminator - 2.5 Gallon)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "BTE104 Big Time Exterminator (Big Time Exterminator - 5 Gallon) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "BTE104"
+        - cell "Big Time Exterminator (Big Time Exterminator - 5 Gallon)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "BC106 Bio Char (1 Yard Tote) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "BC106"
+        - cell "Bio Char (1 Yard Tote)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "BC101C Bio Char (Charged Bio-Char - Small Bag) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "BC101C"
+        - cell "Bio Char (Charged Bio-Char - Small Bag)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "BC101 Bio Char (Raw Bio-Char - Small Bag) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "BC101"
+        - cell "Bio Char (Raw Bio-Char - Small Bag)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "BP101 Boveda Packs (4 Gram 62% Boveda (10 Pack)) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "BP101"
+        - cell "Boveda Packs (4 Gram 62% Boveda (10 Pack))"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "BP104 Boveda Packs (4 Gram 62% Boveda) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "BP104"
+        - cell "Boveda Packs (4 Gram 62% Boveda)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "BP103 Boveda Packs (60 Gram 62% Boveda (12 Pack)) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "BP103"
+        - cell "Boveda Packs (60 Gram 62% Boveda (12 Pack))"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "BP102 Boveda Packs (60 Gram 62% Boveda) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "BP102"
+        - cell "Boveda Packs (60 Gram 62% Boveda)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "BP105 Boveda Packs (8 Gram 62% Boveda (10 Pack)) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "BP105"
+        - cell "Boveda Packs (8 Gram 62% Boveda (10 Pack))"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "BP106 Boveda Packs (8 Gram 62% Boveda) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "BP106"
+        - cell "Boveda Packs (8 Gram 62% Boveda)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "BDHT605 BWGS (Dig Hydro Therm large) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "BDHT605"
+        - cell "BWGS (Dig Hydro Therm large)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "CP105 CalPhos (1 lb) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "CP105"
+        - cell "CalPhos (1 lb)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "ACCESSORY005 Deluxe Accessory 15 Edit stock In Stock 0.00 ∞ Warehouse B Accessory World $22.75 Edit cost 0 ➡️ stable $341.25":
+        - cell "ACCESSORY005"
+        - cell "Deluxe Accessory"
+        - cell "15 Edit stock":
+          - text: "15"
+          - button "Edit stock":
+            - img
+        - cell "In Stock"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Warehouse B"
+        - cell "Accessory World"
+        - cell "$22.75 Edit cost":
+          - text: $22.75
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$341.25"
+        - cell
+      - row "DL105 Dolomite Lime - Granulated (1 lb) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "DL105"
+        - cell "Dolomite Lime - Granulated (1 lb)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "COMPONENT006 Essential Component 0 Edit stock Critical Reorder Now 0.00 ∞ Warehouse A Component Co $8.25 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "COMPONENT006"
+        - cell "Essential Component"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Warehouse A"
+        - cell "Component Co"
+        - cell "$8.25 Edit cost":
+          - text: $8.25
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "10006 FG20P ReoTemp Compost Thermometer 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "10006"
+        - cell "FG20P ReoTemp Compost Thermometer"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "FM105 Fish Meal (1 lb) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "FM105"
+        - cell "Fish Meal (1 lb)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "GBUR20GAL Geo Pot - G-Natural Burlap (20 Gallon) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "GBUR20GAL"
+        - cell "Geo Pot - G-Natural Burlap (20 Gallon)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "GBUR30GAL Geo Pot - G-Natural Burlap (30 Gallon) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "GBUR30GAL"
+        - cell "Geo Pot - G-Natural Burlap (30 Gallon)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "GBUR45GAL Geo Pot - G-Natural Burlap (45 Gallon) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "GBUR45GAL"
+        - cell "Geo Pot - G-Natural Burlap (45 Gallon)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "GBUR65GAL Geo Pot - G-Natural Burlap (65 Gallon) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "GBUR65GAL"
+        - cell "Geo Pot - G-Natural Burlap (65 Gallon)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "GRKSH3 Gro Kashi - Probiotic Amendment (74 lb Bulk Bag) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "GRKSH3"
+        - cell "Gro Kashi - Probiotic Amendment (74 lb Bulk Bag)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "GY105 Gypsum Flour Pellets (1 lb) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "GY105"
+        - cell "Gypsum Flour Pellets (1 lb)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "H-2708-110B H-2708-110B 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "H-2708-110B"
+        - cell "H-2708-110B"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "FR104 Insect Frass (150+ lb Barrel) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "FR104"
+        - cell "Insect Frass (150+ lb Barrel)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "LV101 Living Organic Soil - Oly Mountain Fish Compost (1/2 Cubic Foot Box of Soil Plus Shipping) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "LV101"
+        - cell "Living Organic Soil - Oly Mountain Fish Compost (1/2 Cubic Foot Box of Soil Plus Shipping)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "CSRSUN Living Organic Soil - Oly Mountain Fish Compost Mixed With sunshine bales 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "CSRSUN"
+        - cell "Living Organic Soil - Oly Mountain Fish Compost Mixed With sunshine bales"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "MB105M Malted Barley Grain for SST (1 lb - Milled Barley Large Bag) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "MB105M"
+        - cell "Malted Barley Grain for SST (1 lb - Milled Barley Large Bag)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "MB105 Malted Barley Grain for SST (1 lb - Whole Barley Large Bag) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "MB105"
+        - cell "Malted Barley Grain for SST (1 lb - Whole Barley Large Bag)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "10002 Mineral Mix - (For Coco Coir) (1800 lb Mineral Mix) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "10002"
+        - cell "Mineral Mix - (For Coco Coir) (1800 lb Mineral Mix)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "10007 MM17 ReoTemp Moisture Meter 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "10007"
+        - cell "MM17 ReoTemp Moisture Meter"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "DEVICE007 Multi-Purpose Device 8 Edit stock Low Stock 0.00 ∞ Warehouse C Device Direct $67.50 Edit cost 0 ➡️ stable $540.00":
+        - cell "DEVICE007"
+        - cell "Multi-Purpose Device"
+        - cell "8 Edit stock":
+          - text: "8"
+          - button "Edit stock":
+            - img
+        - cell "Low Stock"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Warehouse C"
+        - cell "Device Direct"
+        - cell "$67.50 Edit cost":
+          - text: $67.50
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$540.00"
+        - cell
+      - row "NKNM03 Nutrient Kit - Without Minerals (Large - 18lbs Mix into 27 Cubic Feet) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "NKNM03"
+        - cell "Nutrient Kit - Without Minerals (Large - 18lbs Mix into 27 Cubic Feet)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "NKNM02 Nutrient Kit - Without Minerals (Medium - 9lbs Mix into 1/2 Yard) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "NKNM02"
+        - cell "Nutrient Kit - Without Minerals (Medium - 9lbs Mix into 1/2 Yard)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "NKNM01 Nutrient Kit - Without Minerals (Small - 4.5 lbs Mix into 6 Cubic Feet) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "NKNM01"
+        - cell "Nutrient Kit - Without Minerals (Small - 4.5 lbs Mix into 6 Cubic Feet)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "OSF107 Oyster Shell Flour (Replacement for Dolomite Lime) (1 Ton Tote) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "OSF107"
+        - cell "Oyster Shell Flour (Replacement for Dolomite Lime) (1 Ton Tote)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "WIDGET001 Premium Widget 26 Edit stock In Stock 0.00 ∞ Warehouse A Widget Corp $12.99 Edit cost 0 ➡️ stable $337.74":
+        - cell "WIDGET001"
+        - cell "Premium Widget"
+        - cell "26 Edit stock":
+          - text: "26"
+          - button "Edit stock":
+            - img
+        - cell "In Stock"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Warehouse A"
+        - cell "Widget Corp"
+        - cell "$12.99 Edit cost":
+          - text: $12.99
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$337.74"
+        - cell
+      - row "TOOL003 Professional Tool 0 Edit stock Critical Reorder Now 0.00 ∞ Warehouse A Tool Supplies $89.99 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "TOOL003"
+        - cell "Professional Tool"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Warehouse A"
+        - cell "Tool Supplies"
+        - cell "$89.99 Edit cost":
+          - text: $89.99
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "PU102 Pumice (Medium Box - 11 lbs) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "PU102"
+        - cell "Pumice (Medium Box - 11 lbs)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "PU101 Pumice (Small Bag - 4 lbs) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "PU101"
+        - cell "Pumice (Small Bag - 4 lbs)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "PART004 Replacement Part 2 Edit stock Low Stock 0.00 ∞ Warehouse C Parts Plus $5.50 Edit cost 0 ➡️ stable $11.00":
+        - cell "PART004"
+        - cell "Replacement Part"
+        - cell "2 Edit stock":
+          - text: "2"
+          - button "Edit stock":
+            - img
+        - cell "Low Stock"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Warehouse C"
+        - cell "Parts Plus"
+        - cell "$5.50 Edit cost":
+          - text: $5.50
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$11.00"
+        - cell
+      - row "SS103 Seedling Soil (1 Cubic Foot Bag + Paid Shipping) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "SS103"
+        - cell "Seedling Soil (1 Cubic Foot Bag + Paid Shipping)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "SS102 Seedling Soil (1/2 Cubic Foot) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "SS102"
+        - cell "Seedling Soil (1/2 Cubic Foot)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "SS101 Seedling Soil (Medium 3 Gallon Box) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "SS101"
+        - cell "Seedling Soil (Medium 3 Gallon Box)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "GADGET002 Smart Gadget 5 Edit stock Low Stock 0.00 ∞ Warehouse B Gadget Inc $45.00 Edit cost 0 ➡️ stable $225.00":
+        - cell "GADGET002"
+        - cell "Smart Gadget"
+        - cell "5 Edit stock":
+          - text: "5"
+          - button "Edit stock":
+            - img
+        - cell "Low Stock"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Warehouse B"
+        - cell "Gadget Inc"
+        - cell "$45.00 Edit cost":
+          - text: $45.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$225.00"
+        - cell
+      - row "20810511A Stock Bags (2 lb - Aloe Metallized Stand Up Zip Pouch (Kraft) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "20810511A"
+        - cell "Stock Bags (2 lb - Aloe Metallized Stand Up Zip Pouch (Kraft)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "SU102 Sulfur - 90% Agricultural (Medium Box - 30 lbs) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "SU102"
+        - cell "Sulfur - 90% Agricultural (Medium Box - 30 lbs)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "SU101 Sulfur - 90% Agricultural (Small Bag - 9.5 lbs) 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "SU101"
+        - cell "Sulfur - 90% Agricultural (Small Bag - 9.5 lbs)"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "CWP02 Test Product CWP02 2 Edit stock In Stock 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00":
+        - cell "CWP02"
+        - cell "Test Product CWP02"
+        - cell "2 Edit stock":
+          - text: "2"
+          - button "Edit stock":
+            - img
+        - cell "In Stock"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell
+      - row "10001 Wind King 12\" Industrial Floor Fan 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "10001"
+        - cell "Wind King 12\" Industrial Floor Fan"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+      - row "WKF104 Wind King 16\" Wall Mount Fan 0 Edit stock Critical Reorder Now 0.00 ∞ Shipping - $0.00 Edit cost 0 ➡️ stable $0.00 Create PO":
+        - cell "WKF104"
+        - cell "Wind King 16\" Wall Mount Fan"
+        - cell "0 Edit stock":
+          - text: "0"
+          - button "Edit stock":
+            - img
+        - cell "Critical Reorder Now"
+        - cell "0.00"
+        - cell "∞"
+        - cell "Shipping"
+        - cell "-"
+        - cell "$0.00 Edit cost":
+          - text: $0.00
+          - button "Edit cost":
+            - img
+        - cell "0"
+        - cell "➡️ stable"
+        - cell "$0.00"
+        - cell "Create PO":
+          - button "Create PO"
+  - text: "Show:"
+  - combobox "Items per page":
+    - option "25"
+    - option "50"
+    - option "100" [selected]
+    - option "250"
+    - option "500"
+    - option "1000"
+  - text: items per page Showing 1 to 58 of 58 results
+- alert
+```

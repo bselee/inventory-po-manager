@@ -4,7 +4,7 @@ import { supabase } from './supabase'
 
 export type SyncStrategy = 'full' | 'incremental' | 'inventory' | 'critical' | 'smart'
 
-interface SyncOptions {
+export interface SyncOptions {
   strategy?: SyncStrategy
   limit?: number
   skus?: string[]

@@ -36,7 +36,7 @@ export async function GET(request: NextRequest) {
         })
 
         // Try to fetch one product
-        const testResult = await finaleApi.getProducts('Shipping', 1, 1)
+        const testResult = await finaleApi.getAllProducts({ limit: 1 })
         
         return NextResponse.json({
           success: true,

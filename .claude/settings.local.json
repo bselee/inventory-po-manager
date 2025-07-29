@@ -66,7 +66,16 @@
       "Bash(timeout:*)",
       "Bash(git rm:*)",
       "Bash(git pull:*)",
-      "Bash(npm audit:*)"
+      "Bash(npm audit:*)",
+      "Bash(PLAYWRIGHT_BASE_URL=http://localhost:3000 npx playwright test tests/e2e/settings/settings-backend.spec.ts --reporter=list --project=chromium)",
+      "WebFetch(domain:localhost)",
+      "Bash(sudo npx playwright:*)",
+      "Bash(git reset:*)",
+      "Bash(# Check sync logs\ncurl -s http://localhost:3001/api/sync-logs?limit=5 | head -100\n\n# Check if any sync is running\necho -e \"\"\\n\\nChecking running syncs:\"\"\ncurl -s http://localhost:3001/api/sync-finale/status\n\n# Check inventory count\necho -e \"\"\\n\\nCurrent inventory count:\"\"\ncurl -s http://localhost:3001/api/inventory | grep -o ''\"\"total\"\":[0-9]*'' | cut -d: -f2)",
+      "Bash(-H \"Content-Type: application/json\" )",
+      "Bash(-d '{\"\"manual\"\": true}' )",
+      "Bash(-w \"\\nStatus: %{http_code}\\n\")",
+      "WebFetch(domain:inventory-po-manager.vercel.app)"
     ],
     "deny": []
   }
