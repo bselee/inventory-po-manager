@@ -1,3 +1,5 @@
+'use client'
+
 export default function TestInlinePage() {
   return (
     <div className="p-8">
