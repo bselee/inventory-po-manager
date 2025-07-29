@@ -8,6 +8,8 @@ import FinaleSyncManager from '@/app/components/FinaleSyncManager'
 import SalesDataUploader from '@/app/components/SalesDataUploader'
 import VendorSyncManager from '@/app/components/VendorSyncManager'
 import FinaleDebugPanel from '@/app/components/FinaleDebugPanel'
+import RateLimiterStatus from '@/app/components/RateLimiterStatus'
+import SyncProgressIndicator from '@/app/components/SyncProgressIndicator'
 import { validateFinaleCredentials, getValidationErrorMessage } from '@/app/lib/validation/finale-credentials'
 
 interface Settings {
@@ -430,6 +432,14 @@ export default function SettingsPage() {
   return (
     <div className="max-w-4xl mx-auto">
       <h1 className="text-2xl font-bold mb-6">Settings</h1>
+      
+      {/* Show sync progress at the top if active */}
+      <SyncProgressIndicator />
+      
+      {/* Show rate limiter status */}
+      <div className="mb-6">
+        <RateLimiterStatus />
+      </div>
 
       {/* Error/Success Message for Playwright */}
       {message && (

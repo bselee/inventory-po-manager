@@ -10,7 +10,9 @@ import {
 import { Package, AlertTriangle, TrendingDown, TrendingUp, Search, Filter, RefreshCw, Plus, Edit2, Loader2, Clock, DollarSign, BarChart3, Zap, AlertCircle, Archive } from 'lucide-react'
 import useInventoryFiltering from '@/app/hooks/useOptimizedInventoryFilter'
 import SafeFilteredInventory from '@/app/components/SafeFilteredInventory'
-import InventoryDataWarning from '@/app/components/inventory/InventoryDataWarning'
+import InventoryDataStatus from '@/app/components/inventory/InventoryDataStatus'
+import QuickStockAdjust from '@/app/components/inventory/QuickStockAdjust'
+import ExportInventory from '@/app/components/inventory/ExportInventory'
 import { useDebounce } from '@/app/hooks/useDebounce'
 import type { InventoryItem as ImportedInventoryItem } from '@/app/types'
 import {
@@ -344,9 +346,10 @@ export default function InventoryPage() {
     setShowCostEdit(true)
   }
 
-  const handleStockUpdate = async (itemId: string) => {
+  const handleStockUpdate = async (itemId: string, newStock?: number) => {
     try {
-      const updatedItem = await updateInventoryStock(itemId, editStock)
+      const stockValue = newStock !== undefined ? newStock : editStock
+      const updatedItem = await updateInventoryStock(itemId, stockValue)
 
       // Update local state
       setItems(items.map(item =>
@@ -392,16 +395,19 @@ export default function InventoryPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold" data-testid="inventory-heading" role="heading" aria-level="1">Inventory</h1>
-        <button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
-          data-testid="refresh-button"
-        >
-          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
-          Refresh
-        </button>
+        <h1 className="text-2xl font-bold" data-testid="inventory-heading" role="heading" aria-level="1">Inventory Management</h1>
+        <div className="flex items-center gap-3">
+          <ExportInventory items={filteredItems} filename="inventory" />
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+            data-testid="refresh-button"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {/* Summary Cards */}
@@ -663,13 +669,14 @@ export default function InventoryPage() {
         </div>
       </div>
 
-      {/* Data Quality Warnings */}
-      <InventoryDataWarning
+      {/* Inventory Overview */}
+      <InventoryDataStatus
         totalItems={totalItems}
-        itemsWithSalesData={dataQualityMetrics.itemsWithSalesData}
         itemsWithCost={dataQualityMetrics.itemsWithCost}
         itemsWithVendor={dataQualityMetrics.itemsWithVendor}
+        totalValue={summary?.total_inventory_value || 0}
         lastSyncDate={dataQualityMetrics.lastSyncDate}
+        onSync={() => window.location.href = '/settings'}
       />
 
       {/* Enhanced Inventory Table */}
@@ -736,49 +743,15 @@ export default function InventoryPage() {
                         {item.product_name || item.name}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {editingItem === item.id && !showCostEdit ? (
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="number"
-                              value={editStock}
-                              onChange={(e) => setEditStock(parseInt(e.target.value) || 0)}
-                              className="w-20 px-2 py-1 border border-gray-300 rounded"
-                              autoFocus
-                              aria-label="Edit stock quantity"
-                            />
-                            <button
-                              onClick={() => handleStockUpdate(item.id)}
-                              className="text-green-600 hover:text-green-800"
-                              aria-label="Save stock update"
-                            >
-                              ✓
-                            </button>
-                            <button
-                              onClick={() => setEditingItem(null)}
-                              className="text-red-600 hover:text-red-800"
-                              aria-label="Cancel stock edit"
-                            >
-                              ✗
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <span className={`font-medium ${
-                              item.current_stock === 0 ? 'text-red-600' : 
-                              (item.stock_status_level === 'low' || item.stock_status_level === 'critical') ? 'text-yellow-600' : 
-                              'text-gray-900'
-                            }`}>
-                              {item.current_stock}
-                            </span>
-                            <button
-                              onClick={() => startEditingStock(item)}
-                              className="text-gray-400 hover:text-gray-600"
-                              aria-label="Edit stock"
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </button>
-                          </div>
-                        )}
+                        <QuickStockAdjust
+                          itemId={item.id}
+                          sku={item.sku}
+                          currentStock={item.current_stock || 0}
+                          onUpdate={async (newStock) => {
+                            await handleStockUpdate(item.id, newStock)
+                            await loadInventory() // Refresh data
+                          }}
+                        />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
