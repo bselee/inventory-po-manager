@@ -98,7 +98,7 @@ export class SyncService {
     try {
       // Initialize if needed
       if (!this.finaleApi) {
-        this.logger.log('initialization', 'started')
+        this.logger.log('initialization', 'retry')
         await this.initialize()
         this.logger.log('initialization', 'success')
       }

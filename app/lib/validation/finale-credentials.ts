@@ -71,7 +71,7 @@ export function validateFinaleCredentials(credentials: FinaleCredentials): Valid
       errors.finale_api_key = 'API Key is required when using API authentication'
     } else {
       // Validate API key format
-      const apiKey = credentials.finale_api_key.trim()
+      const apiKey = credentials.finale_api_key!.trim()
       if (apiKey.length < 10) {
         errors.finale_api_key = 'API Key seems too short. Please check if you copied it correctly'
       }
@@ -84,7 +84,7 @@ export function validateFinaleCredentials(credentials: FinaleCredentials): Valid
       errors.finale_api_secret = 'API Secret is required when using API authentication'
     } else {
       // Validate API secret format
-      const apiSecret = credentials.finale_api_secret.trim()
+      const apiSecret = credentials.finale_api_secret!.trim()
       if (apiSecret.length < 10) {
         errors.finale_api_secret = 'API Secret seems too short. Please check if you copied it correctly'
       }

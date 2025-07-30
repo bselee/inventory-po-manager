@@ -174,6 +174,7 @@ export async function syncWithReports(config: FinaleApiConfig) {
 export async function dailySmartSync() {
   console.log('🤖 Running daily smart sync with reporting data...')
   
+  const { getFinaleConfig } = await import('./data-access')
   const config = await getFinaleConfig()
   if (!config) return
   

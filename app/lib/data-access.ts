@@ -47,7 +47,7 @@ export async function getInventoryItems(
         break
       case 'critical':
         query = query.filter('current_stock', 'gt', 0)
-        query = query.filter('current_stock', 'lte', 'reorder_point')
+        query = query.filter('current_stock', 'lte', 'reorder_point * 2')
         break
       case 'low-stock':
         query = query.filter('current_stock', 'gt', 'reorder_point')

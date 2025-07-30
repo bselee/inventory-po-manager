@@ -3,13 +3,13 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react'
-import {
+import { 
   getRunningSyncLog,
   getRecentSyncLogs,
   getSyncStats,
   isAnySyncRunning
-} from '@/app/lib/data-access'
-import type { SyncLog } from '@/app/lib/data-access'
+} from '@/app/lib/data-access/sync-logs'
+import type { SyncLog } from '@/app/lib/data-access/sync-logs'
 
 /**
  * Hook for monitoring sync status

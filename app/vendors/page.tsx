@@ -207,9 +207,13 @@ export default function VendorsPage() {
                   <h3 className="font-semibold text-lg flex items-center gap-2">
                     {vendor.name}
                     {vendor.finale_vendor_id ? (
-                      <Cloud className="h-4 w-4 text-green-500" title="Synced with Finale" />
+                      <span title="Synced with Finale">
+                        <Cloud className="h-4 w-4 text-green-500" />
+                      </span>
                     ) : (
-                      <CloudOff className="h-4 w-4 text-gray-400" title="Local only" />
+                      <span title="Local only">
+                        <CloudOff className="h-4 w-4 text-gray-400" />
+                      </span>
                     )}
                   </h3>
                   {vendor.finale_vendor_id && (
