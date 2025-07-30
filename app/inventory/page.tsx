@@ -8,6 +8,7 @@ import SafeFilteredInventory from '@/app/components/SafeFilteredInventory'
 import InventoryDataStatus from '@/app/components/inventory/InventoryDataStatus'
 import QuickStockAdjust from '@/app/components/inventory/QuickStockAdjust'
 import ExportInventory from '@/app/components/inventory/ExportInventory'
+import CriticalItemsMonitor from '@/app/components/CriticalItemsMonitor'
 import { useDebounce } from '@/app/hooks/useDebounce'
 import type { InventoryItem as ImportedInventoryItem } from '@/app/types'
 import {
@@ -691,6 +692,9 @@ export default function InventoryPage() {
           </div>
         </div>
       </div>
+
+      {/* Critical Items Monitor - Real-time alerts */}
+      <CriticalItemsMonitor />
 
       {/* Inventory Overview */}
       <InventoryDataStatus
