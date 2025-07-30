@@ -11,13 +11,13 @@ export const maxDuration = 60
 export const GET = createApiHandler(async () => {
   try {
     // 1. Check database counts
-    const { data: inventoryCount } = await supabase
+    const { count: inventoryCount } = await supabase
       .from('inventory_items')
-      .select('count', { count: 'exact' })
+      .select('*', { count: 'exact', head: true })
     
-    const { data: vendorCount } = await supabase
+    const { count: vendorCount } = await supabase
       .from('vendors')
-      .select('count', { count: 'exact' })
+      .select('*', { count: 'exact', head: true })
     
     const { data: syncLogs } = await supabase
       .from('sync_logs')
@@ -31,8 +31,8 @@ export const GET = createApiHandler(async () => {
     // 3. Test Finale connection and get sample data
     let finaleStatus = {
       connected: false,
-      sampleProducts: [],
-      sampleVendors: [],
+      sampleProducts: [] as Array<{ sku: string; name: string; stock: number }>,
+      sampleVendors: [] as Array<{ id: any; name: any }>,
       error: null as string | null
     }
     
@@ -46,7 +46,7 @@ export const GET = createApiHandler(async () => {
         if (finaleStatus.connected) {
           // Get sample products
           const products = await finaleApi.getInventoryData(new Date().getFullYear())
-          finaleStatus.sampleProducts = products.slice(0, 3).map(p => ({
+          finaleStatus.sampleProducts = products.slice(0, 3).map((p: any) => ({
             sku: p.productSku,
             name: p.productName,
             stock: p.quantityOnHand
@@ -54,7 +54,7 @@ export const GET = createApiHandler(async () => {
           
           // Get sample vendors
           const vendors = await finaleApi.getVendors()
-          finaleStatus.sampleVendors = vendors.slice(0, 3).map(v => ({
+          finaleStatus.sampleVendors = vendors.slice(0, 3).map((v: any) => ({
             id: v.vendorId,
             name: v.vendorName
           }))

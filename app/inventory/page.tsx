@@ -8,7 +8,10 @@ import SafeFilteredInventory from '@/app/components/SafeFilteredInventory'
 import InventoryDataStatus from '@/app/components/inventory/InventoryDataStatus'
 import QuickStockAdjust from '@/app/components/inventory/QuickStockAdjust'
 import ExportInventory from '@/app/components/inventory/ExportInventory'
+import ConsolidatedExportDropdown from '@/app/components/inventory/ConsolidatedExportDropdown'
 import CriticalItemsMonitor from '@/app/components/CriticalItemsMonitor'
+import EnhancedQuickFilters from '@/app/components/inventory/EnhancedQuickFilters'
+import { useEnhancedInventoryFilters } from '@/app/hooks/useEnhancedInventoryFilters'
 import { useDebounce } from '@/app/hooks/useDebounce'
 import type { InventoryItem as ImportedInventoryItem } from '@/app/types'
 import {
@@ -93,6 +96,18 @@ export default function InventoryPage() {
   const [filteringInProgress, setFilteringInProgress] = useState(false)
   const debouncedSearchTerm = useDebounce(searchTerm, 300) // 300ms delay
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'product_name', direction: 'asc' })
+  
+  // Enhanced filtering with the new hook
+  const {
+    filteredItems: enhancedFilteredItems,
+    filterCounts,
+    activeFilter: enhancedActiveFilter,
+    filterConfig: enhancedFilterConfig,
+    applyFilter: applyEnhancedFilter,
+    clearFilters: clearEnhancedFilters
+  } = useEnhancedInventoryFilters(allItems)
+
+  // Legacy filter config for compatibility
   const [filterConfig, setFilterConfig] = useState<FilterConfig>({
     status: 'all',
     vendor: '',
@@ -218,7 +233,11 @@ export default function InventoryPage() {
   }
 
   // Use optimized filtering hook with debounced search
-  const filteredItems = useInventoryFiltering(allItems, debouncedSearchTerm, filterConfig, sortConfig)
+  // Apply search filtering to enhanced filtered items
+  const searchFilteredItems = useInventoryFiltering(enhancedFilteredItems, debouncedSearchTerm, filterConfig, sortConfig)
+  
+  // Use search filtered items if there's a search term, otherwise use enhanced filtered items
+  const filteredItems = debouncedSearchTerm ? searchFilteredItems : enhancedFilteredItems
 
   // Update displayed items when filters, search, or pagination changes
   useEffect(() => {
@@ -419,9 +438,9 @@ export default function InventoryPage() {
   return (
     <div>
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold" data-testid="inventory-heading" role="heading" aria-level="1">Inventory Management</h1>
+        <h1 className="text-2xl font-bold" data-testid="inventory-heading">Inventory Management</h1>
         <div className="flex items-center gap-3">
-          <ExportInventory items={filteredItems} filename="inventory" />
+          <ConsolidatedExportDropdown items={filteredItems} filename="inventory" />
           <button
             onClick={handleRefresh}
             disabled={refreshing}
@@ -433,51 +452,6 @@ export default function InventoryPage() {
           </button>
         </div>
       </div>
-
-      {/* Summary Cards */}
-      {summary && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-          <div className="bg-white p-4 rounded-lg shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Items</p>
-                <p className="text-2xl font-bold">{summary.total_items}</p>
-              </div>
-              <Package className="h-8 w-8 text-blue-500" />
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-lg shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Out of Stock</p>
-                <p className="text-2xl font-bold text-red-600">{summary.out_of_stock_count}</p>
-              </div>
-              <AlertTriangle className="h-8 w-8 text-red-500" />
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-lg shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Low Stock</p>
-                <p className="text-2xl font-bold text-yellow-600">{summary.low_stock_count}</p>
-              </div>
-              <TrendingDown className="h-8 w-8 text-yellow-500" />
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-lg shadow">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600">Total Value</p>
-                <p className="text-2xl font-bold">${(summary.total_inventory_value || 0).toFixed(2)}</p>
-              </div>
-              <Package className="h-8 w-8 text-green-500" />
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Enhanced Filters & View Controls */}
       <div className="bg-white p-4 rounded-lg shadow mb-6" data-testid="filter-panel">
@@ -667,30 +641,14 @@ export default function InventoryPage() {
           </div>
         )}
 
-        {/* Preset Filters */}
-        <div className="mt-4">
-          <h3 className="text-sm font-medium text-gray-700 mb-3">Quick Filters</h3>
-          <div className="flex flex-wrap gap-2">
-            {presetFilters.map((preset) => {
-              const IconComponent = preset.icon
-              const isActive = activePresetFilter === preset.id
-              return (
-                <button
-                  key={preset.id}
-                  onClick={() => applyPresetFilter(preset.id)}
-                  className={`flex items-center gap-2 px-3 py-2 text-sm font-medium rounded-md border transition-colors ${
-                    isActive 
-                      ? `${preset.bgColor} ${preset.color} ${preset.borderColor} border-2` 
-                      : `bg-white text-gray-600 border-gray-300 hover:${preset.bgColor} hover:${preset.color}`
-                  }`}
-                >
-                  <IconComponent className="h-4 w-4" />
-                  {preset.label}
-                </button>
-              )
-            })}
-          </div>
-        </div>
+        {/* Enhanced Quick Filters */}
+        <EnhancedQuickFilters
+          activeFilter={enhancedActiveFilter}
+          onFilterChange={applyEnhancedFilter}
+          onClearFilters={clearEnhancedFilters}
+          itemCounts={filterCounts}
+          className="mt-4"
+        />
       </div>
 
       {/* Critical Items Monitor - Real-time alerts */}

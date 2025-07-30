@@ -7,9 +7,9 @@ import {
   getSettings,
   upsertSettings,
   getFinaleConfig,
-  setSyncEnabled,
-  Settings
-} from '@/app/lib/data-access'
+  setSyncEnabled
+} from '@/app/lib/data-access/index'
+import type { Settings } from '@/app/types/consolidated'
 
 /**
  * Hook for managing application settings
@@ -26,7 +26,7 @@ export function useSettings() {
       setLoading(true)
       setError(null)
       const data = await getSettings()
-      setSettings(data || {
+      const defaultSettings: Settings = {
         id: 1,
         sync_enabled: false,
         email_alerts_enabled: false,
@@ -34,7 +34,8 @@ export function useSettings() {
         auto_generate_po: false,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
-      } as Settings)
+      }
+      setSettings(data || defaultSettings)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load settings')
     } finally {

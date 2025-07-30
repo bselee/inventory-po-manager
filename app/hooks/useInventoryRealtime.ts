@@ -5,9 +5,18 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { supabase } from '@/app/lib/supabase'
-import { getCriticalItemMonitor, CriticalAlert, DEFAULT_MONITORING_CONFIG } from '@/app/lib/real-time-monitor'
+import { getCriticalItemMonitor, CriticalItem, DEFAULT_MONITOR_CONFIG } from '@/app/lib/real-time-monitor'
 import { InventoryItem } from '@/app/types'
 import type { RealtimeChannel } from '@supabase/supabase-js'
+
+export interface CriticalAlert {
+  id: string
+  item: CriticalItem
+  alertType: 'out_of_stock' | 'low_stock' | 'critical_stockout'
+  urgencyLevel: 'critical' | 'high' | 'medium' | 'low'
+  message: string
+  timestamp: Date
+}
 
 export interface RealTimeInventoryState {
   items: InventoryItem[]
@@ -95,7 +104,7 @@ export function useInventoryRealtime(options: RealTimeInventoryOptions = {}) {
    * Handle critical alerts
    */
   const handleCriticalAlert = useCallback((alert: CriticalAlert) => {
-    console.log('[useInventoryRealtime] Critical alert:', alert.alertType, alert.sku)
+    console.log('[useInventoryRealtime] Critical alert:', alert.alertType, alert.item.sku)
 
     setState(prev => ({
       ...prev,
@@ -204,7 +213,7 @@ export function useInventoryRealtime(options: RealTimeInventoryOptions = {}) {
       console.log('[useInventoryRealtime] Setting up critical monitoring')
 
       // Get or create monitor instance
-      monitorRef.current = getCriticalItemMonitor(DEFAULT_MONITORING_CONFIG)
+      monitorRef.current = getCriticalItemMonitor(DEFAULT_MONITOR_CONFIG)
 
       // Subscribe to alerts
       alertUnsubscribeRef.current = monitorRef.current.onAlert(handleCriticalAlert)

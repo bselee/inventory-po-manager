@@ -35,8 +35,8 @@ export async function GET(request: NextRequest) {
           accountPath: settings.finale_account_path
         })
 
-        // Try to fetch one product
-        const testResult = await finaleApi.getAllProducts({ limit: 1 })
+        // Try to fetch products from current year
+        const testResult = await finaleApi.getAllProducts({ filterYear: new Date().getFullYear() })
         
         return NextResponse.json({
           success: true,

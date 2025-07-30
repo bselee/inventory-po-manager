@@ -20,6 +20,7 @@ interface SyncResult {
   dryRun?: boolean
   error?: string
   results?: any[]
+  message?: string
 }
 
 export default function FinaleSyncManager() {
@@ -54,8 +55,7 @@ export default function FinaleSyncManager() {
       if (verifyData.credentials?.hasKey && verifyData.credentials?.hasSecret && verifyData.credentials?.accountPath) {
         setStatus({
           configured: true,
-          accountPath: verifyData.credentials.accountPath,
-          lastSync: null
+          accountPath: verifyData.credentials.accountPath
         })
       } else {
         setStatus({

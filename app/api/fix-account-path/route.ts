@@ -37,7 +37,7 @@ export async function POST() {
       } else {
         // Try another pattern
         const parts = currentPath.split('/')
-        const accountIndex = parts.findIndex(p => p.includes('finaleinventory.com'))
+        const accountIndex = parts.findIndex((p: string) => p.includes('finaleinventory.com'))
         if (accountIndex >= 0 && parts[accountIndex + 1]) {
           fixedPath = parts[accountIndex + 1]
           // Check if there's a numeric ID after

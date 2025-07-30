@@ -16,7 +16,7 @@ export const POST = createApiHandler(async ({ body, request, user }) => {
   const { email, password, role } = body
 
   // Get default permissions for role
-  const permissions = ROLE_PERMISSIONS[role]
+  const permissions = ROLE_PERMISSIONS[role as keyof typeof ROLE_PERMISSIONS]
 
   // Create user
   const newUser = await createUser(email, password, role, permissions)

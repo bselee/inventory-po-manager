@@ -14,6 +14,17 @@
       "cwd": ".",
       "env": {}
     },
+    "figma": {
+      "command": "npx",
+      "args": [
+        "@thirdstrandstudio/mcp-figma",
+        "--transport",
+        "stdio"
+      ],
+      "env": {
+        "FIGMA_ACCESS_TOKEN": "${env:FIGMA_ACCESS_TOKEN}"
+      }
+    },
     "context7": {
       "command": "node",
       "args": [

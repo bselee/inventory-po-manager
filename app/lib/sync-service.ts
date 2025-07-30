@@ -16,7 +16,7 @@ import {
   updateInventoryItem,
   createInventoryItem,
   syncVendorFromFinale
-} from './data-access'
+} from './data-access/index'
 import { SyncError, ExternalServiceError, retryWithBackoff } from './errors'
 import { SyncLogger } from './sync-logger'
 

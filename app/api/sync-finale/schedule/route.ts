@@ -59,7 +59,7 @@ export async function GET() {
       .maybeSingle()
     
     // Get last sync info for each strategy
-    const syncStatus = {}
+    const syncStatus: Record<string, any> = {}
     for (const [key, schedule] of Object.entries(SYNC_SCHEDULE)) {
       const { data: lastSync } = await supabase
         .from('sync_logs')
@@ -103,7 +103,7 @@ export async function POST(request: Request) {
       .update({
         sync_enabled: enabled,
         sync_schedule: scheduleType,
-        sync_frequency_minutes: SYNC_SCHEDULE[scheduleType]?.interval || 60
+        sync_frequency_minutes: SYNC_SCHEDULE[scheduleType as keyof typeof SYNC_SCHEDULE]?.interval || 60
       })
       .eq('id', 1)
     
@@ -112,7 +112,7 @@ export async function POST(request: Request) {
     return NextResponse.json({
       success: true,
       message: `Sync schedule updated to: ${scheduleType}`,
-      schedule: SYNC_SCHEDULE[scheduleType]
+      schedule: SYNC_SCHEDULE[scheduleType as keyof typeof SYNC_SCHEDULE]
     })
   } catch (error) {
     return NextResponse.json({ 

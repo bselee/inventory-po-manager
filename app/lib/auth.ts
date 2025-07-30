@@ -160,6 +160,11 @@ export function withAuth<T extends any[]>(
     try {
       const authResult = await authMiddleware(request, requiredPermissions)
       
+      // If it's a response, return it (error case)
+      if (authResult instanceof NextResponse) {
+        return authResult
+      }
+      
       // Store user in request for access in handler
       ;(request as any).user = authResult.user
       

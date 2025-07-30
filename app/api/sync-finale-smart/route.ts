@@ -116,7 +116,7 @@ export async function POST(request: Request) {
       itemsToProcess = toSync.filter(item => {
         const sku = item.productId || item.sku
         const priority = priorities.get(sku) || 0
-        return priority >= options.priorityThreshold
+        return priority >= options.priorityThreshold!
       })
       console.log(`   - After priority filter: ${itemsToProcess.length} items`)
     }

@@ -32,7 +32,7 @@ export const GET = createApiHandler(async () => {
       
       const text = await response.text()
       let data = null
-      let sampleKeys = []
+      let sampleKeys: string[] = []
       
       try {
         data = JSON.parse(text)

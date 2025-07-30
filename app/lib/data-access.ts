@@ -51,7 +51,7 @@ export async function getInventoryItems(
         break
       case 'low-stock':
         query = query.filter('current_stock', 'gt', 'reorder_point')
-        query = query.filter('current_stock', 'lte', query.raw('reorder_point * 2'))
+        // Note: Can't use multiplication in filter, so we're just checking > reorder_point
         break
       case 'in-stock':
         query = query.filter('current_stock', 'gt', 0)
@@ -102,22 +102,18 @@ export async function getInventorySummary() {
     console.error('Error fetching inventory summary:', error)
     return {
       total_items: 0,
-      out_of_stock: 0,
-      low_stock: 0,
-      total_value: 0,
+      out_of_stock_count: 0,
+      low_stock_count: 0,
       total_inventory_value: 0
     }
   }
 
   const summary = {
     total_items: items?.length || 0,
-    out_of_stock: items?.filter(item => item.stock === 0).length || 0,
-    low_stock: items?.filter(item => 
+    out_of_stock_count: items?.filter(item => item.stock === 0).length || 0,
+    low_stock_count: items?.filter(item => 
       item.stock > 0 && item.stock <= item.reorder_point
     ).length || 0,
-    total_value: items?.reduce((sum, item) => 
-      sum + (item.stock * (item.cost || 0)), 0
-    ) || 0,
     total_inventory_value: items?.reduce((sum, item) => 
       sum + (item.stock * (item.cost || 0)), 0
     ) || 0

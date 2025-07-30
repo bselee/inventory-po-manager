@@ -7,9 +7,9 @@ import {
   getRunningSyncLog,
   getRecentSyncLogs,
   getSyncStats,
-  isAnySyncRunning,
-  SyncLog
+  isAnySyncRunning
 } from '@/app/lib/data-access'
+import type { SyncLog } from '@/app/lib/data-access'
 
 /**
  * Hook for monitoring sync status
@@ -219,7 +219,7 @@ export function useSyncHistory(days: number = 30) {
         const cutoffDate = new Date()
         cutoffDate.setDate(cutoffDate.getDate() - days)
         
-        const filteredLogs = logs.filter(log => 
+        const filteredLogs = logs.filter((log: SyncLog) => 
           new Date(log.started_at) >= cutoffDate
         )
         

@@ -120,12 +120,21 @@ export function calculateInventoryValue(item: InventoryItem): number {
 
 /**
  * Format inventory value for display
- * @param item - The inventory item
+ * @param item - The inventory item or numeric value
  * @returns Formatted string with dollar sign
  */
-export function formatInventoryValue(item: InventoryItem): string {
-  const value = calculateInventoryValue(item)
-  return isNaN(value) || !isFinite(value) ? '$0.00' : `$${value.toFixed(2)}`
+export function formatInventoryValue(item: InventoryItem): string;
+export function formatInventoryValue(value: number): string;
+export function formatInventoryValue(itemOrValue: InventoryItem | number): string {
+  let value: number;
+  
+  if (typeof itemOrValue === 'number') {
+    value = itemOrValue;
+  } else {
+    value = calculateInventoryValue(itemOrValue);
+  }
+  
+  return isNaN(value) || !isFinite(value) ? '$0.00' : `$${value.toFixed(2)}`;
 }
 
 /**

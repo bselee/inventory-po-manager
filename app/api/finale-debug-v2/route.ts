@@ -112,7 +112,7 @@ export const POST = createApiHandler(async ({ body }) => {
         results.push({
           test: 'API Key Authentication',
           success: false,
-          error: error.message,
+          error: error instanceof Error ? error.message : 'Unknown error',
           details: { url: apiUrl },
           recommendation: 'Network error - check internet connection'
         })
@@ -208,7 +208,7 @@ export const POST = createApiHandler(async ({ body }) => {
         results.push({
           test: 'Username/Password Authentication',
           success: false,
-          error: error.message,
+          error: error instanceof Error ? error.message : 'Unknown error',
           details: { url: authUrl },
           recommendation: 'Network error or invalid endpoint'
         })
@@ -271,7 +271,7 @@ export const POST = createApiHandler(async ({ body }) => {
     console.error('Debug endpoint error:', error)
     return apiResponse({
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
       results
     }, { status: 500 })
   }

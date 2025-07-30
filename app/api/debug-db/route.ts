@@ -18,7 +18,7 @@ export const GET = createApiHandler(async () => {
     const keyIsPlaceholder = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY === 'your_supabase_anon_key'
     
     // Try to query settings table
-    let dbTest = { success: false, error: null, hasData: false }
+    let dbTest: { success: boolean; error: string | null; hasData: boolean } = { success: false, error: null, hasData: false }
     try {
       const { data, error, count } = await supabase
         .from('settings')

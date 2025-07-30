@@ -12,6 +12,9 @@ export * from './settings'
 // Sync log operations
 export * from './sync-logs'
 
+// Export types
+export type { SyncLog } from './sync-logs'
+
 // Vendor operations
 export * from './vendors'
 

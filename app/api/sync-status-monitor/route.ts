@@ -4,7 +4,7 @@ import {
   markStuckSyncsAsFailed,
   getRecentSyncLogs,
   getSyncStats
-} from '@/app/lib/data-access'
+} from '@/app/lib/data-access/index'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
