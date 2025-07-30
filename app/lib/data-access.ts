@@ -76,8 +76,16 @@ export async function getInventoryItems(
   const total = count || 0
   const totalPages = Math.ceil(total / limit)
 
+  // Map database columns to expected frontend fields
+  const mappedItems = (items || []).map(item => ({
+    ...item,
+    current_stock: item.stock,
+    unit_price: item.cost,
+    unit_cost: item.cost
+  }))
+
   return {
-    items: items || [],
+    items: mappedItems,
     page,
     limit,
     total,
@@ -88,7 +96,7 @@ export async function getInventoryItems(
 export async function getInventorySummary() {
   const { data: items, error } = await supabase
     .from('inventory_items')
-    .select('current_stock, unit_cost, reorder_point')
+    .select('stock, cost, reorder_point')
 
   if (error) {
     console.error('Error fetching inventory summary:', error)
@@ -96,18 +104,22 @@ export async function getInventorySummary() {
       total_items: 0,
       out_of_stock: 0,
       low_stock: 0,
-      total_value: 0
+      total_value: 0,
+      total_inventory_value: 0
     }
   }
 
   const summary = {
     total_items: items?.length || 0,
-    out_of_stock: items?.filter(item => item.current_stock === 0).length || 0,
+    out_of_stock: items?.filter(item => item.stock === 0).length || 0,
     low_stock: items?.filter(item => 
-      item.current_stock > 0 && item.current_stock <= item.reorder_point
+      item.stock > 0 && item.stock <= item.reorder_point
     ).length || 0,
     total_value: items?.reduce((sum, item) => 
-      sum + (item.current_stock * (item.unit_cost || 0)), 0
+      sum + (item.stock * (item.cost || 0)), 0
+    ) || 0,
+    total_inventory_value: items?.reduce((sum, item) => 
+      sum + (item.stock * (item.cost || 0)), 0
     ) || 0
   }
 

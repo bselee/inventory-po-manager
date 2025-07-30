@@ -470,7 +470,7 @@ export default function InventoryPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Total Value</p>
-                <p className="text-2xl font-bold">${summary.total_inventory_value.toFixed(2)}</p>
+                <p className="text-2xl font-bold">${(summary.total_inventory_value || 0).toFixed(2)}</p>
               </div>
               <Package className="h-8 w-8 text-green-500" />
             </div>
@@ -850,7 +850,7 @@ export default function InventoryPage() {
                           </div>
                         ) : (
                           <div className="flex items-center gap-2">
-                            ${(item.unit_price || item.cost || 0).toFixed(2)}
+                            ${((item.unit_price || item.cost || 0) as number).toFixed(2)}
                             <button
                               onClick={() => startEditingCost(item)}
                               className="text-gray-400 hover:text-gray-600"
@@ -1087,7 +1087,7 @@ export default function InventoryPage() {
                                   <p className="text-sm text-gray-500">{item.sku}</p>
                                   <div className="flex items-center gap-4 mt-1">
                                     <span className="text-sm">Stock: {item.current_stock}</span>
-                                    <span className="text-sm">Velocity: {(item.sales_velocity || 0).toFixed(2)}/day</span>
+                                    <span className="text-sm">Velocity: {((item.sales_velocity || 0) as number).toFixed(2)}/day</span>
                                   </div>
                                 </div>
                                 <div className="text-right">
@@ -1202,7 +1202,7 @@ export default function InventoryPage() {
                         <p className="text-sm text-gray-500">{item.sku}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium text-green-600">{(item.sales_velocity || 0).toFixed(2)}/day</p>
+                        <p className="font-medium text-green-600">{((item.sales_velocity || 0) as number).toFixed(2)}/day</p>
                         <p className="text-sm text-gray-500">{item.sales_last_30_days || 0} sold</p>
                       </div>
                     </div>
@@ -1224,7 +1224,7 @@ export default function InventoryPage() {
                         <p className="text-sm text-gray-500">{item.sku}</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-medium text-red-600">${(item.current_stock * (item.unit_price || item.cost || 0)).toFixed(2)}</p>
+                        <p className="font-medium text-red-600">${((item.current_stock || 0) * (item.unit_price || item.cost || 0)).toFixed(2)}</p>
                         <p className="text-sm text-gray-500">{item.current_stock} units</p>
                       </div>
                     </div>
