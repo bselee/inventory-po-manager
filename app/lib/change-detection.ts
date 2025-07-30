@@ -29,17 +29,23 @@ const MONITORED_FIELDS = ['stock', 'cost', 'reorder_point', 'vendor', 'location'
  * Generate a hash of item data for change detection
  */
 export function generateItemHash(item: any): string {
-  // Only include fields we care about for change detection
-  const relevantData = {
-    stock: item.stock || item.quantityAvailable || 0,
-    cost: item.cost || item.unitCost || 0,
-    reorderPoint: item.reorder_point || item.reorderLevel || 0,
-    vendor: item.vendor || item.primaryVendor || '',
-    location: item.location || item.primaryLocation || ''
+  try {
+    // Only include fields we care about for change detection
+    const relevantData = {
+      stock: item.stock || item.quantityAvailable || 0,
+      cost: item.cost || item.unitCost || 0,
+      reorderPoint: item.reorder_point || item.reorderLevel || 0,
+      vendor: item.vendor || item.primaryVendor || '',
+      location: item.location || item.primaryLocation || ''
+    }
+    
+    const dataString = JSON.stringify(relevantData, Object.keys(relevantData).sort())
+    return crypto.createHash('md5').update(dataString).digest('hex')
+  } catch (error) {
+    console.error('Error generating item hash:', error)
+    // Return a default hash that will trigger a sync
+    return 'error-hash-' + Date.now()
   }
-  
-  const dataString = JSON.stringify(relevantData, Object.keys(relevantData).sort())
-  return crypto.createHash('md5').update(dataString).digest('hex')
 }
 
 /**
@@ -50,46 +56,60 @@ export function detectChanges(
   previousHash: string,
   lastSyncedAt: Date
 ): ChangeDetectionResult {
-  const currentHash = generateItemHash(currentItem)
-  const hasChanged = currentHash !== previousHash
-  
-  if (!hasChanged) {
+  try {
+    const currentHash = generateItemHash(currentItem)
+    const hasChanged = currentHash !== previousHash
+    
+    if (!hasChanged) {
+      return {
+        hasChanged: false,
+        changedFields: [],
+        priority: 0,
+        hash: currentHash
+      }
+    }
+    
+    // Determine which fields changed and calculate priority
+    const changedFields: string[] = []
+    let priority = 5 // Base priority for any change
+    
+    // Check critical fields for priority calculation
+    if (currentItem.stock !== undefined) {
+      const stock = parseInt(currentItem.stock) || 0
+      const reorderPoint = parseInt(currentItem.reorder_point || currentItem.reorderPoint) || 0
+      
+      if (stock === 0) {
+        priority = 10 // Highest priority for out of stock
+        changedFields.push('stock')
+      } else if (stock <= reorderPoint) {
+        priority = 9 // High priority for low stock
+        changedFields.push('stock')
+      }
+    }
+    
+    // Time-based priority boost
+    const hoursSinceSync = (Date.now() - lastSyncedAt.getTime()) / (1000 * 60 * 60)
+    if (hoursSinceSync > 24) {
+      priority = Math.min(priority + 2, 10)
+    } else if (hoursSinceSync > 6) {
+      priority = Math.min(priority + 1, 10)
+    }
+    
     return {
-      hasChanged: false,
-      changedFields: [],
-      priority: 0,
+      hasChanged: true,
+      changedFields: MONITORED_FIELDS, // For now, return all monitored fields
+      priority,
       hash: currentHash
     }
-  }
-  
-  // Determine which fields changed and calculate priority
-  const changedFields: string[] = []
-  let priority = 5 // Base priority for any change
-  
-  // Check critical fields for priority calculation
-  if (currentItem.stock !== undefined) {
-    if (currentItem.stock === 0) {
-      priority = 10 // Highest priority for out of stock
-      changedFields.push('stock')
-    } else if (currentItem.stock <= (currentItem.reorder_point || 0)) {
-      priority = 9 // High priority for low stock
-      changedFields.push('stock')
+  } catch (error) {
+    console.error('Error detecting changes:', error)
+    // Return a result that will trigger a sync
+    return {
+      hasChanged: true,
+      changedFields: MONITORED_FIELDS,
+      priority: 5,
+      hash: 'error-hash-' + Date.now()
     }
-  }
-  
-  // Time-based priority boost
-  const hoursSinceSync = (Date.now() - lastSyncedAt.getTime()) / (1000 * 60 * 60)
-  if (hoursSinceSync > 24) {
-    priority = Math.min(priority + 2, 10)
-  } else if (hoursSinceSync > 6) {
-    priority = Math.min(priority + 1, 10)
-  }
-  
-  return {
-    hasChanged: true,
-    changedFields: MONITORED_FIELDS, // For now, return all monitored fields
-    priority,
-    hash: currentHash
   }
 }
 
@@ -164,15 +184,29 @@ export function calculateSyncStats(
   estimatedFullSyncTime: number
   efficiencyGain: number
 } {
-  const changeRate = (changedItems / totalItems) * 100
-  const itemsPerSecond = changedItems / (syncDuration / 1000)
-  const estimatedFullSyncTime = totalItems / itemsPerSecond
-  const efficiencyGain = ((totalItems - changedItems) / totalItems) * 100
-  
-  return {
-    changeRate,
-    itemsPerSecond,
-    estimatedFullSyncTime,
-    efficiencyGain
+  try {
+    // Ensure we don't divide by zero
+    const safeTotalItems = Math.max(totalItems, 1)
+    const safeSyncDuration = Math.max(syncDuration, 1)
+    
+    const changeRate = (changedItems / safeTotalItems) * 100
+    const itemsPerSecond = changedItems / (safeSyncDuration / 1000)
+    const estimatedFullSyncTime = safeTotalItems / Math.max(itemsPerSecond, 0.1)
+    const efficiencyGain = ((safeTotalItems - changedItems) / safeTotalItems) * 100
+    
+    return {
+      changeRate: isFinite(changeRate) ? changeRate : 0,
+      itemsPerSecond: isFinite(itemsPerSecond) ? itemsPerSecond : 0,
+      estimatedFullSyncTime: isFinite(estimatedFullSyncTime) ? estimatedFullSyncTime : 0,
+      efficiencyGain: isFinite(efficiencyGain) ? efficiencyGain : 0
+    }
+  } catch (error) {
+    console.error('Error calculating sync stats:', error)
+    return {
+      changeRate: 0,
+      itemsPerSecond: 0,
+      estimatedFullSyncTime: 0,
+      efficiencyGain: 0
+    }
   }
 }

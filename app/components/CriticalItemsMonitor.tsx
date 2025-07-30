@@ -71,26 +71,43 @@ export default function CriticalItemsMonitor() {
   }, [])
 
   const loadCriticalItems = async () => {
-    // First get all items, then filter client-side
-    // (Supabase doesn't support column-to-column comparisons in where clauses)
-    const { data, error } = await supabase
-      .from('inventory_items')
-      .select('*')
-      .order('stock', { ascending: true })
-      .limit(1000)
+    try {
+      // First get all items, then filter client-side
+      // (Supabase doesn't support column-to-column comparisons in where clauses)
+      const { data, error } = await supabase
+        .from('inventory_items')
+        .select('*')
+        .order('stock', { ascending: true })
+        .limit(1000)
 
-    if (!error && data) {
-      // Filter for critical items where stock <= reorder_point
-      const critical = data.filter(item => 
-        item.stock <= item.reorder_point
-      ).slice(0, 20) // Take top 20
-      
-      setCriticalItems(critical)
+      if (error) {
+        console.error('Error loading critical items:', error)
+        return
+      }
+
+      if (data) {
+        // Filter for critical items where stock <= reorder_point
+        const critical = data.filter(item => {
+          // Ensure we have valid numbers for comparison
+          const stock = parseInt(item.stock) || 0
+          const reorderPoint = parseInt(item.reorder_point) || 0
+          return stock <= reorderPoint
+        }).slice(0, 20) // Take top 20
+        
+        setCriticalItems(critical)
+      }
+    } catch (error) {
+      console.error('Failed to load critical items:', error)
+      // Optionally set an error state here
     }
   }
 
   const dismissAlert = (sku: string) => {
-    setNewAlerts(prev => prev.filter(s => s !== sku))
+    try {
+      setNewAlerts(prev => prev.filter(s => s !== sku))
+    } catch (error) {
+      console.error('Error dismissing alert:', error)
+    }
   }
 
   if (!isMonitoring || criticalItems.length === 0) {

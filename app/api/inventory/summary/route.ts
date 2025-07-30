@@ -12,9 +12,9 @@ export const GET = createApiHandler(async () => {
   return apiResponse({ 
     total_items: summary.total_items,
     total_inventory_value: summary.total_inventory_value,
-    out_of_stock_count: summary.out_of_stock_count,
-    low_stock_count: summary.low_stock_count,
-    critical_reorder_count: summary.critical_reorder_count,
-    overstocked_count: summary.overstocked_count
+    out_of_stock_count: summary.out_of_stock,
+    low_stock_count: summary.low_stock,
+    critical_reorder_count: summary.low_stock, // Same as low stock
+    overstocked_count: 0 // Not calculated in summary
   })
 })

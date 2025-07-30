@@ -204,3 +204,64 @@ export async function deleteInventoryItem(id: string) {
 
   return true
 }
+
+// Specific update functions for API routes
+export async function updateInventoryStock(id: string, stock: number) {
+  return updateInventoryItem(id, { stock })
+}
+
+export async function updateInventoryCost(id: string, cost: number) {
+  return updateInventoryItem(id, { cost })
+}
+
+// Settings functions
+export async function getSettings() {
+  const { data, error } = await supabase
+    .from('settings')
+    .select('*')
+    .eq('id', 1)
+    .single()
+
+  if (error && error.code !== 'PGRST116') { // Not found is ok
+    console.error('Error fetching settings:', error)
+    throw error
+  }
+
+  return data
+}
+
+export async function upsertSettings(settings: any) {
+  const { data, error } = await supabase
+    .from('settings')
+    .upsert({ ...settings, id: 1 })
+    .select()
+    .single()
+
+  if (error) {
+    console.error('Error updating settings:', error)
+    throw error
+  }
+
+  return data
+}
+
+export async function getFinaleConfig() {
+  const settings = await getSettings()
+  if (!settings) return null
+
+  return {
+    apiKey: settings.finale_api_key || process.env.FINALE_API_KEY,
+    apiSecret: settings.finale_api_secret || process.env.FINALE_API_SECRET,
+    accountPath: settings.finale_account_path || process.env.FINALE_ACCOUNT_PATH
+  }
+}
+
+export async function getEmailConfig() {
+  const settings = await getSettings()
+  if (!settings) return null
+
+  return {
+    sendgridApiKey: settings.sendgrid_api_key || process.env.SENDGRID_API_KEY,
+    alertEmail: settings.alert_email
+  }
+}

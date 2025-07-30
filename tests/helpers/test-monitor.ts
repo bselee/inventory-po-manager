@@ -207,7 +207,7 @@ export class TestMonitor {
         passingTests: passingTests.length,
         failingTests: failingTests.length,
         flakyTests: flakyTests.length,
-        averageRunTime
+        averageRunTime: avgRunTime
       },
       criticalIssues,
       recommendations,

@@ -5,8 +5,8 @@
 
 import { supabase } from './supabase'
 import { executeSync } from './sync-service'
-import { detectInventoryChanges } from './change-detection'
-import { getCriticalItemsSummary } from './real-time-monitor'
+import { detectChanges } from './change-detection'
+import { getCriticalItemMonitor } from './real-time-monitor'
 
 export interface SyncScheduleConfig {
   businessHours: {
@@ -107,7 +107,7 @@ export class IntelligentSyncScheduler {
       recentChanges,
       businessHourStatus
     ] = await Promise.all([
-      getCriticalItemsSummary(),
+      getCriticalItemMonitor().getAlertMetrics(),
       this.getLastSyncData(),
       this.analyzeRecentChanges(),
       this.isBusinessHours()
