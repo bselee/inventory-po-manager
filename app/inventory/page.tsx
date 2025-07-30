@@ -288,14 +288,14 @@ export default function InventoryPage() {
       
       // Calculate data quality metrics
       const metrics = {
-        itemsWithSalesData: result.items.filter(item => 
+        itemsWithSalesData: result.items.filter((item: any) => 
           (item.sales_last_30_days && item.sales_last_30_days > 0) || 
           (item.sales_last_90_days && item.sales_last_90_days > 0)
         ).length,
-        itemsWithCost: result.items.filter(item => 
+        itemsWithCost: result.items.filter((item: any) => 
           item.cost && item.cost > 0
         ).length,
-        itemsWithVendor: result.items.filter(item => 
+        itemsWithVendor: result.items.filter((item: any) => 
           item.vendor && item.vendor.trim() !== ''
         ).length,
         lastSyncDate: result.items.length > 0 && result.items[0].last_updated 

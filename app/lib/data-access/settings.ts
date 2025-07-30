@@ -5,7 +5,8 @@
 
 import { supabase } from '@/app/lib/supabase'
 
-export interface Settings {
+// Internal settings type - use Settings from @/app/types/consolidated for external use
+interface SettingsRecord {
   id: string // Changed to string to handle UUID
   finale_api_key: string | null
   finale_api_secret: string | null
@@ -36,7 +37,7 @@ export interface Settings {
  * Get application settings (single row)
  * Always gets the first row ordered by created_at to ensure consistency
  */
-export async function getSettings(): Promise<Settings | null> {
+export async function getSettings(): Promise<SettingsRecord | null> {
   const { data, error } = await supabase
     .from('settings')
     .select('*')
@@ -55,7 +56,7 @@ export async function getSettings(): Promise<Settings | null> {
  * Create or update settings (upsert)
  * Ensures only one settings row exists
  */
-export async function upsertSettings(settings: Partial<Settings>): Promise<Settings> {
+export async function upsertSettings(settings: Partial<SettingsRecord>): Promise<SettingsRecord> {
   // First, try to get existing settings to get the UUID
   const existingSettings = await getSettings()
   
@@ -97,7 +98,7 @@ export async function upsertSettings(settings: Partial<Settings>): Promise<Setti
 /**
  * Update specific setting fields
  */
-export async function updateSettings(updates: Partial<Settings>): Promise<Settings> {
+export async function updateSettings(updates: Partial<SettingsRecord>): Promise<SettingsRecord> {
   // First get existing settings to get the ID
   const existing = await getSettings()
   

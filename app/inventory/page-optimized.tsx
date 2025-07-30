@@ -49,7 +49,7 @@ export default function OptimizedInventoryPage() {
     setRefreshing(false)
   }
 
-  const handleSort = (key: keyof typeof sortConfig.key) => {
+  const handleSort = (key: keyof InventoryItem) => {
     setSortConfig({
       key,
       direction: sortConfig.key === key && sortConfig.direction === 'asc' ? 'desc' : 'asc'

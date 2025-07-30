@@ -70,8 +70,8 @@ export class UnifiedFinaleApiService {
    */
   async getInventoryData(filterYear?: number | null) {
     if (this.service instanceof FinaleSessionApiService) {
-      // Session service doesn't support year filtering yet
-      return await this.service.getInventoryData()
+      // Session service uses different method name
+      return await this.service.getInventory()
     }
     return await this.service.getInventoryData(filterYear)
   }
@@ -90,7 +90,11 @@ export class UnifiedFinaleApiService {
    * Get vendors with smart endpoint discovery
    */
   async getVendors() {
-    return await this.service.getVendors()
+    if ('getVendors' in this.service) {
+      return await this.service.getVendors()
+    }
+    // Session service doesn't have vendor support
+    throw new Error('Vendor operations are not available with session authentication')
   }
   
   /**
@@ -195,4 +199,4 @@ export async function getFinaleConfig() {
 export { FinaleApiService }
 
 // Export optimized sync strategies
-export { SyncStrategy } from './finale-api-optimized'
+export type { SyncStrategy } from './finale-api-optimized'

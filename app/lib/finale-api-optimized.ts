@@ -112,7 +112,7 @@ export class OptimizedFinaleSync extends FinaleApiService {
     } catch (error) {
       return {
         success: false,
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       }
     }
   }
@@ -186,13 +186,13 @@ export class OptimizedFinaleSync extends FinaleApiService {
     console.log(`Syncing ${skus.length} specific SKUs...`)
     
     // Fetch products for these SKUs
-    const products = await this.getProducts()
-    const targetProducts = products.filter(p => 
+    const products = await this.getAllProducts()
+    const targetProducts = products.filter((p: any) => 
       skus.includes(p.productId || p.sku)
     )
     
     // Get inventory for these products
-    const inventory = await this.getInventoryItems()
+    const inventory = await this.getInventoryData()
     
     // Continue with normal sync for just these items
     // ... (use existing sync logic)
@@ -222,9 +222,9 @@ export class OptimizedFinaleSync extends FinaleApiService {
     
     // Unfortunately Finale doesn't support modifiedSince filter
     // So we fetch all and filter client-side (not ideal but works)
-    const products = await this.getProducts()
+    const products = await this.getAllProducts()
     
-    const recentProducts = products.filter(p => {
+    const recentProducts = products.filter((p: any) => {
       const modified = new Date(p.lastUpdatedDate || p.createdDate || 0)
       return modified > since
     })

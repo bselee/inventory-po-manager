@@ -211,7 +211,7 @@ export async function updateInventoryCost(id: string, cost: number) {
 }
 
 // Settings functions
-export async function getSettings() {
+export async function getSettings(): Promise<any> {
   const { data, error } = await supabase
     .from('settings')
     .select('*')
@@ -226,7 +226,7 @@ export async function getSettings() {
   return data
 }
 
-export async function upsertSettings(settings: any) {
+export async function upsertSettings(settings: any): Promise<any> {
   const { data, error } = await supabase
     .from('settings')
     .upsert({ ...settings, id: 1 })

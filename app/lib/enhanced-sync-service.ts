@@ -536,7 +536,7 @@ export async function checkEnhancedSyncHealth(): Promise<{
 
     const components = {
       changeDetection: true, // Always available
-      realTimeMonitoring: monitorStatus.isMonitoring,
+      realTimeMonitoring: monitorStatus.isRunning,
       intelligentScheduling: true, // Would check scheduler status
       database: databaseHealthy
     }

@@ -155,13 +155,13 @@ export async function syncWithReports(config: FinaleApiConfig) {
   // 2. Get fast-moving items
   const salesVelocity = await reporting.getSalesVelocityReport(30)
   const fastMovers = salesVelocity
-    .sort((a, b) => b.quantitySold - a.quantitySold)
+    .sort((a: any, b: any) => b.quantitySold - a.quantitySold)
     .slice(0, 100) // Top 100 fast movers
   
   // 3. Combine for smart sync
   const prioritySKUs = new Set([
-    ...lowStock.map(i => i.productId),
-    ...fastMovers.map(i => i.productId)
+    ...lowStock.map((i: any) => i.productId),
+    ...fastMovers.map((i: any) => i.productId)
   ])
   
   console.log(`Syncing ${prioritySKUs.size} priority items`)
@@ -184,7 +184,7 @@ export async function dailySmartSync() {
   const lowStock = await reporting.getLowStockReport()
   
   // 2. Alert on critical items
-  const criticalItems = reorderNeeded.filter(item => 
+  const criticalItems = reorderNeeded.filter((item: any) => 
     item.quantityOnHand === 0 && item.quantityOnOrder === 0
   )
   

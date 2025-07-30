@@ -15,6 +15,9 @@ interface FinaleProduct {
   averageCost?: number
   facilityName?: string
   lastModifiedDate?: string
+  statusId?: string
+  discontinued?: boolean
+  active?: boolean
 }
 
 export interface FinaleApiConfig {
@@ -229,7 +232,7 @@ export class FinaleApiService {
         
         // Apply year filter if specified
         if (yearFilter) {
-          const modifiedYear = new Date(finaleProduct.lastModifiedDate).getFullYear()
+          const modifiedYear = new Date(finaleProduct.lastModifiedDate || 0).getFullYear()
           if (modifiedYear >= yearFilter) {
             products.push(finaleProduct)
           }
