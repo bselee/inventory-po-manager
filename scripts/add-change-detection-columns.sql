@@ -101,3 +101,7 @@ COMMENT ON COLUMN inventory_items.content_hash IS 'MD5 hash of monitored fields 
 COMMENT ON COLUMN inventory_items.sync_priority IS 'Priority for syncing (0-10, 10 = highest)';
 COMMENT ON COLUMN inventory_items.sync_status IS 'Current sync status: pending, syncing, completed, unchanged';
 COMMENT ON COLUMN inventory_items.last_synced_at IS 'Last successful sync timestamp';
+
+-- Add metadata column to sync_logs for storing efficiency metrics
+ALTER TABLE sync_logs 
+ADD COLUMN IF NOT EXISTS metadata JSONB;

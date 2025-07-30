@@ -31,8 +31,8 @@ export default function CriticalItemsMonitor() {
         {
           event: '*',
           schema: 'public',
-          table: 'inventory_items',
-          filter: 'stock=lte.reorder_point'
+          table: 'inventory_items'
+          // Note: Can't filter on column comparison, will check in handler
         },
         (payload) => {
           console.log('Critical item change:', payload)
@@ -71,15 +71,21 @@ export default function CriticalItemsMonitor() {
   }, [])
 
   const loadCriticalItems = async () => {
+    // First get all items, then filter client-side
+    // (Supabase doesn't support column-to-column comparisons in where clauses)
     const { data, error } = await supabase
       .from('inventory_items')
       .select('*')
-      .lte('stock', 'reorder_point')
       .order('stock', { ascending: true })
-      .limit(20)
+      .limit(1000)
 
     if (!error && data) {
-      setCriticalItems(data)
+      // Filter for critical items where stock <= reorder_point
+      const critical = data.filter(item => 
+        item.stock <= item.reorder_point
+      ).slice(0, 20) // Take top 20
+      
+      setCriticalItems(critical)
     }
   }
 

@@ -184,12 +184,8 @@ export async function POST(request: Request) {
         completed_at: new Date().toISOString(),
         items_processed: products.length,
         items_updated: itemsToProcess.length,
-        metadata: {
-          unchanged,
-          efficiencyGain: stats.efficiencyGain,
-          itemsPerSecond: stats.itemsPerSecond,
-          vendorFilter: options.vendorFilter
-        }
+        // Store efficiency metrics in errors array for now (until metadata column is added)
+        errors: [`Efficiency: ${stats.efficiencyGain.toFixed(1)}%, Speed: ${stats.itemsPerSecond.toFixed(1)} items/sec, Unchanged: ${unchanged}`]
       })
 
     return NextResponse.json({
