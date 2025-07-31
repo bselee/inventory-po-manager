@@ -107,34 +107,46 @@ export default function InventoryPage() {
 
   const loadInventory = async () => {
     try {
-      // First, get the total count
-      const countResponse = await fetch('/api/inventory?limit=1')
-      const countData = await countResponse.json()
-      const totalCount = countData.data?.pagination?.total || 0
+      // Fetch ALL inventory items using pagination
+      // Supabase has a 1000 item limit per query
+      let allInventoryItems: any[] = []
+      let page = 1
+      let hasMore = true
       
-      console.log(`Total items in database: ${totalCount}`)
+      console.log('🔄 Loading all inventory items with pagination...')
       
-      // Fetch ALL inventory items - use actual total count
-      const response = await fetch(`/api/inventory?limit=${Math.max(totalCount, 50000)}`)
-      const data = await response.json()
-      
-      if (data.error) {
-        throw new Error(data.error)
+      while (hasMore) {
+        const response = await fetch(`/api/inventory?limit=1000&page=${page}`)
+        const data = await response.json()
+        
+        if (data.error) {
+          throw new Error(data.error)
+        }
+        
+        const items = data.data?.inventory || []
+        const pagination = data.data?.pagination || {}
+        
+        allInventoryItems = allInventoryItems.concat(items)
+        
+        console.log(`📄 Page ${page}: ${items.length} items (Total: ${allInventoryItems.length}/${pagination.total || 'unknown'})`)
+        
+        // Check if there are more items
+        hasMore = items.length === 1000 && page < (pagination.totalPages || 0)
+        page++
+        
+        // Safety break to prevent infinite loops
+        if (page > 20) {
+          console.warn('⚠️ Stopped at page 20 to prevent infinite loop')
+          break
+        }
       }
       
-      const items = data.data?.inventory || []
       const result = {
-        items,
-        total: items.length
+        items: allInventoryItems,
+        total: allInventoryItems.length
       }
       
-      console.log(`Loaded ${result.items.length} items from database (out of ${totalCount} total)`)
-      
-      // Show warning if we didn't get all items
-      if (result.items.length < totalCount) {
-        console.warn(`⚠️ Only loaded ${result.items.length} out of ${totalCount} items. Some items may be missing.`)
-      }
-      
+      console.log(`✅ Successfully loaded ${result.items.length} total inventory items`)
       setAllItems(result.items as InventoryItem[])
       
       // Calculate data quality metrics
