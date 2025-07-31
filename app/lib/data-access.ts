@@ -19,6 +19,9 @@ export async function getInventoryItems(
   options: PaginationOptions = {}
 ) {
   const { page = 1, limit = 100, sortBy = 'sku', sortDirection = 'asc' } = options
+  
+  // Log for debugging
+  console.log(`[Data Access] Fetching inventory with limit: ${limit}, page: ${page}`)
   const offset = (page - 1) * limit
 
   // Start query

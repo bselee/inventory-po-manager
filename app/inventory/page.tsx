@@ -107,8 +107,15 @@ export default function InventoryPage() {
 
   const loadInventory = async () => {
     try {
-      // Fetch ALL inventory items by setting a high limit
-      const response = await fetch('/api/inventory?limit=10000')
+      // First, get the total count
+      const countResponse = await fetch('/api/inventory?limit=1')
+      const countData = await countResponse.json()
+      const totalCount = countData.data?.pagination?.total || 0
+      
+      console.log(`Total items in database: ${totalCount}`)
+      
+      // Fetch ALL inventory items - use actual total count
+      const response = await fetch(`/api/inventory?limit=${Math.max(totalCount, 50000)}`)
       const data = await response.json()
       
       if (data.error) {
@@ -121,7 +128,13 @@ export default function InventoryPage() {
         total: items.length
       }
       
-      console.log(`Loaded ${result.items.length} items from database`)
+      console.log(`Loaded ${result.items.length} items from database (out of ${totalCount} total)`)
+      
+      // Show warning if we didn't get all items
+      if (result.items.length < totalCount) {
+        console.warn(`⚠️ Only loaded ${result.items.length} out of ${totalCount} items. Some items may be missing.`)
+      }
+      
       setAllItems(result.items as InventoryItem[])
       
       // Calculate data quality metrics
@@ -158,6 +171,13 @@ export default function InventoryPage() {
       
     } catch (error) {
       console.error('Error loading inventory:', error)
+      // Show more detailed error information
+      if (error instanceof Error) {
+        console.error('Error details:', {
+          message: error.message,
+          stack: error.stack
+        })
+      }
     } finally {
       setLoading(false)
       setRefreshing(false)
@@ -305,6 +325,11 @@ export default function InventoryPage() {
         onToggleColumn={toggleColumn}
         onReorderColumns={reorderColumns}
         onResetColumns={resetColumns}
+        itemsPerPage={itemsPerPage}
+        onItemsPerPageChange={(value) => {
+          setItemsPerPage(value)
+          setCurrentPage(1)
+        }}
       />
 
       {/* Critical Items Monitor - Only show when Critical Stock filter is active */}
@@ -317,25 +342,6 @@ export default function InventoryPage() {
           {filteredCount !== totalItems && (
             <span> (filtered from {totalItems.toLocaleString()} total)</span>
           )}
-        </div>
-        <div className="flex items-center gap-2">
-          <label htmlFor="items-per-page" className="text-sm">Items per page:</label>
-          <select
-            id="items-per-page"
-            value={itemsPerPage}
-            onChange={(e) => {
-              setItemsPerPage(Number(e.target.value))
-              setCurrentPage(1)
-            }}
-            className="border border-gray-300 rounded px-2 py-1 text-sm"
-          >
-            <option value={25}>25</option>
-            <option value={50}>50</option>
-            <option value={100}>100</option>
-            <option value={200}>200</option>
-            <option value={500}>500</option>
-            <option value={9999}>All</option>
-          </select>
         </div>
       </div>
 
