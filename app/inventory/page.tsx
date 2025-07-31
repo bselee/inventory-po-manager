@@ -314,10 +314,8 @@ export default function InventoryPage() {
         console.warn(`⚠️ Only ${salesDataPercent}% of items have sales data`)
       }
       
-      // Set initial page items
-      const startIndex = (currentPage - 1) * itemsPerPage
-      const endIndex = startIndex + itemsPerPage
-      setItems(result.items.slice(startIndex, endIndex) as InventoryItem[])
+      // Don't slice here - let the pagination useEffect handle this
+      // The pagination logic will set the correct items based on current page and filters
       
     } catch (error) {
       console.error('Error loading inventory:', error)
@@ -427,25 +425,23 @@ export default function InventoryPage() {
 
   return (
     <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold" data-testid="inventory-heading">Inventory Management</h1>
-        <div className="flex items-center gap-3">
-          {/* Last sync status indicator */}
-          {dataQualityMetrics.lastSyncDate && (
-            <div className="flex items-center gap-2">
-              <div className={`w-3 h-3 rounded-full ${
-                isRecentSync(dataQualityMetrics.lastSyncDate) ? 'bg-green-500' : 'bg-red-500'
-              }`}></div>
-              <div className={`text-sm ${
-                isRecentSync(dataQualityMetrics.lastSyncDate) ? 'text-green-700' : 'text-red-700'
-              }`}>
-                Last sync: {formatSyncTime(dataQualityMetrics.lastSyncDate)}
-              </div>
+      {/* Consolidated top row with sync status and export */}
+      <div className="flex justify-end items-center gap-4 mb-6">
+        {/* Last sync status indicator */}
+        {dataQualityMetrics.lastSyncDate && (
+          <div className="flex items-center gap-2">
+            <div className={`w-3 h-3 rounded-full ${
+              isRecentSync(dataQualityMetrics.lastSyncDate) ? 'bg-green-500' : 'bg-red-500'
+            }`}></div>
+            <div className={`text-sm ${
+              isRecentSync(dataQualityMetrics.lastSyncDate) ? 'text-green-700' : 'text-red-700'
+            }`}>
+              Last sync: {formatSyncTime(dataQualityMetrics.lastSyncDate)}
             </div>
-          )}
-          
-          <ConsolidatedExportDropdown items={filteredItems} filename="inventory" />
-        </div>
+          </div>
+        )}
+        
+        <ConsolidatedExportDropdown items={filteredItems} filename="inventory" />
       </div>
 
       {/* Enhanced Filters & View Controls */}
@@ -479,7 +475,7 @@ export default function InventoryPage() {
                 viewMode === 'table' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:text-gray-900'
               }`}
               data-testid="table-view-button"
-              aria-pressed={viewMode === 'table' ? 'true' : 'false'}
+              aria-pressed={viewMode === 'table'}
             >
               Table View
             </button>
@@ -489,7 +485,7 @@ export default function InventoryPage() {
                 viewMode === 'planning' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:text-gray-900'
               }`}
               data-testid="planning-view-button"
-              aria-pressed={viewMode === 'planning' ? 'true' : 'false'}
+              aria-pressed={viewMode === 'planning'}
             >
               Planning
             </button>
@@ -499,7 +495,7 @@ export default function InventoryPage() {
                 viewMode === 'analytics' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:text-gray-900'
               }`}
               data-testid="analytics-view-button"
-              aria-pressed={viewMode === 'analytics' ? 'true' : 'false'}
+              aria-pressed={viewMode === 'analytics'}
             >
               Analytics
             </button>
