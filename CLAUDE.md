@@ -433,9 +433,9 @@ export default function ComponentName({ prop1, prop2 = 0 }: ComponentProps) {
 7. **CSRF Protection**: CSRF tokens required for state-changing operations
 8. **Error Handling**: Never expose sensitive error details to clients
 
-## Key Implementation Guidance
+## Key Implementation Guidance from GitHub Copilot
 
-### From GitHub Copilot Instructions
+From `.github/copilot-instructions.md`:
 - Focus on performance and optimization using modern React patterns
 - Use server components where possible for better performance
 - Implement proper error boundaries and loading states
@@ -451,14 +451,6 @@ export default function ComponentName({ prop1, prop2 = 0 }: ComponentProps) {
 - Ensure all database queries are optimized
 - Implement proper caching strategies
 - Use TypeScript strictly for type safety
-
-### Workflow Best Practices
-- Always run tests before committing (`npm run test` and `npm run test:e2e`)
-- Use descriptive commit messages following conventional commits
-- Create feature branches for new functionality
-- Write tests for new features and bug fixes
-- Check CI/CD status before merging PRs
-- Monitor deployment health after releases
 
 ## Authentication & CSRF Pattern
 
@@ -541,28 +533,4 @@ if (!cached) {
 }
 ```
 
-## Documentation References
-
-Detailed guides available in `/docs/`:
-- [Database Migration Guide](docs/database-migration-guide.md) - Step-by-step database setup
-- [Playwright Creative Testing Guide](docs/playwright-creative-guide.md) - Advanced testing patterns
-- [Vercel Deployment Guide](docs/vercel_deployment_guide.md) - Deployment configuration
-- [Settings Backend Guide](docs/settings-backend-guide.md) - Settings implementation details
-
-## Important Notes
-
-- When running lint and type-check commands fail, check for:
-  - Missing imports or type definitions
-  - Unused variables or imports
-  - TypeScript strict mode violations
-  - ESLint configuration issues in `.eslintrc.json`
-
-- For database operations:
-  - Always handle the case where settings might not exist (use `maybeSingle()`)
-  - Use `upsert` for settings operations to handle both insert and update
-  - Check migration status before running the application
-
-- For testing:
-  - Playwright tests use port 3001 by default
-  - Jest tests may require database connection
-  - Use `npm run test:all` for comprehensive testing before deployment
+Detailed deployment guides and troubleshooting available in `/docs/`

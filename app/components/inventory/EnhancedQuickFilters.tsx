@@ -388,8 +388,8 @@ export default function EnhancedQuickFilters({
         </div>
       </div>
 
-      {/* Default Quick Filters */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-7 gap-3">
+      {/* Default Quick Filters - Compact single row layout */}
+      <div className="grid grid-cols-3 md:grid-cols-5 lg:grid-cols-7 xl:grid-cols-9 gap-2">
         {defaultQuickFilters.map((filter) => {
           const IconComponent = filter.icon
           const isActive = activeFilter === filter.id
@@ -399,23 +399,23 @@ export default function EnhancedQuickFilters({
             <button
               key={filter.id}
               onClick={() => handleFilterClick(filter)}
-              className={`relative group flex flex-col items-center p-4 rounded-lg border-2 transition-all duration-200 ${
+              className={`relative group flex flex-col items-center p-2 rounded-lg border-2 transition-all duration-200 ${
                 isActive 
                   ? `${filter.bgColor} ${filter.color} ${filter.borderColor} shadow-md scale-105` 
                   : `bg-white text-gray-600 border-gray-200 hover:${filter.bgColor} hover:${filter.color} hover:border-gray-300 hover:shadow-sm`
               }`}
               title={filter.description}
             >
-              <IconComponent className="h-6 w-6 mb-2" />
+              <IconComponent className="h-4 w-4 mb-1" />
               <span className="text-xs font-medium text-center leading-tight">
                 {filter.label}
               </span>
               {count > 0 && (
                 <Badge 
                   variant={isActive ? "secondary" : "outline"}
-                  className="absolute -top-2 -right-2 h-5 min-w-5 text-xs"
+                  className="absolute -top-1 -right-1 h-4 min-w-4 text-xs"
                 >
-                  {count > 999 ? '999+' : count}
+                  {count > 99 ? '99+' : count}
                 </Badge>
               )}
             </button>

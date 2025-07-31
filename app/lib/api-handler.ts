@@ -295,17 +295,16 @@ export function createCrudHandlers<T>(
   return {
     // GET handler - list resources
     GET: createApiHandler(async ({ query }) => {
-      const pagination = getPaginationParams(query || new URLSearchParams())
+      const searchParams = query || new URLSearchParams()
+      const pagination = getPaginationParams(searchParams)
       const filters: Record<string, any> = {}
       
       // Extract non-pagination query params as filters
-      if (query) {
-        query.forEach((value, key) => {
-          if (!['page', 'limit', 'sortBy', 'sortDirection'].includes(key)) {
-            filters[key] = value
-          }
-        })
-      }
+      searchParams.forEach((value, key) => {
+        if (!['page', 'limit', 'sortBy', 'sortDirection'].includes(key)) {
+          filters[key] = value
+        }
+      })
 
       const result = await dataAccess.list(filters, pagination)
       

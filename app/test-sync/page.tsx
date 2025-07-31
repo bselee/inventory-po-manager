@@ -68,7 +68,7 @@ export default function TestSyncPage() {
           
           if (status.lastSync?.status === 'success') {
             const itemsUpdated = status.lastSync.items_updated || 0
-            setSyncResult(prev => ({
+            setSyncResult((prev: any) => ({
               ...prev,
               completed: true,
               itemsUpdated,

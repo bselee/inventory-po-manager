@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react'
 import { Package, AlertTriangle, TrendingDown, TrendingUp, Search, Filter, RefreshCw, Plus, Edit2, Loader2, Clock, DollarSign, BarChart3, Zap, AlertCircle, Archive } from 'lucide-react'
 import useInventoryFiltering from '@/app/hooks/useOptimizedInventoryFilter'
 import SafeFilteredInventory from '@/app/components/SafeFilteredInventory'
-import InventoryDataStatus from '@/app/components/inventory/InventoryDataStatus'
 import QuickStockAdjust from '@/app/components/inventory/QuickStockAdjust'
 import ExportInventory from '@/app/components/inventory/ExportInventory'
 import ConsolidatedExportDropdown from '@/app/components/inventory/ConsolidatedExportDropdown'
@@ -13,7 +12,7 @@ import CriticalItemsMonitor from '@/app/components/CriticalItemsMonitor'
 import EnhancedQuickFilters from '@/app/components/inventory/EnhancedQuickFilters'
 import { useEnhancedInventoryFilters } from '@/app/hooks/useEnhancedInventoryFilters'
 import { useDebounce } from '@/app/hooks/useDebounce'
-import type { InventoryItem as ImportedInventoryItem } from '@/app/types'
+import { InventoryItem } from '@/app/types'
 import {
   calculateSalesVelocity,
   calculateDaysUntilStockout,
@@ -25,30 +24,28 @@ import {
   shouldReorder
 } from '@/app/lib/inventory-calculations'
 
-interface InventoryItem {
-  id: string
-  sku: string
-  product_name?: string
-  name?: string
-  current_stock: number
-  location?: string
-  minimum_stock: number
-  maximum_stock?: number
-  reorder_point?: number
-  reorder_quantity?: number
-  vendor?: string
-  cost?: number
-  unit_price?: number
-  sales_last_30_days?: number
-  sales_last_90_days?: number
-  last_sales_update?: string
-  last_updated?: string
-  // Calculated fields for planning
-  sales_velocity?: number
-  days_until_stockout?: number
-  reorder_recommended?: boolean
-  stock_status_level?: 'critical' | 'low' | 'adequate' | 'overstocked'
-  trend?: 'increasing' | 'decreasing' | 'stable'
+// Helper functions for sync status
+const isRecentSync = (lastSyncDate: string) => {
+  const now = new Date()
+  const syncDate = new Date(lastSyncDate)
+  const hoursDiff = (now.getTime() - syncDate.getTime()) / (1000 * 60 * 60)
+  return hoursDiff <= 24
+}
+
+const formatSyncTime = (lastSyncDate: string) => {
+  const now = new Date()
+  const syncDate = new Date(lastSyncDate)
+  const hoursDiff = (now.getTime() - syncDate.getTime()) / (1000 * 60 * 60)
+  
+  if (hoursDiff < 1) {
+    const minutes = Math.floor(hoursDiff * 60)
+    return `${minutes}m ago`
+  } else if (hoursDiff < 24) {
+    return `${Math.floor(hoursDiff)}h ago`
+  } else {
+    const days = Math.floor(hoursDiff / 24)
+    return `${days}d ago`
+  }
 }
 
 interface InventorySummary {
@@ -91,7 +88,6 @@ export default function InventoryPage() {
   const [allItems, setAllItems] = useState<InventoryItem[]>([]) // Store all items for filtering/searching
   const [summary, setSummary] = useState<InventorySummary | null>(null)
   const [loading, setLoading] = useState(true)
-  const [refreshing, setRefreshing] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [filteringInProgress, setFilteringInProgress] = useState(false)
   const debouncedSearchTerm = useDebounce(searchTerm, 300) // 300ms delay
@@ -345,14 +341,8 @@ export default function InventoryPage() {
     }
   }
 
-  const handleRefresh = async () => {
-    setRefreshing(true)
-    await Promise.all([loadInventory(), loadSummary()])
-    setRefreshing(false)
-  }
-
   const getStockStatus = (item: InventoryItem) => {
-    return getStockStatusDisplay(item as ImportedInventoryItem)
+    return getStockStatusDisplay(item as InventoryItem)
   }
 
   // Enhanced sorting function
@@ -440,16 +430,21 @@ export default function InventoryPage() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold" data-testid="inventory-heading">Inventory Management</h1>
         <div className="flex items-center gap-3">
+          {/* Last sync status indicator */}
+          {dataQualityMetrics.lastSyncDate && (
+            <div className="flex items-center gap-2">
+              <div className={`w-3 h-3 rounded-full ${
+                isRecentSync(dataQualityMetrics.lastSyncDate) ? 'bg-green-500' : 'bg-red-500'
+              }`}></div>
+              <div className={`text-sm ${
+                isRecentSync(dataQualityMetrics.lastSyncDate) ? 'text-green-700' : 'text-red-700'
+              }`}>
+                Last sync: {formatSyncTime(dataQualityMetrics.lastSyncDate)}
+              </div>
+            </div>
+          )}
+          
           <ConsolidatedExportDropdown items={filteredItems} filename="inventory" />
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
-            data-testid="refresh-button"
-          >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} aria-hidden="true" />
-            Refresh
-          </button>
         </div>
       </div>
 
@@ -484,7 +479,7 @@ export default function InventoryPage() {
                 viewMode === 'table' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:text-gray-900'
               }`}
               data-testid="table-view-button"
-              aria-selected={viewMode === 'table'}
+              aria-pressed={viewMode === 'table' ? 'true' : 'false'}
             >
               Table View
             </button>
@@ -494,7 +489,7 @@ export default function InventoryPage() {
                 viewMode === 'planning' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:text-gray-900'
               }`}
               data-testid="planning-view-button"
-              aria-selected={viewMode === 'planning'}
+              aria-pressed={viewMode === 'planning' ? 'true' : 'false'}
             >
               Planning
             </button>
@@ -504,7 +499,7 @@ export default function InventoryPage() {
                 viewMode === 'analytics' ? 'bg-blue-600 text-white' : 'text-gray-600 hover:text-gray-900'
               }`}
               data-testid="analytics-view-button"
-              aria-selected={viewMode === 'analytics'}
+              aria-pressed={viewMode === 'analytics' ? 'true' : 'false'}
             >
               Analytics
             </button>
@@ -651,18 +646,8 @@ export default function InventoryPage() {
         />
       </div>
 
-      {/* Critical Items Monitor - Real-time alerts */}
-      <CriticalItemsMonitor />
-
-      {/* Inventory Overview */}
-      <InventoryDataStatus
-        totalItems={totalItems}
-        itemsWithCost={dataQualityMetrics.itemsWithCost}
-        itemsWithVendor={dataQualityMetrics.itemsWithVendor}
-        totalValue={summary?.total_inventory_value || 0}
-        lastSyncDate={dataQualityMetrics.lastSyncDate}
-        onSync={() => window.location.href = '/settings'}
-      />
+      {/* Critical Items Monitor - Only show when Critical Stock filter is active */}
+      {enhancedActiveFilter === 'critical-stock' && <CriticalItemsMonitor />}
 
       {/* Enhanced Inventory Table */}
       {viewMode === 'table' && (
@@ -709,7 +694,7 @@ export default function InventoryPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {filteredItems.map((item) => {
+                {items.map((item) => {
                   const status = getStockStatus(item)
                   const velocity = item.sales_velocity || 0
                   const daysLeft = item.days_until_stockout === Infinity ? '∞' : item.days_until_stockout
@@ -867,87 +852,103 @@ export default function InventoryPage() {
           </div>
           
           {/* Pagination Controls */}
-          <div className="bg-white px-6 py-4 border-t border-gray-200 flex items-center justify-between">
-            {/* Items per page selector */}
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-700">Show:</span>
-              <select
-                value={itemsPerPage}
-                onChange={(e) => {
-                  setItemsPerPage(Number(e.target.value))
-                  setCurrentPage(1) // Reset to first page when changing items per page
-                }}
-                className="px-3 py-1 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                aria-label="Items per page"
-              >
-                <option value={25}>25</option>
-                <option value={50}>50</option>
-                <option value={100}>100</option>
-                <option value={250}>250</option>
-                <option value={500}>500</option>
-                <option value={1000}>1000</option>
-              </select>
-              <span className="text-sm text-gray-700">
-                items per page
-              </span>
-            </div>
-
-            {/* Pagination info and controls */}
-            <div className="flex items-center space-x-6">
-              {/* Results info */}
-              <div className="text-sm text-gray-700">
-                Showing {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} to{' '}
-                {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} results
+          <div className="bg-white px-6 py-4 border-t border-gray-200">
+            <div className="flex items-center justify-between">
+              {/* Items per page selector */}
+              <div className="flex items-center space-x-3">
+                <span className="text-sm font-medium text-gray-700">Results per page:</span>
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => {
+                    setItemsPerPage(Number(e.target.value))
+                    setCurrentPage(1) // Reset to first page when changing items per page
+                  }}
+                  className="px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white"
+                  aria-label="Items per page"
+                >
+                  <option value={10}>10</option>
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={250}>250</option>
+                  <option value={500}>500</option>
+                </select>
               </div>
 
-              {/* Page controls */}
-              {totalPages > 1 && (
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={() => goToPage(currentPage - 1)}
-                    disabled={currentPage === 1}
-                    className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed border border-gray-300 rounded-md hover:bg-gray-50"
-                  >
-                    Previous
-                  </button>
-                  
-                  {/* Page numbers */}
-                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    let pageNum
-                    if (totalPages <= 5) {
-                      pageNum = i + 1
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i
-                    } else {
-                      pageNum = currentPage - 2 + i
-                    }
-                    
-                    return (
-                      <button
-                        key={pageNum}
-                        onClick={() => goToPage(pageNum)}
-                        className={`px-3 py-2 text-sm border rounded-md ${
-                          currentPage === pageNum
-                            ? 'bg-blue-600 text-white border-blue-600'
-                            : 'text-gray-700 border-gray-300 hover:bg-gray-50'
-                        }`}
-                      >
-                        {pageNum}
-                      </button>
-                    )
-                  })}
-                  
-                  <button
-                    onClick={() => goToPage(currentPage + 1)}
-                    disabled={currentPage === totalPages}
-                    className="px-3 py-2 text-sm text-gray-500 hover:text-gray-700 disabled:opacity-50 disabled:cursor-not-allowed border border-gray-300 rounded-md hover:bg-gray-50"
-                  >
-                    Next
-                  </button>
+              {/* Page navigation controls */}
+              <div className="flex items-center space-x-4">
+                {/* Results info */}
+                <div className="text-sm text-gray-600">
+                  Showing {Math.min((currentPage - 1) * itemsPerPage + 1, totalItems)} to{' '}
+                  {Math.min(currentPage * itemsPerPage, totalItems)} of {totalItems} results
                 </div>
-              )}
+
+                {/* Page controls - Always show if there are items */}
+                {totalItems > 0 && (
+                  <div className="flex items-center space-x-1">
+                    <button
+                      onClick={() => goToPage(currentPage - 1)}
+                      disabled={currentPage === 1}
+                      className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-40 disabled:cursor-not-allowed border border-gray-300 rounded-lg hover:bg-gray-50 disabled:hover:bg-white transition-colors"
+                    >
+                      Previous
+                    </button>
+                    
+                    {/* Page numbers */}
+                    {totalPages > 1 && (
+                      <>
+                        {Array.from({ length: Math.min(7, totalPages) }, (_, i) => {
+                          let pageNum
+                          if (totalPages <= 7) {
+                            pageNum = i + 1
+                          } else if (currentPage <= 4) {
+                            pageNum = i + 1
+                          } else if (currentPage >= totalPages - 3) {
+                            pageNum = totalPages - 6 + i
+                          } else {
+                            pageNum = currentPage - 3 + i
+                          }
+                          
+                          return (
+                            <button
+                              key={pageNum}
+                              onClick={() => goToPage(pageNum)}
+                              className={`px-3 py-1.5 text-sm border rounded-lg transition-colors ${
+                                currentPage === pageNum
+                                  ? 'bg-blue-600 text-white border-blue-600 shadow-sm'
+                                  : 'text-gray-700 border-gray-300 hover:bg-gray-50 hover:border-gray-400'
+                              }`}
+                            >
+                              {pageNum}
+                            </button>
+                          )
+                        })}
+                        
+                        {/* Show ellipsis and last page if needed */}
+                        {totalPages > 7 && currentPage < totalPages - 3 && (
+                          <>
+                            <span className="px-2 py-1.5 text-sm text-gray-500">...</span>
+                            <button
+                              onClick={() => goToPage(totalPages)}
+                              className="px-3 py-1.5 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 hover:border-gray-400 transition-colors"
+                            >
+                              {totalPages}
+                            </button>
+                          </>
+                        )}
+                      </>
+                    )}
+                    
+                    <button
+                      onClick={() => goToPage(currentPage + 1)}
+                      disabled={currentPage === totalPages || totalPages <= 1}
+                      className="px-3 py-1.5 text-sm text-gray-600 hover:text-gray-900 disabled:opacity-40 disabled:cursor-not-allowed border border-gray-300 rounded-lg hover:bg-gray-50 disabled:hover:bg-white transition-colors"
+                    >
+                      Next
+                    </button>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>

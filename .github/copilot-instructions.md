@@ -69,6 +69,8 @@ Located in `.vscode/settings.json`:
 - Implement proper error boundaries
 - Use TypeScript for prop types
 - Follow the component structure: imports → types → component → export
+- Implement modern pagination patterns with professional styling and accessibility
+- Use responsive design principles for mobile-friendly interfaces
 
 ### API Routes
 - Use proper HTTP status codes (200, 201, 400, 401, 404, 500)
@@ -82,6 +84,15 @@ Located in `.vscode/settings.json`:
 - Implement proper error handling for database queries
 - Use transactions for multi-table operations
 - Include proper type safety with generated types
+
+### UI/UX Standards
+- Implement professional pagination with smart page numbering (up to 7 pages)
+- Always show pagination controls when items exist (not just multiple pages)
+- Use "Results per page:" labeling instead of "Show:" for better UX
+- Implement smooth transitions and hover effects for interactive elements
+- Default to reasonable page sizes (10-500 items) for optimal performance
+- Ensure responsive design across desktop, tablet, and mobile devices
+- Follow accessibility guidelines with proper ARIA labels and keyboard navigation
 
 ### Testing Patterns
 - **Unit Tests**: Test individual functions and components

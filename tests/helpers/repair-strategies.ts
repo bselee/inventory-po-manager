@@ -129,7 +129,7 @@ export class TestRepairService {
         success: false,
         strategy: 'selector-fallback',
         changes,
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }
@@ -202,7 +202,7 @@ export class TestRepairService {
         success: false,
         strategy: 'timing-adjustment',
         changes,
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }
@@ -267,7 +267,7 @@ export class TestRepairService {
         success: false,
         strategy: 'assertion-relaxation',
         changes,
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }
@@ -319,7 +319,7 @@ export class TestRepairService {
         success: false,
         strategy: 'navigation-retry',
         changes,
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }
@@ -399,7 +399,7 @@ export class TestRepairService {
         success: false,
         strategy: 'network-resilience',
         changes,
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       };
     }
   }

@@ -134,8 +134,7 @@ export class IntelligentSyncScheduler {
     // Time-based analysis
     const hoursSinceLastSync = lastSyncData.hoursSinceLastSync
     if (hoursSinceLastSync > 24) {
-      const urgencyValue = urgency === 'low' ? 1 : urgency === 'medium' ? 2 : urgency === 'high' ? 3 : 4
-      if (urgencyValue < 2) {
+      if (urgency === 'low') {
         urgency = 'medium'
       }
       recommendedStrategy = hoursSinceLastSync > 48 ? 'full' : 'smart'

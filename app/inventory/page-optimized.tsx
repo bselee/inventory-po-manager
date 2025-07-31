@@ -8,6 +8,7 @@ import { InventoryPagination } from '@/app/components/inventory/InventoryPaginat
 import { InventoryFiltersComponent } from '@/app/components/inventory/InventoryFilters'
 import { formatInventoryValue } from '@/app/lib/inventory-calculations'
 import { updateInventoryStock, updateInventoryCost } from '@/app/lib/data-access/inventory'
+import { InventoryItem } from '@/app/types'
 
 export default function OptimizedInventoryPage() {
   const {
