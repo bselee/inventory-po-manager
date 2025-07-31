@@ -278,6 +278,26 @@ export default function InventoryPage() {
     setShowCostEdit(false)
   }
 
+  const handleToggleItemVisibility = async (itemId: string, hidden: boolean) => {
+    try {
+      const response = await fetch(`/api/inventory/${itemId}/visibility`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ hidden })
+      })
+      
+      if (!response.ok) {
+        throw new Error('Failed to update item visibility')
+      }
+      
+      // Refresh data to reflect the change
+      await loadInventory()
+    } catch (error) {
+      console.error('Error updating item visibility:', error)
+      alert('Failed to update item visibility. Please try again.')
+    }
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -370,6 +390,7 @@ export default function InventoryPage() {
         editCost={editCost}
         onStartCostEdit={handleStartCostEdit}
         onCancelCostEdit={handleCancelCostEdit}
+        onToggleVisibility={handleToggleItemVisibility}
       />
 
       {/* Pagination */}

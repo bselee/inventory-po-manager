@@ -53,6 +53,7 @@ export interface InventoryItem {
   created_at?: string
   finale_id?: string
   active?: boolean
+  hidden?: boolean // UI-level hiding (separate from Finale active status)
 }
 
 /**

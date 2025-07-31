@@ -21,6 +21,7 @@ interface EnhancedInventoryTableProps {
   editCost?: number
   onStartCostEdit?: (itemId: string, currentCost: number) => void
   onCancelCostEdit?: () => void
+  onToggleVisibility?: (itemId: string, hidden: boolean) => Promise<void>
   className?: string
 }
 
@@ -36,6 +37,7 @@ export default function EnhancedInventoryTable({
   editCost,
   onStartCostEdit,
   onCancelCostEdit,
+  onToggleVisibility,
   className = ''
 }: EnhancedInventoryTableProps) {
   const visibleColumns = columns.filter(col => col.visible)
@@ -89,6 +91,19 @@ export default function EnhancedInventoryTable({
                   title="Edit cost"
                 >
                   <Edit2 className="h-4 w-4" />
+                </button>
+              )}
+              {onToggleVisibility && (
+                <button
+                  onClick={() => onToggleVisibility(item.id, !item.hidden)}
+                  className={`text-xs px-2 py-1 rounded transition-colors ${
+                    item.hidden 
+                      ? 'bg-yellow-100 text-yellow-700 hover:bg-yellow-200' 
+                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  }`}
+                  title={item.hidden ? 'Show item' : 'Hide item'}
+                >
+                  {item.hidden ? 'Show' : 'Hide'}
                 </button>
               )}
             </div>

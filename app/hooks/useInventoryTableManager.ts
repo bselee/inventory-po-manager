@@ -30,6 +30,8 @@ export interface TableFilterConfig {
   hasValue: boolean
   showManufactured: boolean
   showPurchased: boolean
+  activeStatus: 'all' | 'active' | 'inactive'
+  showHidden: boolean
 }
 
 // Sorting configuration
@@ -86,7 +88,9 @@ const DEFAULT_FILTER_CONFIG: TableFilterConfig = {
   reorderNeeded: false,
   hasValue: false,
   showManufactured: true,
-  showPurchased: true
+  showPurchased: true,
+  activeStatus: 'active',
+  showHidden: false
 }
 
 // Preset filters
@@ -353,6 +357,31 @@ export function useInventoryTableManager(items: InventoryItem[]) {
         if (!filterConfig.showManufactured && isManufactured) return false
         if (!filterConfig.showPurchased && !isManufactured) return false
         return true
+      })
+    }
+
+    // Active status filter
+    if (filterConfig.activeStatus !== 'all') {
+      filtered = filtered.filter(item => {
+        // Default to active if the field doesn't exist yet
+        const isActive = item.active !== undefined ? item.active : true
+        
+        switch (filterConfig.activeStatus) {
+          case 'active':
+            return isActive === true
+          case 'inactive':
+            return isActive === false
+          default:
+            return true
+        }
+      })
+    }
+
+    // Hidden items filter
+    if (!filterConfig.showHidden) {
+      filtered = filtered.filter(item => {
+        // Only show items that are not hidden (default to not hidden if field doesn't exist)
+        return item.hidden !== true
       })
     }
 

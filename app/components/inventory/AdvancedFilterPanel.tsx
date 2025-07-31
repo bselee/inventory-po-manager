@@ -34,6 +34,9 @@ interface AdvancedFilterPanelProps {
   onReorderColumns: (dragIndex: number, hoverIndex: number) => void
   onResetColumns: () => void
   className?: string
+  // Pagination props
+  itemsPerPage?: number
+  onItemsPerPageChange?: (value: number) => void
 }
 
 export default function AdvancedFilterPanel({
@@ -50,7 +53,9 @@ export default function AdvancedFilterPanel({
   onToggleColumn,
   onReorderColumns,
   onResetColumns,
-  className = ''
+  className = '',
+  itemsPerPage = 100,
+  onItemsPerPageChange
 }: AdvancedFilterPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false)
   const [showPresets, setShowPresets] = useState(true)
@@ -68,6 +73,7 @@ export default function AdvancedFilterPanel({
     if (key === 'maxStock') return value < 999999
     if (key === 'reorderNeeded' || key === 'hasValue') return value === true
     if (key === 'showManufactured' || key === 'showPurchased') return value === false
+    if (key === 'showHidden') return value === true
     return false
   }).length
 
@@ -111,6 +117,27 @@ export default function AdvancedFilterPanel({
                 Clear All
               </button>
             )}
+            
+            {/* Compact Items Per Page Selector */}
+            {onItemsPerPageChange && (
+              <div className="flex items-center gap-1 text-sm">
+                <Package className="h-4 w-4 text-gray-400" />
+                <select
+                  value={itemsPerPage}
+                  onChange={(e) => onItemsPerPageChange(Number(e.target.value))}
+                  className="border border-gray-300 rounded px-2 py-1 text-xs bg-white min-w-0"
+                  title="Items per page"
+                >
+                  <option value={25}>25</option>
+                  <option value={50}>50</option>
+                  <option value={100}>100</option>
+                  <option value={200}>200</option>
+                  <option value={500}>500</option>
+                  <option value={9999}>All</option>
+                </select>
+              </div>
+            )}
+            
             <ColumnSelector
               columns={columns}
               onToggleColumn={onToggleColumn}
@@ -402,6 +429,16 @@ export default function AdvancedFilterPanel({
                 className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
               />
               <span className="text-sm text-gray-700">Show Purchased</span>
+            </label>
+
+            <label className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                checked={filterConfig.showHidden}
+                onChange={(e) => onFilterChange({ showHidden: e.target.checked })}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <span className="text-sm text-gray-700">Show Hidden Items</span>
             </label>
           </div>
         </div>
