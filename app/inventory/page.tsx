@@ -394,7 +394,7 @@ export default function InventoryPage() {
       />
 
       {/* Pagination */}
-      {totalPages > 1 && (
+      {filteredCount > 0 && (
         <div className="flex items-center justify-between">
           <div className="text-sm text-gray-700">
             Page {currentPage} of {totalPages}
