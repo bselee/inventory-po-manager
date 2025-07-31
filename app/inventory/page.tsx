@@ -79,7 +79,7 @@ export default function InventoryPage() {
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1)
-  const [itemsPerPage, setItemsPerPage] = useState(50)
+  const [itemsPerPage, setItemsPerPage] = useState(100)
 
   // Data quality metrics state
   const [dataQualityMetrics, setDataQualityMetrics] = useState({
@@ -290,11 +290,6 @@ export default function InventoryPage() {
         </button>
       </div>
 
-      {/* Page Title */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">Inventory Management</h1>
-      </div>
-
       {/* Filter Panel */}
       <AdvancedFilterPanel
         filterConfig={filterConfig}
@@ -338,6 +333,8 @@ export default function InventoryPage() {
             <option value={50}>50</option>
             <option value={100}>100</option>
             <option value={200}>200</option>
+            <option value={500}>500</option>
+            <option value={9999}>All</option>
           </select>
         </div>
       </div>
