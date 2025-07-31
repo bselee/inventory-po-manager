@@ -3,7 +3,6 @@
 import React from 'react'
 import { InventoryItem } from '@/app/types'
 import { ColumnConfig, SortConfig } from '@/app/hooks/useInventoryTableManager'
-import QuickStockAdjust from '@/app/components/inventory/QuickStockAdjust'
 import { Edit2 } from 'lucide-react'
 import { 
   getStockStatusDisplay,
@@ -114,16 +113,12 @@ export default function EnhancedInventoryTable({
 
   const renderCell = (column: ColumnConfig, item: InventoryItem) => {
     // Special handling for editable cells
-    if (column.key === 'current_stock' && onStockUpdate) {
+    if (column.key === 'current_stock') {
+      // Make stock column read-only - just display the number
       return (
-        <QuickStockAdjust
-          itemId={item.id}
-          sku={item.sku}
-          currentStock={item.current_stock || 0}
-          onUpdate={async (newStock) => {
-            await onStockUpdate(item.id, newStock)
-          }}
-        />
+        <span className="font-mono text-sm">
+          {(item.current_stock || 0).toLocaleString()}
+        </span>
       )
     }
 

@@ -15,7 +15,9 @@ import {
   Bookmark,
   Star
 } from 'lucide-react'
-import { TableFilterConfig, PresetFilter } from '@/app/hooks/useInventoryTableManager'
+import { TableFilterConfig, PresetFilter, ColumnConfig } from '@/app/hooks/useInventoryTableManager'
+import { InventoryItem } from '@/app/types'
+import ColumnSelector from './ColumnSelector'
 
 interface AdvancedFilterPanelProps {
   filterConfig: TableFilterConfig
@@ -27,6 +29,10 @@ interface AdvancedFilterPanelProps {
   filterCounts: Record<string, number>
   uniqueVendors: string[]
   uniqueLocations: string[]
+  columns: ColumnConfig[]
+  onToggleColumn: (columnKey: keyof InventoryItem | 'actions') => void
+  onReorderColumns: (dragIndex: number, hoverIndex: number) => void
+  onResetColumns: () => void
   className?: string
 }
 
@@ -40,6 +46,10 @@ export default function AdvancedFilterPanel({
   filterCounts,
   uniqueVendors,
   uniqueLocations,
+  columns,
+  onToggleColumn,
+  onReorderColumns,
+  onResetColumns,
   className = ''
 }: AdvancedFilterPanelProps) {
   const [isExpanded, setIsExpanded] = useState(false)
@@ -101,6 +111,12 @@ export default function AdvancedFilterPanel({
                 Clear All
               </button>
             )}
+            <ColumnSelector
+              columns={columns}
+              onToggleColumn={onToggleColumn}
+              onReorderColumns={onReorderColumns}
+              onResetColumns={onResetColumns}
+            />
             <button
               onClick={() => setIsExpanded(!isExpanded)}
               className="p-1 text-gray-400 hover:text-gray-600 transition-colors"

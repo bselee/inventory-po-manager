@@ -259,114 +259,41 @@ export default function InventoryPage() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Inventory Management</h1>
-          <p className="text-gray-600">
-            Manage your inventory with advanced filtering and customizable views
-          </p>
+      {/* Header Controls */}
+      <div className="flex items-center justify-end gap-3">
+        {/* Sync Status */}
+        <div className="flex items-center gap-2 text-sm text-gray-600">
+          <div className={`h-2 w-2 rounded-full ${
+            dataQualityMetrics.lastSyncDate && isRecentSync(dataQualityMetrics.lastSyncDate)
+              ? 'bg-green-500' 
+              : 'bg-yellow-500'
+          }`} />
+          <span>
+            Last sync: {dataQualityMetrics.lastSyncDate 
+              ? formatSyncTime(dataQualityMetrics.lastSyncDate)
+              : 'Unknown'
+            }
+          </span>
         </div>
-        
-        <div className="flex items-center gap-3">
-          {/* Sync Status */}
-          <div className="flex items-center gap-2 text-sm text-gray-600">
-            <div className={`h-2 w-2 rounded-full ${
-              dataQualityMetrics.lastSyncDate && isRecentSync(dataQualityMetrics.lastSyncDate)
-                ? 'bg-green-500' 
-                : 'bg-yellow-500'
-            }`} />
-            <span>
-              Last sync: {dataQualityMetrics.lastSyncDate 
-                ? formatSyncTime(dataQualityMetrics.lastSyncDate)
-                : 'Unknown'
-              }
-            </span>
-          </div>
 
-          {/* Export Buttons */}
-          <CompactExportButtons items={filteredItems} />
+        {/* Export Buttons */}
+        <CompactExportButtons items={filteredItems} />
 
-          {/* Refresh Button */}
-          <button
-            onClick={handleRefresh}
-            disabled={refreshing}
-            className="inline-flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 transition-colors"
-          >
-            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            {refreshing ? 'Refreshing...' : 'Refresh'}
-          </button>
-
-          {/* Column Selector */}
-          <ColumnSelector
-            columns={columns}
-            onToggleColumn={toggleColumn}
-            onReorderColumns={reorderColumns}
-            onResetColumns={resetColumns}
-          />
-        </div>
+        {/* Refresh Button */}
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          className="inline-flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 transition-colors"
+        >
+          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+          {refreshing ? 'Refreshing...' : 'Refresh'}
+        </button>
       </div>
 
-      {/* Summary Stats */}
-      {summary && (
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-blue-100 rounded-md flex items-center justify-center">
-                  <span className="text-blue-600 text-lg">📦</span>
-                </div>
-              </div>
-              <div className="ml-4">
-                <div className="text-2xl font-bold text-gray-900">{summary.total_items.toLocaleString()}</div>
-                <div className="text-sm text-gray-500">Total Items</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-green-100 rounded-md flex items-center justify-center">
-                  <span className="text-green-600 text-lg">💰</span>
-                </div>
-              </div>
-              <div className="ml-4">
-                <div className="text-2xl font-bold text-gray-900">${summary.total_inventory_value.toLocaleString()}</div>
-                <div className="text-sm text-gray-500">Total Value</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-red-100 rounded-md flex items-center justify-center">
-                  <span className="text-red-600 text-lg">🚫</span>
-                </div>
-              </div>
-              <div className="ml-4">
-                <div className="text-2xl font-bold text-gray-900">{summary.out_of_stock_count}</div>
-                <div className="text-sm text-gray-500">Out of Stock</div>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-6 rounded-lg shadow">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-yellow-100 rounded-md flex items-center justify-center">
-                  <span className="text-yellow-600 text-lg">⚠️</span>
-                </div>
-              </div>
-              <div className="ml-4">
-                <div className="text-2xl font-bold text-gray-900">{summary.low_stock_count}</div>
-                <div className="text-sm text-gray-500">Low Stock</div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* Page Title */}
+      <div>
+        <h1 className="text-2xl font-bold text-gray-900">Inventory Management</h1>
+      </div>
 
       {/* Filter Panel */}
       <AdvancedFilterPanel
@@ -379,6 +306,10 @@ export default function InventoryPage() {
         filterCounts={filterCounts}
         uniqueVendors={uniqueVendors}
         uniqueLocations={uniqueLocations}
+        columns={columns}
+        onToggleColumn={toggleColumn}
+        onReorderColumns={reorderColumns}
+        onResetColumns={resetColumns}
       />
 
       {/* Critical Items Monitor - Only show when Critical Stock filter is active */}
