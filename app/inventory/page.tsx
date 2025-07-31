@@ -107,8 +107,8 @@ export default function InventoryPage() {
 
   const loadInventory = async () => {
     try {
-      // Use API to fetch inventory
-      const response = await fetch('/api/inventory')
+      // Fetch ALL inventory items by setting a high limit
+      const response = await fetch('/api/inventory?limit=10000')
       const data = await response.json()
       
       if (data.error) {
