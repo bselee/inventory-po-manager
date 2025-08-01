@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { RefreshCw, Loader2 } from 'lucide-react'
-import { Toaster, toast } from 'react-hot-toast'
+import { Toaster, toast } from '@/app/components/common/SimpleToast'
 import CompactExportButtons from '@/app/components/inventory/CompactExportButtons'
 import CriticalItemsMonitor from '@/app/components/CriticalItemsMonitor'
 import useInventoryTableManager from '@/app/hooks/useInventoryTableManager'
@@ -14,6 +15,8 @@ import EnhancedInventoryTable from '@/app/components/inventory/EnhancedInventory
 import PaginationControls from '@/app/components/inventory/PaginationControls'
 import InventoryTableSkeleton, { FilterPanelSkeleton } from '@/app/components/inventory/InventoryTableSkeleton'
 import { InventoryItem } from '@/app/types'
+import ErrorBoundary, { PageErrorFallback } from '@/app/components/common/ErrorBoundary'
+import { InventoryLoadingFallback } from '@/app/components/common/LoadingFallback'
 
 // Helper functions for sync status
 const isRecentSync = (lastSyncDate: string) => {
@@ -49,6 +52,17 @@ interface InventorySummary {
 }
 
 export default function InventoryPage() {
+  return (
+    <ErrorBoundary fallback={PageErrorFallback}>
+      <Suspense fallback={<InventoryLoadingFallback />}>
+        <InventoryPageContent />
+      </Suspense>
+    </ErrorBoundary>
+  )
+}
+
+function InventoryPageContent() {
+  const searchParams = useSearchParams()
   const [allItems, setAllItems] = useState<InventoryItem[]>([])
   const [summary, setSummary] = useState<InventorySummary | null>(null)
   const [loading, setLoading] = useState(true)
@@ -240,6 +254,26 @@ export default function InventoryPage() {
     loadInventory()
     loadSummary()
   }, [])
+
+  // Handle URL parameter for vendor filtering
+  useEffect(() => {
+    const vendorParam = searchParams.get('vendor')
+    if (vendorParam && allItems.length > 0) {
+      const decodedVendor = decodeURIComponent(vendorParam)
+      
+      if (useEnhancedFilters) {
+        // For enhanced filters, we need to apply a vendor filter
+        // This would require checking the enhanced filtering hook implementation
+        console.log('Enhanced vendor filtering not yet implemented for URL params')
+      } else {
+        // For legacy filters, update the filter config
+        updateFilter({ vendor: decodedVendor })
+      }
+      
+      // Show a toast notification
+      toast.success(`Filtering inventory by vendor: ${decodedVendor}`)
+    }
+  }, [searchParams, allItems, useEnhancedFilters, updateFilter])
 
   const handleRefresh = async () => {
     setRefreshing(true)
