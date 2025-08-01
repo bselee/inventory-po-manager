@@ -2,8 +2,8 @@
 
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
-import { supabase } from '@/lib/supabase'
 import { Search, RefreshCw, Loader2, Plus, Grid3X3, List, X } from 'lucide-react'
+import { Toaster, toast } from '@/app/components/common/SimpleToast'
 import { Vendor } from '@/app/lib/data-access/vendors'
 import EnhancedVendorCard from '@/app/components/vendors/EnhancedVendorCard'
 import VendorListView from '@/app/components/vendors/VendorListView'
@@ -109,15 +109,17 @@ function VendorsPageContent() {
 
   const loadVendors = async () => {
     try {
-      const { data, error } = await supabase
-        .from('vendors')
-        .select('*')
-        .order('name', { ascending: true })
-
-      if (error) throw error
-      setVendors(data || [])
+      const response = await fetch('/api/vendors')
+      const result = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Failed to load vendors')
+      }
+      
+      setVendors(result.data || [])
     } catch (error) {
       console.error('Error loading vendors:', error)
+      toast.error('Failed to load vendors')
     } finally {
       setLoading(false)
     }
@@ -265,6 +267,7 @@ function VendorsPageContent() {
 
   return (
     <div>
+      <Toaster />
       <div className="flex justify-between items-center mb-6">
         <div>
           <h1 className="text-2xl font-bold">Vendors</h1>

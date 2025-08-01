@@ -6,6 +6,32 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
+// Get all vendors
+export async function GET(request: NextRequest) {
+  try {
+    const { data, error } = await supabase
+      .from('vendors')
+      .select('*')
+      .order('name', { ascending: true })
+
+    if (error) {
+      console.error('Error fetching vendors:', error)
+      return NextResponse.json(
+        { error: 'Failed to fetch vendors' },
+        { status: 500 }
+      )
+    }
+
+    return NextResponse.json({ data: data || [] })
+  } catch (error) {
+    console.error('Error in GET /api/vendors:', error)
+    return NextResponse.json(
+      { error: 'Internal server error' },
+      { status: 500 }
+    )
+  }
+}
+
 // Create a new vendor (sync to Finale)
 export async function POST(request: NextRequest) {
   try {
