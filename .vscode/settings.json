@@ -36,5 +36,6 @@
       "env": {}
     }
   },
-  "mcp.enabled": true
+  "mcp.enabled": true,
+  "markdown.validate.enabled": true
 }

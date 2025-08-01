@@ -2,12 +2,17 @@
 
 import { useState, useEffect } from 'react'
 import { RefreshCw, Loader2 } from 'lucide-react'
+import { Toaster, toast } from 'react-hot-toast'
 import CompactExportButtons from '@/app/components/inventory/CompactExportButtons'
 import CriticalItemsMonitor from '@/app/components/CriticalItemsMonitor'
 import useInventoryTableManager from '@/app/hooks/useInventoryTableManager'
+import { useEnhancedInventoryFiltering } from '@/app/hooks/useEnhancedInventoryFiltering'
+import EnhancedQuickFilters from '@/app/components/inventory/EnhancedQuickFilters'
 import AdvancedFilterPanel from '@/app/components/inventory/AdvancedFilterPanel'
 import ColumnSelector from '@/app/components/inventory/ColumnSelector'
 import EnhancedInventoryTable from '@/app/components/inventory/EnhancedInventoryTable'
+import PaginationControls from '@/app/components/inventory/PaginationControls'
+import InventoryTableSkeleton, { FilterPanelSkeleton } from '@/app/components/inventory/InventoryTableSkeleton'
 import { InventoryItem } from '@/app/types'
 
 // Helper functions for sync status
@@ -48,12 +53,13 @@ export default function InventoryPage() {
   const [summary, setSummary] = useState<InventorySummary | null>(null)
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
+  const [useEnhancedFilters, setUseEnhancedFilters] = useState(true) // Toggle between filter systems
   
-  // Use the comprehensive table manager
+  // Use the comprehensive table manager for legacy support
   const {
-    filteredItems,
+    filteredItems: legacyFilteredItems,
     totalItems,
-    filteredCount,
+    filteredCount: legacyFilteredCount,
     columns,
     visibleColumns,
     toggleColumn,
@@ -61,16 +67,34 @@ export default function InventoryPage() {
     resetColumns,
     filterConfig,
     updateFilter,
-    clearFilters,
+    clearFilters: legacyClearFilters,
     activePresetFilter,
     applyPresetFilter,
     presetFilters,
-    filterCounts,
+    filterCounts: legacyFilterCounts,
     uniqueVendors,
     uniqueLocations,
     sortConfig,
     handleSort
   } = useInventoryTableManager(allItems)
+
+  // Use the enhanced filtering system
+  const {
+    filteredItems: enhancedFilteredItems,
+    filterCounts: enhancedFilterCounts,
+    activeFilterConfig,
+    setActiveFilterConfig,
+    applyFilter,
+    clearFilters: enhancedClearFilters,
+    activeFilterId,
+    isFilterActive
+  } = useEnhancedInventoryFiltering(allItems)
+
+  // Choose which filter system to use
+  const filteredItems = useEnhancedFilters ? enhancedFilteredItems : legacyFilteredItems
+  const filteredCount = filteredItems.length
+  const filterCounts = useEnhancedFilters ? enhancedFilterCounts : legacyFilterCounts
+  const clearFilters = useEnhancedFilters ? enhancedClearFilters : legacyClearFilters
 
   // Cost editing state
   const [editingItem, setEditingItem] = useState<string | null>(null)
@@ -223,27 +247,6 @@ export default function InventoryPage() {
     await loadSummary()
   }
 
-  const handleStockUpdate = async (itemId: string, newStock: number) => {
-    try {
-      const response = await fetch(`/api/inventory/${itemId}/stock`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ stock: newStock })
-      })
-      
-      if (!response.ok) {
-        throw new Error('Failed to update stock')
-      }
-      
-      // Refresh data
-      await loadInventory()
-      await loadSummary()
-    } catch (error) {
-      console.error('Error updating stock:', error)
-      alert('Failed to update stock. Please try again.')
-    }
-  }
-
   const handleCostUpdate = async (itemId: string, newCost: number) => {
     try {
       const response = await fetch(`/api/inventory/${itemId}/cost`, {
@@ -261,9 +264,10 @@ export default function InventoryPage() {
       
       // Refresh data
       await loadInventory()
+      toast.success('Cost updated successfully!')
     } catch (error) {
       console.error('Error updating cost:', error)
-      alert('Failed to update cost. Please try again.')
+      toast.error('Failed to update cost. Please try again.')
     }
   }
 
@@ -280,30 +284,63 @@ export default function InventoryPage() {
 
   const handleToggleItemVisibility = async (itemId: string, hidden: boolean) => {
     try {
-      const response = await fetch(`/api/inventory/${itemId}/visibility`, {
+      const response = await fetch(`/api/inventory/${itemId}`, {
         method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ hidden })
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          hidden: !hidden 
+        }),
       })
-      
+
       if (!response.ok) {
         throw new Error('Failed to update item visibility')
       }
-      
-      // Refresh data to reflect the change
+
+      // Refresh data
       await loadInventory()
+      
+      // Auto-disable "Show Hidden Items" filter when hiding items for better UX
+      if (!hidden) {
+        updateFilter({ showHidden: false })
+      }
+      
+      toast.success(`Item ${!hidden ? 'hidden' : 'shown'} successfully`)
     } catch (error) {
       console.error('Error updating item visibility:', error)
-      alert('Failed to update item visibility. Please try again.')
+      toast.error('Failed to update item visibility')
     }
   }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
-          <p className="text-gray-600">Loading inventory...</p>
+      <div className="space-y-6">
+        <Toaster />
+        
+        {/* Header Skeleton */}
+        <div className="flex items-center justify-end gap-3">
+          <div className="h-8 bg-gray-200 rounded w-32 animate-pulse"></div>
+          <div className="h-8 bg-gray-200 rounded w-24 animate-pulse"></div>
+        </div>
+
+        {/* Filter Panel Skeleton */}
+        <FilterPanelSkeleton />
+
+        {/* Table Skeleton */}
+        <InventoryTableSkeleton />
+
+        {/* Pagination Skeleton */}
+        <div className="bg-white border border-gray-200 rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div className="h-8 bg-gray-200 rounded w-48 animate-pulse"></div>
+            <div className="flex items-center gap-2">
+              <div className="h-8 bg-gray-200 rounded w-16 animate-pulse"></div>
+              <div className="h-8 bg-gray-200 rounded w-8 animate-pulse"></div>
+              <div className="h-8 bg-gray-200 rounded w-8 animate-pulse"></div>
+              <div className="h-8 bg-gray-200 rounded w-16 animate-pulse"></div>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -311,71 +348,86 @@ export default function InventoryPage() {
 
   return (
     <div className="space-y-6">
+      <Toaster />
       {/* Header Controls */}
-      <div className="flex items-center justify-end gap-3">
-        {/* Sync Status */}
-        <div className="flex items-center gap-2 text-sm text-gray-600">
-          <div className={`h-2 w-2 rounded-full ${
-            dataQualityMetrics.lastSyncDate && isRecentSync(dataQualityMetrics.lastSyncDate)
-              ? 'bg-green-500' 
-              : 'bg-yellow-500'
-          }`} />
-          <span>
-            Last sync: {dataQualityMetrics.lastSyncDate 
-              ? formatSyncTime(dataQualityMetrics.lastSyncDate)
-              : 'Unknown'
-            }
-          </span>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {/* Filter System Toggle */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600">Filter System:</span>
+            <button
+              onClick={() => setUseEnhancedFilters(!useEnhancedFilters)}
+              className={`px-3 py-1 text-xs rounded-full transition-colors ${
+                useEnhancedFilters 
+                  ? 'bg-blue-100 text-blue-700 border border-blue-300' 
+                  : 'bg-gray-100 text-gray-700 border border-gray-300'
+              }`}
+            >
+              {useEnhancedFilters ? '✨ Enhanced' : '📊 Legacy'}
+            </button>
+          </div>
         </div>
+        
+        <div className="flex items-center gap-3">
+          {/* Sync Status */}
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            <div className={`h-2 w-2 rounded-full ${
+              dataQualityMetrics.lastSyncDate && isRecentSync(dataQualityMetrics.lastSyncDate)
+                ? 'bg-green-500' 
+                : 'bg-yellow-500'
+            }`} />
+            <span>
+              Last sync: {dataQualityMetrics.lastSyncDate 
+                ? formatSyncTime(dataQualityMetrics.lastSyncDate)
+                : 'Unknown'
+              }
+            </span>
+          </div>
 
-        {/* Export Buttons */}
-        <CompactExportButtons items={filteredItems} />
+          {/* Export Buttons */}
+          <CompactExportButtons items={filteredItems} />
 
-        {/* Refresh Button */}
-        <button
-          onClick={handleRefresh}
-          disabled={refreshing}
-          className="inline-flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 transition-colors"
-        >
-          <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-          {refreshing ? 'Refreshing...' : 'Refresh'}
-        </button>
-      </div>
-
-      {/* Filter Panel */}
-      <AdvancedFilterPanel
-        filterConfig={filterConfig}
-        onFilterChange={updateFilter}
-        onClearFilters={clearFilters}
-        presetFilters={presetFilters}
-        activePresetFilter={activePresetFilter}
-        onApplyPresetFilter={applyPresetFilter}
-        filterCounts={filterCounts}
-        uniqueVendors={uniqueVendors}
-        uniqueLocations={uniqueLocations}
-        columns={columns}
-        onToggleColumn={toggleColumn}
-        onReorderColumns={reorderColumns}
-        onResetColumns={resetColumns}
-        itemsPerPage={itemsPerPage}
-        onItemsPerPageChange={(value) => {
-          setItemsPerPage(value)
-          setCurrentPage(1)
-        }}
-      />
-
-      {/* Critical Items Monitor - Only show when Critical Stock filter is active */}
-      {activePresetFilter === 'critical' && <CriticalItemsMonitor />}
-
-      {/* Results Summary */}
-      <div className="flex items-center justify-between text-sm text-gray-600">
-        <div>
-          Showing {startIndex + 1}-{Math.min(endIndex, filteredCount)} of {filteredCount} items
-          {filteredCount !== totalItems && (
-            <span> (filtered from {totalItems.toLocaleString()} total)</span>
-          )}
+          {/* Refresh Button */}
+          <button
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 transition-colors"
+          >
+            <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </button>
         </div>
       </div>
+
+      {/* Filter Panel - Choose between Enhanced and Legacy */}
+      {useEnhancedFilters ? (
+        <EnhancedQuickFilters
+          activeFilter={activeFilterId}
+          onFilterChange={applyFilter}
+          onClearFilters={enhancedClearFilters}
+          itemCounts={enhancedFilterCounts}
+          className="bg-white rounded-lg shadow"
+        />
+      ) : (
+        <AdvancedFilterPanel
+          filterConfig={filterConfig}
+          onFilterChange={updateFilter}
+          onClearFilters={legacyClearFilters}
+          presetFilters={presetFilters}
+          activePresetFilter={activePresetFilter}
+          onApplyPresetFilter={applyPresetFilter}
+          filterCounts={legacyFilterCounts}
+          uniqueVendors={uniqueVendors}
+          uniqueLocations={uniqueLocations}
+          columns={columns}
+          onToggleColumn={toggleColumn}
+          onReorderColumns={reorderColumns}
+          onResetColumns={resetColumns}
+        />
+      )}
+
+      {/* Critical Items Monitor - Show when critical filters are active */}
+      {(activePresetFilter === 'critical' || (useEnhancedFilters && activeFilterId === 'critical-stock')) && <CriticalItemsMonitor />}
 
       {/* Enhanced Inventory Table */}
       <EnhancedInventoryTable
@@ -383,7 +435,6 @@ export default function InventoryPage() {
         columns={columns}
         sortConfig={sortConfig}
         onSort={handleSort}
-        onStockUpdate={handleStockUpdate}
         onCostEdit={handleCostUpdate}
         editingItem={editingItem}
         showCostEdit={showCostEdit}
@@ -393,53 +444,21 @@ export default function InventoryPage() {
         onToggleVisibility={handleToggleItemVisibility}
       />
 
-      {/* Pagination */}
-      {filteredCount > 0 && (
-        <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-700">
-            Page {currentPage} of {totalPages}
-          </div>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => goToPage(currentPage - 1)}
-              disabled={currentPage === 1}
-              className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Previous
-            </button>
-            
-            {/* Page numbers */}
-            <div className="flex items-center gap-1">
-              {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                const pageNum = Math.max(1, Math.min(currentPage - 2 + i, totalPages - 4 + i))
-                if (pageNum > totalPages) return null
-                
-                return (
-                  <button
-                    key={pageNum}
-                    onClick={() => goToPage(pageNum)}
-                    className={`px-3 py-2 text-sm border rounded-md ${
-                      currentPage === pageNum
-                        ? 'bg-blue-600 text-white border-blue-600'
-                        : 'border-gray-300 hover:bg-gray-50'
-                    }`}
-                  >
-                    {pageNum}
-                  </button>
-                )
-              })}
-            </div>
-
-            <button
-              onClick={() => goToPage(currentPage + 1)}
-              disabled={currentPage === totalPages}
-              className="px-3 py-2 text-sm border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-      )}
+      {/* Enhanced Pagination Controls */}
+      <PaginationControls
+        currentPage={currentPage}
+        totalPages={totalPages}
+        totalItems={totalItems}
+        filteredCount={filteredCount}
+        itemsPerPage={itemsPerPage}
+        startIndex={startIndex}
+        endIndex={endIndex}
+        onPageChange={goToPage}
+        onItemsPerPageChange={(value) => {
+          setItemsPerPage(value)
+          setCurrentPage(1)
+        }}
+      />
     </div>
   )
 }
