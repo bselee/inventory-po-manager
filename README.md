@@ -11,7 +11,6 @@ Enterprise-grade inventory management system with intelligent purchase order aut
 - **Predictive reorder recommendations** based on sales trends
 - **Multi-view dashboards**: Table, Planning (30/60/90 day), Analytics
 - **Advanced filtering** by status, vendor, location, sales velocity
-- **Professional pagination** - modern, responsive navigation with smart page numbering
 
 ### 🛒 **Smart Purchase Order System**
 
@@ -96,7 +95,6 @@ scripts/              # Database migrations and utilities
 - [Database Migration Guide](docs/database-migration-guide.md)
 - [Creative Playwright Testing](docs/playwright-creative-guide.md)
 - [Deployment Guide](docs/vercel_deployment_guide.md)
-- [UI/UX Improvements Guide](docs/ui-ux-improvements-guide.md)
 
 ## 🎯 Business Value
 
@@ -105,3 +103,18 @@ scripts/              # Database migrations and utilities
 - **Automate manual processes** with intelligent PO generation
 - **Improve accuracy** with two-way system synchronization
 - **Save time** with real-time dashboards and alerts
+
+## 📚 Documentation
+
+### Page Documentation
+- [Inventory Page Documentation](./docs/inventory-page-documentation.md) - Comprehensive guide to inventory features
+- [Vendors Page Documentation](./docs/vendors-page-documentation.md) - Complete vendor management guide
+
+### Integration Guides
+- [Serena MCP Server Documentation](./docs/serena-mcp-server-documentation.md) - Semantic code analysis
+- [Context7 MCP Server Documentation](./docs/context7-mcp-server-documentation.md) - Real-time documentation access
+
+### Additional Resources
+- [UI/UX Improvements Guide](./docs/ui-ux-improvements-guide.md)
+- [Playwright Creative Testing Guide](./docs/playwright-creative-guide.md)
+- [Testing Summary Report](./docs/testing-summary-report.md)
