@@ -174,6 +174,7 @@ export async function updateInventoryItem(id: string, data: any) {
   if (data.location !== undefined) updates.location = data.location
   if (data.sales_last_30_days !== undefined) updates.sales_last_30_days = data.sales_last_30_days
   if (data.sales_last_90_days !== undefined) updates.sales_last_90_days = data.sales_last_90_days
+  if (data.hidden !== undefined) updates.hidden = data.hidden
 
   const { data: updated, error } = await supabase
     .from('inventory_items')
@@ -211,6 +212,10 @@ export async function updateInventoryStock(id: string, stock: number) {
 
 export async function updateInventoryCost(id: string, cost: number) {
   return updateInventoryItem(id, { cost })
+}
+
+export async function updateInventoryVisibility(id: string, hidden: boolean) {
+  return updateInventoryItem(id, { hidden })
 }
 
 // Settings functions

@@ -27,3 +27,6 @@ export const PUT = createApiHandler(async ({ params, body }) => {
 }, {
   validateBody: updateStockSchema
 })
+
+// PATCH /api/inventory/[id]/stock - Update inventory stock level (same as PUT)
+export const PATCH = PUT

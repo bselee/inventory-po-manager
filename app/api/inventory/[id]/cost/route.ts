@@ -27,3 +27,6 @@ export const PUT = createApiHandler(async ({ params, body }) => {
 }, {
   validateBody: updateCostSchema
 })
+
+// PATCH /api/inventory/[id]/cost - Update inventory item cost (same as PUT)
+export const PATCH = PUT
