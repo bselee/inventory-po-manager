@@ -13,6 +13,7 @@
 10. [Test Coverage](#test-coverage)
 11. [API Endpoints](#api-endpoints)
 12. [Accessibility Features](#accessibility-features)
+13. [Recent Updates](#recent-updates)
 
 ## Overview
 
@@ -529,3 +530,80 @@ Body: { hidden: boolean }
    - Service worker caching
    - Offline mode
    - Background sync
+
+## Recent Updates
+
+### December 2024 Updates
+
+#### 1. **Dual Filter System**
+The inventory page now features a toggle between two filtering systems:
+- **Enhanced Filters**: Modern, card-based quick filters with visual indicators
+- **Legacy Filters**: Traditional advanced filter panel with detailed controls
+
+```typescript
+// Toggle is located in the header
+const [useEnhancedFilters, setUseEnhancedFilters] = useState(true)
+```
+
+#### 2. **Enhanced Quick Filters**
+New filter presets with real-time counts:
+- Out of Stock
+- Reorder Needed
+- Dead Stock
+- Overstocked
+- Fast Moving
+- Low/High Value Items
+- BuildASoil Products (manufactured items)
+- Supplier Materials
+
+#### 3. **Vendor Integration**
+- Vendor names in the table are now clickable links
+- Clicking a vendor opens the vendor page filtered to that vendor
+- URL parameter support: `/inventory?vendor=VendorName`
+- Cross-page navigation between inventory and vendor views
+
+#### 4. **UI/UX Improvements**
+- **Toast Notifications**: User feedback for all actions using react-hot-toast
+- **Loading Skeletons**: Proper loading states with skeleton UI
+- **Read-only Stock Display**: Stock quantities are no longer editable inline
+- **Improved Pagination**: New PaginationControls component with better UX
+- **Filter System Toggle**: Easy switching between filter systems
+
+#### 5. **API Consistency**
+All inventory update endpoints now support both PUT and PATCH methods:
+- `/api/inventory/[id]/stock`
+- `/api/inventory/[id]/cost`
+- `/api/inventory/[id]/visibility`
+
+#### 6. **BuildASoil-Specific Features**
+- Manufactured vs Purchased item filtering
+- Custom vendor categorization
+- BuildASoil manufacturing vendor detection
+
+#### 7. **Performance Enhancements**
+- Improved memoization for filtered items
+- Better state management with custom hooks
+- Optimized re-renders with proper dependencies
+
+#### 8. **Bug Fixes**
+- Fixed visibility toggle using wrong API endpoint
+- Fixed filter checkboxes not updating properly
+- Improved error handling with proper error messages
+- Fixed pagination reset on filter changes
+
+### Cross-Page Navigation Features
+
+#### Vendor Integration
+The inventory page now includes seamless navigation to vendor pages:
+- **Clickable Vendor Names**: In the inventory table, vendor names are now interactive links
+- **URL Parameter Support**: Clicking a vendor opens `/vendors?vendor=VendorName`
+- **Auto-scroll and Highlight**: The vendor page automatically scrolls to and highlights the selected vendor
+- **Bi-directional Navigation**: Navigate from inventory to vendors and back while maintaining context
+
+Example flow:
+1. View inventory item from "BuildASoil Manufacturing"
+2. Click the vendor name in the table
+3. Opens vendor page with that vendor highlighted
+4. View all products and statistics for that vendor
+
+This creates a cohesive experience for managing vendor relationships and inventory together.
