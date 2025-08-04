@@ -3,12 +3,15 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Search, RefreshCw, Loader2, Plus, Grid3X3, List, X } from 'lucide-react'
-import { Toaster, toast } from '@/app/components/common/SimpleToast'
+import { Toaster, toast } from 'react-hot-toast'
 import { Vendor } from '@/app/lib/data-access/vendors'
 import EnhancedVendorCard from '@/app/components/vendors/EnhancedVendorCard'
 import VendorListView from '@/app/components/vendors/VendorListView'
 import ErrorBoundary, { PageErrorFallback } from '@/app/components/common/ErrorBoundary'
 import { VendorsLoadingFallback } from '@/app/components/common/LoadingFallback'
+import PaginationControls from '@/app/components/inventory/PaginationControls'
+import { useDebounce } from '@/app/hooks/useDebounce'
+import { VendorPageSkeleton, VendorCardSkeleton, VendorListSkeleton } from '@/app/components/vendors/VendorSkeletons'
 
 interface VendorStats {
   vendor: Vendor
@@ -50,17 +53,19 @@ function VendorsPageContent() {
   const [refreshing, setRefreshing] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
   const [viewMode, setViewMode] = useState<'card' | 'list'>('card')
-  const [editingVendor, setEditingVendor] = useState<string | null>(null)
-  const [editForm, setEditForm] = useState<Partial<Vendor>>({})
-  const [showAddModal, setShowAddModal] = useState(false)
-  const [newVendor, setNewVendor] = useState<Partial<Vendor>>({
-    name: '',
-    contact_name: '',
-    email: '',
-    phone: '',
-    address: '',
-    notes: ''
-  })
+  
+  // Debounce search term to improve performance
+  const debouncedSearchTerm = useDebounce(searchTerm, 300)
+  const [isSearching, setIsSearching] = useState(false)
+  
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(50) // Match inventory default
+  const [totalVendors, setTotalVendors] = useState(0)
+  
+  // Sorting state
+  const [sortField, setSortField] = useState<'name' | 'totalItems' | 'totalSpend' | 'lastOrderDate'>('name')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
 
   useEffect(() => {
     loadVendors()
@@ -117,9 +122,12 @@ function VendorsPageContent() {
       }
       
       setVendors(result.data || [])
+      setTotalVendors(result.data?.length || 0)
     } catch (error) {
       console.error('Error loading vendors:', error)
-      toast.error('Failed to load vendors')
+      const errorMessage = error instanceof Error ? error.message : 'Failed to load vendors'
+      toast.error(errorMessage)
+      setVendors([])
     } finally {
       setLoading(false)
     }
@@ -150,10 +158,17 @@ function VendorsPageContent() {
 
   const handleRefresh = async () => {
     setRefreshing(true)
-    await loadVendors()
-    // Clear stats to reload them
-    setVendorStats({})
-    setRefreshing(false)
+    try {
+      await loadVendors()
+      // Clear stats to reload them
+      setVendorStats({})
+      toast.success('Vendors refreshed successfully')
+    } catch (error) {
+      console.error('Error refreshing vendors:', error)
+      toast.error('Failed to refresh vendors')
+    } finally {
+      setRefreshing(false)
+    }
   }
 
   const handleViewModeChange = (mode: 'card' | 'list') => {
@@ -165,138 +180,109 @@ function VendorsPageContent() {
     setSearchTerm('')
   }
 
-  const startEditing = (vendor: Vendor) => {
-    setEditingVendor(vendor.id)
-    setEditForm({
-      contact_name: vendor.contact_name,
-      email: vendor.email,
-      phone: vendor.phone,
-      address: vendor.address,
-      notes: vendor.notes
-    })
-  }
-
-  const handleUpdate = async (vendorId: string) => {
-    try {
-      const vendorToUpdate = vendors.find(v => v.id === vendorId)
-      if (!vendorToUpdate) return
-
-      const response = await fetch(`/api/vendors/${vendorId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...vendorToUpdate,
-          ...editForm
-        })
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to update vendor')
-      }
-
-      const updatedVendor = await response.json()
-      
-      // Update local state
-      setVendors(vendors.map(vendor => 
-        vendor.id === vendorId ? updatedVendor : vendor
-      ))
-      setEditingVendor(null)
-
-      // Show sync warning if present
-      if (updatedVendor.syncWarning) {
-        alert(updatedVendor.syncWarning)
-      }
-    } catch (error) {
-      console.error('Error updating vendor:', error)
-      alert(`Error: ${error instanceof Error ? error.message : 'Failed to update vendor'}`)
-    }
-  }
-
-  const handleAdd = async () => {
-    try {
-      const response = await fetch('/api/vendors', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newVendor)
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to create vendor')
-      }
-
-      const data = await response.json()
-
-      if (data) {
-        setVendors([...vendors, data])
-        setShowAddModal(false)
-        setNewVendor({
-          name: '',
-          contact_name: '',
-          email: '',
-          phone: '',
-          address: '',
-          notes: ''
-        })
-
-        // Show sync status
-        if (data.syncStatus === 'local-only') {
-          alert('Vendor created locally but could not sync to Finale. Check your Finale settings.')
-        }
-      }
-    } catch (error) {
-      console.error('Error adding vendor:', error)
-      alert(`Error: ${error instanceof Error ? error.message : 'Failed to add vendor'}`)
-    }
-  }
-
   const filteredVendors = vendors.filter(vendor => 
-    vendor.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    (vendor.contact_name && vendor.contact_name.toLowerCase().includes(searchTerm.toLowerCase())) ||
-    (vendor.email && vendor.email.toLowerCase().includes(searchTerm.toLowerCase()))
+    vendor.name.toLowerCase().includes(debouncedSearchTerm.toLowerCase()) ||
+    (vendor.contact_name && vendor.contact_name.toLowerCase().includes(debouncedSearchTerm.toLowerCase())) ||
+    (vendor.email && vendor.email.toLowerCase().includes(debouncedSearchTerm.toLowerCase()))
   )
+  
+  // Sort vendors
+  const sortedVendors = [...filteredVendors].sort((a, b) => {
+    let aValue: any
+    let bValue: any
+    
+    switch (sortField) {
+      case 'name':
+        aValue = a.name.toLowerCase()
+        bValue = b.name.toLowerCase()
+        break
+      case 'totalItems':
+        aValue = vendorStats[a.id]?.totalItems || 0
+        bValue = vendorStats[b.id]?.totalItems || 0
+        break
+      case 'totalSpend':
+        aValue = vendorStats[a.id]?.totalSpend || 0
+        bValue = vendorStats[b.id]?.totalSpend || 0
+        break
+      case 'lastOrderDate':
+        aValue = vendorStats[a.id]?.lastOrderDate || ''
+        bValue = vendorStats[b.id]?.lastOrderDate || ''
+        break
+      default:
+        return 0
+    }
+    
+    if (aValue < bValue) return sortDirection === 'asc' ? -1 : 1
+    if (aValue > bValue) return sortDirection === 'asc' ? 1 : -1
+    return 0
+  })
+  
+  // Calculate pagination
+  const totalPages = Math.ceil(sortedVendors.length / itemsPerPage)
+  const startIndex = (currentPage - 1) * itemsPerPage
+  const endIndex = startIndex + itemsPerPage
+  const paginatedVendors = sortedVendors.slice(startIndex, endIndex)
+  
+  // Reset to first page when search or sort changes
+  useEffect(() => {
+    setCurrentPage(1)
+  }, [debouncedSearchTerm, sortField, sortDirection])
+  
+  // Update searching state when debounced term changes
+  useEffect(() => {
+    setIsSearching(false)
+  }, [debouncedSearchTerm])
+  
+  // Handle sort change
+  const handleSort = (field: typeof sortField) => {
+    if (field === sortField) {
+      setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDirection('asc')
+    }
+  }
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-64">
-        <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-      </div>
+      <>
+        <Toaster />
+        <VendorPageSkeleton />
+      </>
     )
   }
 
   return (
-    <div>
+    <div className="space-y-6">
       <Toaster />
-      <div className="flex justify-between items-center mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Vendors</h1>
-          <p className="text-gray-600 text-sm mt-1">
-            {filteredVendors.length} of {vendors.length} vendors
-            {searchTerm && ` matching "${searchTerm}"`}
-          </p>
+      {/* Header Controls */}
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          {/* Page Title and Info */}
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Vendors</h1>
+            <p className="text-sm text-gray-600 mt-1">
+              {sortedVendors.length} of {vendors.length} vendors
+              {searchTerm && ` matching "${searchTerm}"`}
+            </p>
+          </div>
         </div>
-        <div className="flex gap-2">
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700"
-          >
-            <Plus className="h-4 w-4" />
-            Add Vendor
-          </button>
+        
+        <div className="flex items-center gap-3">
+          {/* Refresh Button */}
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:bg-gray-400"
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm text-gray-600 hover:text-gray-800 border border-gray-300 rounded-md hover:bg-gray-50 disabled:opacity-50 transition-colors"
           >
             <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-            Refresh
+            {refreshing ? 'Refreshing...' : 'Refresh'}
           </button>
         </div>
       </div>
 
       {/* Search and View Controls */}
-      <div className="bg-white p-4 rounded-lg shadow mb-6">
+      <div className="bg-white p-4 rounded-lg shadow">
         <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between">
           {/* Search */}
           <div className="relative flex-1 max-w-md">
@@ -305,17 +291,28 @@ function VendorsPageContent() {
               type="text"
               placeholder="Search vendors by name, contact, or email..."
               value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onChange={(e) => {
+                setSearchTerm(e.target.value)
+                setIsSearching(true)
+              }}
+              className="w-full pl-10 pr-10 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             />
             {searchTerm && (
               <button
-                onClick={clearSearch}
+                onClick={() => {
+                  clearSearch()
+                  setIsSearching(false)
+                }}
                 title="Clear search"
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400 hover:text-gray-600"
+                className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100 transition-colors"
               >
                 <X className="h-4 w-4" />
               </button>
+            )}
+            {isSearching && searchTerm && (
+              <div className="absolute right-10 top-1/2 transform -translate-y-1/2">
+                <Loader2 className="h-4 w-4 animate-spin text-gray-400" />
+              </div>
             )}
           </div>
 
@@ -325,7 +322,7 @@ function VendorsPageContent() {
               onClick={() => handleViewModeChange('card')}
               className={`flex items-center gap-2 px-3 py-2 rounded text-sm font-medium transition-colors ${
                 viewMode === 'card'
-                  ? 'bg-white text-blue-600 shadow-sm'
+                  ? 'bg-white text-blue-700 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -336,7 +333,7 @@ function VendorsPageContent() {
               onClick={() => handleViewModeChange('list')}
               className={`flex items-center gap-2 px-3 py-2 rounded text-sm font-medium transition-colors ${
                 viewMode === 'list'
-                  ? 'bg-white text-blue-600 shadow-sm'
+                  ? 'bg-white text-blue-700 shadow-sm'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
             >
@@ -350,27 +347,47 @@ function VendorsPageContent() {
       {/* Vendors Display */}
       {viewMode === 'card' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredVendors.map((vendor) => (
+          {paginatedVendors.map((vendor) => (
             <div key={vendor.id} data-vendor-id={vendor.id}>
               <EnhancedVendorCard
                 vendor={vendor}
                 stats={vendorStats[vendor.id]}
                 isLoading={loadingStats[vendor.id]}
-                onEdit={startEditing}
               />
             </div>
           ))}
         </div>
       ) : (
         <VendorListView
-          vendors={filteredVendors}
+          vendors={paginatedVendors}
           vendorStats={vendorStats}
           loadingStats={loadingStats}
-          onEdit={startEditing}
+          sortField={sortField}
+          sortDirection={sortDirection}
+          onSort={handleSort}
+        />
+      )}
+      
+      {/* Pagination */}
+      {sortedVendors.length > 0 && (
+        <PaginationControls
+          currentPage={currentPage}
+          totalPages={totalPages}
+          totalItems={vendors.length}
+          filteredCount={sortedVendors.length}
+          itemsPerPage={itemsPerPage}
+          startIndex={startIndex}
+          endIndex={Math.min(endIndex, sortedVendors.length)}
+          onPageChange={setCurrentPage}
+          onItemsPerPageChange={(value) => {
+            setItemsPerPage(value)
+            setCurrentPage(1)
+          }}
+          className="mt-6"
         />
       )}
 
-      {filteredVendors.length === 0 && !loading && (
+      {sortedVendors.length === 0 && !loading && (
         <div className="bg-white rounded-lg shadow p-8 text-center text-gray-500">
           {searchTerm ? (
             <div>
@@ -378,7 +395,7 @@ function VendorsPageContent() {
               <p className="mt-2">No vendors match your search for "{searchTerm}"</p>
               <button
                 onClick={clearSearch}
-                className="mt-4 text-blue-600 hover:text-blue-800 underline"
+                className="mt-4 text-blue-700 hover:text-blue-800 underline"
               >
                 Clear search
               </button>
@@ -386,90 +403,12 @@ function VendorsPageContent() {
           ) : (
             <div>
               <p className="text-lg font-medium">No vendors found</p>
-              <p className="mt-2">Run vendor sync to import from Finale or add vendors manually.</p>
+              <p className="mt-2">Run vendor sync to import vendors from Finale.</p>
             </div>
           )}
         </div>
       )}
 
-      {/* Add Vendor Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 max-w-md w-full">
-            <h2 className="text-lg font-semibold mb-4">Add New Vendor</h2>
-            <div className="space-y-3">
-              <input
-                type="text"
-                placeholder="Vendor Name *"
-                value={newVendor.name || ''}
-                onChange={(e) => setNewVendor({ ...newVendor, name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                required
-              />
-              <input
-                type="text"
-                placeholder="Contact Name"
-                value={newVendor.contact_name || ''}
-                onChange={(e) => setNewVendor({ ...newVendor, contact_name: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
-              <input
-                type="email"
-                placeholder="Email"
-                value={newVendor.email || ''}
-                onChange={(e) => setNewVendor({ ...newVendor, email: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
-              <input
-                type="tel"
-                placeholder="Phone"
-                value={newVendor.phone || ''}
-                onChange={(e) => setNewVendor({ ...newVendor, phone: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-              />
-              <textarea
-                placeholder="Address"
-                value={newVendor.address || ''}
-                onChange={(e) => setNewVendor({ ...newVendor, address: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                rows={2}
-              />
-              <textarea
-                placeholder="Notes"
-                value={newVendor.notes || ''}
-                onChange={(e) => setNewVendor({ ...newVendor, notes: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                rows={2}
-              />
-            </div>
-            <div className="flex gap-2 mt-6">
-              <button
-                onClick={handleAdd}
-                disabled={!newVendor.name}
-                className="flex-1 px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:bg-gray-400"
-              >
-                Add Vendor
-              </button>
-              <button
-                onClick={() => {
-                  setShowAddModal(false)
-                  setNewVendor({
-                    name: '',
-                    contact_name: '',
-                    email: '',
-                    phone: '',
-                    address: '',
-                    notes: ''
-                  })
-                }}
-                className="flex-1 px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   )
 }

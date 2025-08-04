@@ -5,7 +5,6 @@ import {
   Phone, 
   MapPin, 
   FileText, 
-  Edit2, 
   Cloud, 
   CloudOff,
   Package,
@@ -42,14 +41,12 @@ interface EnhancedVendorCardProps {
   vendor: VendorStats['vendor']
   stats?: VendorStats
   isLoading?: boolean
-  onEdit: (vendor: VendorStats['vendor']) => void
 }
 
 export default function EnhancedVendorCard({ 
   vendor, 
   stats, 
-  isLoading = false, 
-  onEdit 
+  isLoading = false
 }: EnhancedVendorCardProps) {
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', {
@@ -67,6 +64,11 @@ export default function EnhancedVendorCard({
       day: 'numeric',
       year: 'numeric'
     })
+  }
+
+  const handleViewInventory = (vendorName: string) => {
+    const encodedVendor = encodeURIComponent(vendorName)
+    window.open(`/inventory?vendor=${encodedVendor}`, '_blank')
   }
 
   return (
@@ -93,14 +95,6 @@ export default function EnhancedVendorCard({
             )}
           </div>
         </div>
-        <button
-          onClick={() => onEdit(vendor)}
-          className="text-gray-400 hover:text-gray-600"
-          title="Edit vendor"
-          aria-label={`Edit vendor ${vendor.name}`}
-        >
-          <Edit2 className="h-4 w-4" />
-        </button>
       </div>
 
       {/* Contact Information */}
@@ -142,38 +136,64 @@ export default function EnhancedVendorCard({
 
       {/* Statistics */}
       {isLoading ? (
-        <div className="space-y-2">
-          <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
-          <div className="h-4 bg-gray-200 rounded animate-pulse w-3/4"></div>
-          <div className="h-4 bg-gray-200 rounded animate-pulse w-1/2"></div>
+        <div className="space-y-4">
+          {/* Key Metrics Skeleton */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="text-center">
+                <div className="h-4 bg-gray-200 rounded animate-pulse mb-2"></div>
+                <div className="h-6 bg-gray-300 rounded animate-pulse w-3/4 mx-auto"></div>
+              </div>
+            ))}
+          </div>
+          
+          {/* Inventory Health Skeleton */}
+          <div className="border-t pt-3">
+            <div className="h-4 bg-gray-200 rounded animate-pulse w-32 mb-2"></div>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              {[...Array(4)].map((_, i) => (
+                <div key={i} className="h-8 bg-gray-100 rounded animate-pulse"></div>
+              ))}
+            </div>
+          </div>
+          
+          {/* Order Status Skeleton */}
+          <div className="border-t pt-3">
+            <div className="h-4 bg-gray-200 rounded animate-pulse w-24 mb-2"></div>
+            <div className="flex gap-2">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="h-6 bg-gray-100 rounded animate-pulse w-20"></div>
+              ))}
+            </div>
+          </div>
         </div>
       ) : stats ? (
         <div className="space-y-4">
           {/* Key Metrics */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <div className="text-center">
-              <div className="flex items-center justify-center gap-1 text-blue-600 mb-1">
+              <div className="flex items-center justify-center gap-1 text-blue-700 mb-1">
                 <Package className="h-4 w-4" />
                 <span className="text-xs font-medium">Items</span>
               </div>
               <div className="text-lg font-semibold">{stats.totalItems}</div>
             </div>
             <div className="text-center">
-              <div className="flex items-center justify-center gap-1 text-green-600 mb-1">
+              <div className="flex items-center justify-center gap-1 text-green-700 mb-1">
                 <ShoppingCart className="h-4 w-4" />
                 <span className="text-xs font-medium">Orders</span>
               </div>
               <div className="text-lg font-semibold">{stats.totalPurchaseOrders}</div>
             </div>
             <div className="text-center">
-              <div className="flex items-center justify-center gap-1 text-purple-600 mb-1">
+              <div className="flex items-center justify-center gap-1 text-purple-700 mb-1">
                 <DollarSign className="h-4 w-4" />
                 <span className="text-xs font-medium">Total Spend</span>
               </div>
               <div className="text-lg font-semibold">{formatCurrency(stats.totalSpend)}</div>
             </div>
             <div className="text-center">
-              <div className="flex items-center justify-center gap-1 text-orange-600 mb-1">
+              <div className="flex items-center justify-center gap-1 text-orange-700 mb-1">
                 <Calendar className="h-4 w-4" />
                 <span className="text-xs font-medium">Last Order</span>
               </div>
@@ -217,19 +237,19 @@ export default function EnhancedVendorCard({
               <div className="flex gap-2 text-xs">
                 {stats.ordersByStatus.draft > 0 && (
                   <div className="flex items-center gap-1 px-2 py-1 bg-gray-100 rounded">
-                    <span className="text-gray-600">Draft:</span>
+                    <span className="text-gray-700">Draft:</span>
                     <span className="font-semibold">{stats.ordersByStatus.draft}</span>
                   </div>
                 )}
                 {stats.ordersByStatus.submitted > 0 && (
                   <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 rounded">
-                    <span className="text-blue-600">Submitted:</span>
+                    <span className="text-blue-700">Submitted:</span>
                     <span className="font-semibold">{stats.ordersByStatus.submitted}</span>
                   </div>
                 )}
                 {stats.ordersByStatus.approved > 0 && (
                   <div className="flex items-center gap-1 px-2 py-1 bg-green-100 rounded">
-                    <span className="text-green-600">Approved:</span>
+                    <span className="text-green-700">Approved:</span>
                     <span className="font-semibold">{stats.ordersByStatus.approved}</span>
                   </div>
                 )}
@@ -242,19 +262,19 @@ export default function EnhancedVendorCard({
             <div className="flex flex-wrap gap-2 text-xs">
               {stats.inventoryStats.totalValue > 0 && (
                 <div className="flex items-center gap-1 px-2 py-1 bg-purple-50 rounded">
-                  <DollarSign className="h-3 w-3 text-purple-600" />
+                  <DollarSign className="h-3 w-3 text-purple-700" />
                   <span className="text-purple-700">Inventory Value: {formatCurrency(stats.inventoryStats.totalValue)}</span>
                 </div>
               )}
               {stats.averageOrderValue > 0 && (
                 <div className="flex items-center gap-1 px-2 py-1 bg-indigo-50 rounded">
-                  <TrendingUp className="h-3 w-3 text-indigo-600" />
+                  <TrendingUp className="h-3 w-3 text-indigo-700" />
                   <span className="text-indigo-700">Avg Order: {formatCurrency(stats.averageOrderValue)}</span>
                 </div>
               )}
               {(stats.inventoryStats.lowStockItems > 0 || stats.inventoryStats.outOfStockItems > 0) && (
                 <div className="flex items-center gap-1 px-2 py-1 bg-red-50 rounded">
-                  <AlertTriangle className="h-3 w-3 text-red-600" />
+                  <AlertTriangle className="h-3 w-3 text-red-700" />
                   <span className="text-red-700">
                     {stats.inventoryStats.lowStockItems + stats.inventoryStats.outOfStockItems} items need attention
                   </span>
@@ -282,9 +302,4 @@ export default function EnhancedVendorCard({
       </div>
     </div>
   )
-
-  const handleViewInventory = (vendorName: string) => {
-    const encodedVendor = encodeURIComponent(vendorName)
-    window.open(`/inventory?vendor=${encodedVendor}`, '_blank')
-  }
 }

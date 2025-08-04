@@ -1,7 +1,7 @@
 'use client'
 
 import { Vendor } from '@/app/lib/data-access/vendors'
-import { Edit2, ExternalLink, Mail, Phone, MapPin, Package } from 'lucide-react'
+import { ExternalLink, Mail, Phone, MapPin, Package, ChevronUp, ChevronDown } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import ErrorBoundary, { DefaultErrorFallback } from '@/app/components/common/ErrorBoundary'
 
@@ -30,18 +30,27 @@ interface VendorListViewProps {
   vendors: Vendor[]
   vendorStats: Record<string, VendorStats>
   loadingStats: Record<string, boolean>
-  onEdit: (vendor: Vendor) => void
+  sortField?: 'name' | 'totalItems' | 'totalSpend' | 'lastOrderDate'
+  sortDirection?: 'asc' | 'desc'
+  onSort?: (field: 'name' | 'totalItems' | 'totalSpend' | 'lastOrderDate') => void
 }
 
-export default function VendorListView({ vendors, vendorStats, loadingStats, onEdit }: VendorListViewProps) {
+export default function VendorListView({ vendors, vendorStats, loadingStats, sortField, sortDirection, onSort }: VendorListViewProps) {
   return (
     <ErrorBoundary fallback={DefaultErrorFallback}>
-      <VendorListTable vendors={vendors} vendorStats={vendorStats} loadingStats={loadingStats} onEdit={onEdit} />
+      <VendorListTable 
+        vendors={vendors} 
+        vendorStats={vendorStats} 
+        loadingStats={loadingStats} 
+        sortField={sortField}
+        sortDirection={sortDirection}
+        onSort={onSort}
+      />
     </ErrorBoundary>
   )
 }
 
-function VendorListTable({ vendors, vendorStats, loadingStats, onEdit }: VendorListViewProps) {
+function VendorListTable({ vendors, vendorStats, loadingStats, sortField, sortDirection, onSort }: VendorListViewProps) {
   const router = useRouter()
 
   const handleViewInventory = (vendor: Vendor) => {
@@ -63,20 +72,53 @@ function VendorListTable({ vendors, vendorStats, loadingStats, onEdit }: VendorL
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Vendor
+              <th 
+                scope="col" 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => onSort?.('name')}
+              >
+                <div className="flex items-center gap-1">
+                  Vendor
+                  {sortField === 'name' && (
+                    <span className="text-blue-600">
+                      {sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                    </span>
+                  )}
+                </div>
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Contact
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Inventory
+              <th 
+                scope="col" 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => onSort?.('totalItems')}
+              >
+                <div className="flex items-center gap-1">
+                  Inventory
+                  {sortField === 'totalItems' && (
+                    <span className="text-blue-600">
+                      {sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                    </span>
+                  )}
+                </div>
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Purchase Orders
               </th>
-              <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                Spend
+              <th 
+                scope="col" 
+                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100"
+                onClick={() => onSort?.('totalSpend')}
+              >
+                <div className="flex items-center gap-1">
+                  Spend
+                  {sortField === 'totalSpend' && (
+                    <span className="text-blue-600">
+                      {sortDirection === 'asc' ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                    </span>
+                  )}
+                </div>
               </th>
               <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                 Actions
@@ -134,7 +176,10 @@ function VendorListTable({ vendors, vendorStats, loadingStats, onEdit }: VendorL
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {isLoading ? (
-                      <div className="text-sm text-gray-500">Loading...</div>
+                      <div className="space-y-2">
+                        <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
+                        <div className="h-3 bg-gray-100 rounded animate-pulse w-16"></div>
+                      </div>
                     ) : stats ? (
                       <div className="flex flex-col gap-1">
                         <div className="text-sm font-medium text-gray-900">
@@ -144,12 +189,12 @@ function VendorListTable({ vendors, vendorStats, loadingStats, onEdit }: VendorL
                           {stats.inventoryStats.inStockItems} in stock
                         </div>
                         {stats.inventoryStats.lowStockItems > 0 && (
-                          <div className="text-xs text-orange-600">
+                          <div className="text-xs text-yellow-700">
                             {stats.inventoryStats.lowStockItems} low stock
                           </div>
                         )}
                         {stats.inventoryStats.outOfStockItems > 0 && (
-                          <div className="text-xs text-red-600">
+                          <div className="text-xs text-red-700">
                             {stats.inventoryStats.outOfStockItems} out of stock
                           </div>
                         )}
@@ -160,7 +205,10 @@ function VendorListTable({ vendors, vendorStats, loadingStats, onEdit }: VendorL
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {isLoading ? (
-                      <div className="text-sm text-gray-500">Loading...</div>
+                      <div className="space-y-2">
+                        <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
+                        <div className="h-3 bg-gray-100 rounded animate-pulse w-16"></div>
+                      </div>
                     ) : stats ? (
                       <div className="flex flex-col gap-1">
                         <div className="text-sm font-medium text-gray-900">
@@ -181,7 +229,10 @@ function VendorListTable({ vendors, vendorStats, loadingStats, onEdit }: VendorL
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {isLoading ? (
-                      <div className="text-sm text-gray-500">Loading...</div>
+                      <div className="space-y-2">
+                        <div className="h-4 bg-gray-200 rounded animate-pulse w-20"></div>
+                        <div className="h-3 bg-gray-100 rounded animate-pulse w-16"></div>
+                      </div>
                     ) : stats ? (
                       <div className="flex flex-col gap-1">
                         <div className="text-sm font-medium text-gray-900">
@@ -202,18 +253,12 @@ function VendorListTable({ vendors, vendorStats, loadingStats, onEdit }: VendorL
                     <div className="flex items-center gap-2">
                       <button
                         onClick={() => handleViewInventory(vendor)}
-                        className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100"
+                        className="inline-flex items-center gap-1 px-3 py-1 text-xs bg-blue-50 text-blue-700 rounded hover:bg-blue-100"
                         title="View Inventory"
                       >
                         <Package className="h-3 w-3" />
+                        <span>View Inventory</span>
                         <ExternalLink className="h-3 w-3" />
-                      </button>
-                      <button
-                        onClick={() => onEdit(vendor)}
-                        className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-gray-50 text-gray-700 rounded hover:bg-gray-100"
-                        title="Edit Vendor"
-                      >
-                        <Edit2 className="h-3 w-3" />
                       </button>
                     </div>
                   </td>
