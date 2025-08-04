@@ -227,7 +227,27 @@ export class FinaleApiService {
         
         // Extract supplier from supplierList if available
         if (product.supplierList && Array.isArray(product.supplierList) && product.supplierList.length > 0) {
-          finaleProduct.primarySupplierName = product.supplierList[0].partyName || ''
+          // Check different possible supplier data structures
+          const firstSupplier = product.supplierList[0]
+          
+          // Try different field names that might contain the supplier name
+          finaleProduct.primarySupplierName = 
+            firstSupplier.partyName || 
+            firstSupplier.supplierName || 
+            firstSupplier.name ||
+            firstSupplier.vendorName ||
+            firstSupplier.supplier ||
+            firstSupplier.vendor ||
+            ''
+          
+          // Log the structure for debugging
+          if (firstSupplier && Object.keys(firstSupplier).length > 0) {
+            console.log('[Finale Sync] Supplier structure found:', {
+              productId: productId,
+              supplierFields: Object.keys(firstSupplier),
+              supplierData: firstSupplier
+            })
+          }
         }
         
         // Apply year filter if specified

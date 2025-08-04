@@ -736,6 +736,55 @@ export default function SettingsPage() {
               )}
             </div>
             
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Inventory Report URL (Optional)
+              </label>
+              <p className="text-xs text-gray-500 mb-2">
+                To include supplier/vendor data in inventory sync, create a report in Finale with 
+                Product ID, Name, Supplier, and Stock data. Copy the report URL and change 
+                "pivotTableStream" to "pivotTable".
+              </p>
+              <input
+                type="text"
+                value={settings.finale_inventory_report_url || ''}
+                onChange={(e) => handleChange('finale_inventory_report_url', e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                placeholder="https://app.finaleinventory.com/.../report/pivotTable/..."
+              />
+              <button
+                onClick={async () => {
+                  if (!settings.finale_inventory_report_url) {
+                    setMessage({ type: 'error', text: 'Please enter a report URL first' })
+                    return
+                  }
+                  try {
+                    const response = await fetch('/api/test-report-api', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify({ reportUrl: settings.finale_inventory_report_url })
+                    })
+                    const result = await response.json()
+                    if (result.success) {
+                      setMessage({ 
+                        type: 'success', 
+                        text: `Report test successful! Found ${result.analysis.supplierColumns.length > 0 ? 
+                          result.analysis.supplierColumns.join(', ') : 'no supplier columns'}` 
+                      })
+                    } else {
+                      setMessage({ type: 'error', text: result.error || 'Failed to test report' })
+                    }
+                  } catch (error) {
+                    setMessage({ type: 'error', text: 'Failed to test report URL' })
+                  }
+                }}
+                className="mt-2 px-3 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700"
+                type="button"
+              >
+                Test Report
+              </button>
+            </div>
+            
             {/* Alternative Authentication Section */}
             <div className="border-t pt-4 mt-4">
               <h3 className="text-sm font-semibold text-gray-700 mb-2">
