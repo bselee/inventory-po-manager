@@ -4,7 +4,7 @@ import { FinaleApiService } from '@/app/lib/finale-api'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
-export const maxDuration = 60
+export const maxDuration = 300 // Increase to 5 minutes for Finale API calls
 
 export async function GET(request: NextRequest) {
   try {

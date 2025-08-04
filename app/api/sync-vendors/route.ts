@@ -4,7 +4,7 @@ import { supabase } from '@/app/lib/supabase'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
-export const maxDuration = 60
+export const maxDuration = 300 // Increase to 5 minutes for vendor sync
 
 export async function POST(request: NextRequest) {
   try {
