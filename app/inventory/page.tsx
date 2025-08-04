@@ -79,6 +79,8 @@ function InventoryPageContent() {
     toggleColumn,
     reorderColumns,
     resetColumns,
+    applyColumnPreset,
+    columnPresets,
     filterConfig,
     updateFilter,
     clearFilters: legacyClearFilters,
@@ -424,6 +426,8 @@ function InventoryPageContent() {
             onToggleColumn={toggleColumn}
             onReorderColumns={reorderColumns}
             onResetColumns={resetColumns}
+            onApplyColumnPreset={(presetKey) => applyColumnPreset(presetKey as keyof typeof columnPresets)}
+            columnPresets={columnPresets}
           />
 
           {/* Export Buttons */}

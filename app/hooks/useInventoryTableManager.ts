@@ -46,6 +46,35 @@ export const DEFAULT_COLUMNS: ColumnConfig[] = [
   { key: 'active', label: 'Active', visible: false, sortable: true, width: '80px' }
 ]
 
+// Preset column layouts
+export const COLUMN_PRESETS = {
+  essential: {
+    name: 'Essential',
+    description: 'Core inventory fields only',
+    columns: ['actions', 'sku', 'product_name', 'current_stock', 'cost', 'vendor'] as string[]
+  },
+  operations: {
+    name: 'Operations',
+    description: 'Fields needed for daily operations',
+    columns: ['actions', 'sku', 'product_name', 'current_stock', 'minimum_stock', 'stock_status_level', 'vendor', 'location'] as string[]
+  },
+  analytics: {
+    name: 'Analytics',
+    description: 'Sales and performance data',
+    columns: ['actions', 'sku', 'product_name', 'current_stock', 'sales_velocity', 'sales_last_30_days', 'days_until_stockout', 'trend'] as string[]
+  },
+  purchasing: {
+    name: 'Purchasing',
+    description: 'Purchase and reorder information',
+    columns: ['actions', 'sku', 'product_name', 'current_stock', 'minimum_stock', 'reorder_quantity', 'cost', 'vendor'] as string[]
+  },
+  comprehensive: {
+    name: 'Comprehensive',
+    description: 'All available fields',
+    columns: DEFAULT_COLUMNS.map(col => col.key) as string[]
+  }
+}
+
 // Preset filters
 export const PRESET_FILTERS: PresetFilter[] = [
   {
@@ -428,6 +457,18 @@ export default function useInventoryTableManager(items: InventoryItem[]) {
     setColumns(DEFAULT_COLUMNS)
   }, [])
 
+  const applyColumnPreset = useCallback((presetKey: keyof typeof COLUMN_PRESETS) => {
+    const preset = COLUMN_PRESETS[presetKey]
+    if (preset) {
+      const presetColumns = new Set(preset.columns)
+      const updatedColumns = DEFAULT_COLUMNS.map(col => ({
+        ...col,
+        visible: presetColumns.has(col.key as any)
+      }))
+      setColumns(updatedColumns)
+    }
+  }, [])
+
   return {
     filteredItems,
     totalItems: items.length,
@@ -437,6 +478,8 @@ export default function useInventoryTableManager(items: InventoryItem[]) {
     toggleColumn,
     reorderColumns,
     resetColumns,
+    applyColumnPreset,
+    columnPresets: COLUMN_PRESETS,
     filterConfig,
     updateFilter,
     clearFilters,
