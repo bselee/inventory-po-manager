@@ -418,6 +418,14 @@ function InventoryPageContent() {
             </span>
           </div>
 
+          {/* Column Selector */}
+          <ColumnSelector
+            columns={columns}
+            onToggleColumn={toggleColumn}
+            onReorderColumns={reorderColumns}
+            onResetColumns={resetColumns}
+          />
+
           {/* Export Buttons */}
           <CompactExportButtons items={filteredItems} />
 
