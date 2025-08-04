@@ -292,6 +292,138 @@ export default function EnhancedQuickFilters({
         stockRange: { min: 0, max: 999999 },
         sourceType: 'manufactured'
       }
+    },
+    {
+      id: 'high-value',
+      label: 'High Value',
+      icon: Star,
+      color: 'text-amber-600',
+      bgColor: 'bg-amber-50 hover:bg-amber-100',
+      borderColor: 'border-amber-200',
+      description: 'Items with unit price over $100',
+      config: { 
+        status: 'all', 
+        vendor: '', 
+        location: '', 
+        priceRange: { min: 100, max: 999999 }, 
+        salesVelocity: 'all', 
+        stockDays: 'all', 
+        reorderNeeded: false, 
+        hasValue: true,
+        costRange: { min: 100, max: 999999 },
+        stockRange: { min: 0, max: 999999 },
+        sourceType: 'all'
+      }
+    },
+    {
+      id: 'medium-stock',
+      label: 'Medium Stock',
+      icon: CheckCircle,
+      color: 'text-teal-600',
+      bgColor: 'bg-teal-50 hover:bg-teal-100',
+      borderColor: 'border-teal-200',
+      description: 'Items with 30-90 days supply',
+      config: { 
+        status: 'adequate', 
+        vendor: '', 
+        location: '', 
+        priceRange: { min: 0, max: 999999 }, 
+        salesVelocity: 'all', 
+        stockDays: '30-60', 
+        reorderNeeded: false, 
+        hasValue: false,
+        costRange: { min: 0, max: 999999 },
+        stockRange: { min: 1, max: 999999 },
+        sourceType: 'all'
+      }
+    },
+    {
+      id: 'slow-moving',
+      label: 'Slow Moving',
+      icon: TrendingDown,
+      color: 'text-yellow-600',
+      bgColor: 'bg-yellow-50 hover:bg-yellow-100',
+      borderColor: 'border-yellow-200',
+      description: 'Items with low sales velocity but still moving',
+      config: { 
+        status: 'in-stock', 
+        vendor: '', 
+        location: '', 
+        priceRange: { min: 0, max: 999999 }, 
+        salesVelocity: 'slow', 
+        stockDays: 'all', 
+        reorderNeeded: false, 
+        hasValue: true,
+        costRange: { min: 0, max: 999999 },
+        stockRange: { min: 1, max: 999999 },
+        sourceType: 'all'
+      }
+    },
+    {
+      id: 'recently-purchased',
+      label: 'Recently Purchased',
+      icon: Clock,
+      color: 'text-purple-600',
+      bgColor: 'bg-purple-50 hover:bg-purple-100',
+      borderColor: 'border-purple-200',
+      description: 'Items purchased in the last 30 days',
+      config: { 
+        status: 'all', 
+        vendor: '', 
+        location: '', 
+        priceRange: { min: 0, max: 999999 }, 
+        salesVelocity: 'all', 
+        stockDays: 'all', 
+        reorderNeeded: false, 
+        hasValue: false,
+        costRange: { min: 0, max: 999999 },
+        stockRange: { min: 0, max: 999999 },
+        sourceType: 'purchased'
+      }
+    },
+    {
+      id: 'needs-attention',
+      label: 'Needs Attention',
+      icon: AlertTriangle,
+      color: 'text-red-600',
+      bgColor: 'bg-red-50 hover:bg-red-100',
+      borderColor: 'border-red-200',
+      description: 'Items that need immediate attention (out of stock or reorder needed)',
+      config: { 
+        status: 'out-of-stock', 
+        vendor: '', 
+        location: '', 
+        priceRange: { min: 0, max: 999999 }, 
+        salesVelocity: 'all', 
+        stockDays: 'all', 
+        reorderNeeded: true, 
+        hasValue: false,
+        costRange: { min: 0, max: 999999 },
+        stockRange: { min: 0, max: 0 },
+        sourceType: 'all'
+      }
+    },
+    {
+      id: 'new-items',
+      label: 'New Items',
+      icon: Plus,
+      color: 'text-green-600',
+      bgColor: 'bg-green-50 hover:bg-green-100',
+      borderColor: 'border-green-200',
+      description: 'Items added in the last 30 days',
+      config: { 
+        status: 'all', 
+        vendor: '', 
+        location: '', 
+        priceRange: { min: 0, max: 999999 }, 
+        salesVelocity: 'all', 
+        stockDays: 'all', 
+        reorderNeeded: false, 
+        hasValue: false,
+        costRange: { min: 0, max: 999999 },
+        stockRange: { min: 0, max: 999999 },
+        sourceType: 'all'
+      }
     }
   ]
 

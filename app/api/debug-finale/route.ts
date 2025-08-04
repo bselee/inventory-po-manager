@@ -35,8 +35,8 @@ export const POST = createApiHandler(async ({ body }) => {
     // Build auth header
     const authString = Buffer.from(`${settings.finale_api_key}:${settings.finale_api_secret}`).toString('base64')
     
-    // Test URL with minimal data
-    const testUrl = `https://app.finaleinventory.com/api/${cleanAccountPath}/product?limit=1`
+    // Test URL with minimal data - account path comes before /api/
+    const testUrl = `https://app.finaleinventory.com/${cleanAccountPath}/api/product?limit=1`
     
     const debugInfo = {
       originalAccountPath: settings.finale_account_path,

@@ -24,7 +24,7 @@ export async function GET() {
 
     // Test direct API call to Finale with rate limiting
     const authHeader = `Basic ${Buffer.from(`${config.apiKey}:${config.apiSecret}`).toString('base64')}`
-    const testUrl = `https://app.finaleinventory.com/${config.accountPath}/api/products?limit=1`
+    const testUrl = `https://app.finaleinventory.com/${config.accountPath}/api/product?limit=1`
     
     console.log('[Debug Finale] Calling:', testUrl)
     console.log('[Debug Finale] Auth header present:', !!authHeader)

@@ -64,8 +64,8 @@ export async function POST(request: NextRequest) {
         email: vendor.email,
         phone: vendor.phone,
         address: vendor.address,
-        notes: vendor.notes,
-        last_updated: new Date().toISOString()
+        // Remove notes and other fields that might not exist
+        active: true
       })
       .select()
       .single()
