@@ -11,6 +11,8 @@ Enterprise-grade inventory management system with intelligent purchase order aut
 - **Predictive reorder recommendations** based on sales trends
 - **Multi-view dashboards**: Table, Planning (30/60/90 day), Analytics
 - **Advanced filtering** by status, vendor, location, sales velocity
+- **Customizable columns** with drag-and-drop reordering and preset layouts
+- **22+ column options** including sales data, stock levels, and financial metrics
 
 ### 🛒 **Smart Purchase Order System**
 
@@ -116,5 +118,6 @@ scripts/              # Database migrations and utilities
 
 ### Additional Resources
 - [UI/UX Improvements Guide](./docs/ui-ux-improvements-guide.md)
+- [Column Management Guide](./docs/column-management-guide.md) - Complete column customization system
 - [Playwright Creative Testing Guide](./docs/playwright-creative-guide.md)
 - [Testing Summary Report](./docs/testing-summary-report.md)
