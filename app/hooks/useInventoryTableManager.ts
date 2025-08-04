@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback } from 'react'
+import { useState, useMemo, useCallback, useEffect } from 'react'
 import { InventoryItem, TableFilterConfig, PresetFilter, ColumnConfig, SortConfig } from '@/app/types'
 
 // Default filter configuration
@@ -22,13 +22,28 @@ export const DEFAULT_FILTER_CONFIG: TableFilterConfig = {
 
 // Default columns configuration
 export const DEFAULT_COLUMNS: ColumnConfig[] = [
-  { key: 'actions', label: 'Actions', visible: true, sortable: false, width: '100px' },
-  { key: 'sku', label: 'SKU', visible: true, sortable: true },
-  { key: 'product_name', label: 'Product Name', visible: true, sortable: true },
-  { key: 'current_stock', label: 'Stock', visible: true, sortable: true },
-  { key: 'cost', label: 'Cost', visible: true, sortable: true },
-  { key: 'vendor', label: 'Vendor', visible: true, sortable: true },
-  { key: 'location', label: 'Location', visible: true, sortable: true }
+  { key: 'actions', label: 'Actions', visible: true, sortable: false, width: '100px', align: 'center' },
+  { key: 'sku', label: 'SKU', visible: true, sortable: true, width: '120px' },
+  { key: 'product_name', label: 'Product Name', visible: true, sortable: true, width: '250px' },
+  { key: 'current_stock', label: 'Current Stock', visible: true, sortable: true, width: '110px', align: 'right' },
+  { key: 'cost', label: 'Unit Cost', visible: true, sortable: true, width: '100px', align: 'right' },
+  { key: 'vendor', label: 'Vendor', visible: true, sortable: true, width: '150px' },
+  { key: 'location', label: 'Location', visible: true, sortable: true, width: '120px' },
+  { key: 'minimum_stock', label: 'Min Stock', visible: false, sortable: true, width: '100px', align: 'right' },
+  { key: 'maximum_stock', label: 'Max Stock', visible: false, sortable: true, width: '100px', align: 'right' },
+  { key: 'reorder_quantity', label: 'Reorder Qty', visible: false, sortable: true, width: '110px', align: 'right' },
+  { key: 'sales_velocity', label: 'Sales Velocity', visible: false, sortable: true, width: '130px', align: 'right' },
+  { key: 'days_until_stockout', label: 'Days Until Stockout', visible: false, sortable: true, width: '150px', align: 'right' },
+  { key: 'inventory_value', label: 'Inventory Value', visible: false, sortable: true, width: '130px', align: 'right' },
+  { key: 'stock_status_level', label: 'Stock Status', visible: false, sortable: true, width: '120px' },
+  { key: 'trend', label: 'Trend', visible: false, sortable: true, width: '100px' },
+  { key: 'sales_last_30_days', label: 'Sales (30d)', visible: false, sortable: true, width: '100px', align: 'right' },
+  { key: 'sales_last_90_days', label: 'Sales (90d)', visible: false, sortable: true, width: '100px', align: 'right' },
+  { key: 'unit_price', label: 'Unit Price', visible: false, sortable: true, width: '100px', align: 'right' },
+  { key: 'finale_id', label: 'Finale ID', visible: false, sortable: true, width: '100px' },
+  { key: 'last_updated', label: 'Last Updated', visible: false, sortable: true, width: '130px' },
+  { key: 'created_at', label: 'Created', visible: false, sortable: true, width: '130px' },
+  { key: 'active', label: 'Active', visible: false, sortable: true, width: '80px' }
 ]
 
 // Preset filters
@@ -98,9 +113,48 @@ export const PRESET_FILTERS: PresetFilter[] = [
 
 export default function useInventoryTableManager(items: InventoryItem[]) {
   const [filterConfig, setFilterConfig] = useState<TableFilterConfig>(DEFAULT_FILTER_CONFIG)
-  const [columns, setColumns] = useState<ColumnConfig[]>(DEFAULT_COLUMNS)
+  
+  // Initialize columns from localStorage or default
+  const [columns, setColumns] = useState<ColumnConfig[]>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const saved = localStorage.getItem('inventory-column-preferences')
+        if (saved) {
+          const parsedColumns = JSON.parse(saved)
+          // Validate that saved columns match expected structure
+          const isValid = Array.isArray(parsedColumns) && 
+            parsedColumns.every(col => 
+              col && typeof col.key === 'string' && 
+              typeof col.label === 'string' && 
+              typeof col.visible === 'boolean'
+            )
+          if (isValid) {
+            // Merge saved preferences with any new default columns
+            const savedKeys = new Set(parsedColumns.map((col: ColumnConfig) => col.key))
+            const newColumns = DEFAULT_COLUMNS.filter(col => !savedKeys.has(col.key))
+            return [...parsedColumns, ...newColumns]
+          }
+        }
+      } catch (error) {
+        console.warn('Failed to load column preferences:', error)
+      }
+    }
+    return DEFAULT_COLUMNS
+  })
+  
   const [sortConfig, setSortConfig] = useState<SortConfig>({ key: 'product_name', direction: 'asc' })
   const [activePresetFilter, setActivePresetFilter] = useState<string | null>(null)
+
+  // Save column preferences to localStorage whenever columns change
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('inventory-column-preferences', JSON.stringify(columns))
+      } catch (error) {
+        console.warn('Failed to save column preferences:', error)
+      }
+    }
+  }, [columns])
 
   // BuildASoil manufacturing vendors
   const manufacturingVendors = [
