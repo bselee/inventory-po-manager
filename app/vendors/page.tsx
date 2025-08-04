@@ -403,7 +403,8 @@ function VendorsPageContent() {
           ) : (
             <div>
               <p className="text-lg font-medium">No vendors found</p>
-              <p className="mt-2">Run vendor sync to import vendors from Finale.</p>
+              <p className="mt-2">Vendors are synced automatically from Finale daily.</p>
+              <p className="mt-1 text-sm">If you just set up the system, the first sync will run at 4 AM UTC.</p>
             </div>
           )}
         </div>
