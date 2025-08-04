@@ -6,7 +6,6 @@ import { api } from '@/app/lib/client-fetch'
 import { Save, TestTube, Check, X, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import FinaleSyncManager from '@/app/components/FinaleSyncManager'
 import SalesDataUploader from '@/app/components/SalesDataUploader'
-import VendorSyncManager from '@/app/components/VendorSyncManager'
 import FinaleDebugPanel from '@/app/components/FinaleDebugPanel'
 import RateLimiterStatus from '@/app/components/RateLimiterStatus'
 import SyncProgressIndicator from '@/app/components/SyncProgressIndicator'
@@ -649,7 +648,7 @@ export default function SettingsPage() {
           <ul className="list-disc list-inside text-sm text-gray-600 mb-4 space-y-1">
             <li><strong>Inventory Monitoring:</strong> Real-time stock levels, out-of-stock alerts, and analysis</li>
             <li><strong>Purchase Orders:</strong> Create POs here and sync directly to Finale</li>
-            <li><strong>Vendor Data:</strong> Sync supplier information and costs</li>
+            <li><strong>Vendor Data:</strong> Automatically syncs supplier information daily</li>
             <li><strong>Automated Updates:</strong> Hourly sync keeps data current</li>
           </ul>
           <div className="space-y-4">
@@ -798,8 +797,6 @@ export default function SettingsPage() {
         {/* Finale Sync Manager - Main Sync Control */}
         <FinaleSyncManager />
 
-        {/* Vendor Sync Manager */}
-        <VendorSyncManager />
 
         {/* Sales Data Upload */}
         <SalesDataUploader />

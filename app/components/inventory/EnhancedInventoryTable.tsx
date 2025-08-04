@@ -1,7 +1,7 @@
 'use client'
 
 import React from 'react'
-import { ArrowUpDown, ArrowUp, ArrowDown, Edit2, Eye, EyeOff } from 'lucide-react'
+import { ArrowUpDown, ArrowUp, ArrowDown, Edit2, Eye, EyeOff, ExternalLink } from 'lucide-react'
 import { InventoryItem, ColumnConfig, SortConfig } from '@/app/types'
 
 interface EnhancedInventoryTableProps {
@@ -55,11 +55,29 @@ export default function EnhancedInventoryTable({
       return value.toLocaleString()
     }
     
-    if (columnKey === 'vendor' && !value) {
-      return '-'
+    if (columnKey === 'vendor') {
+      if (!value) {
+        return '-'
+      }
+      
+      return (
+        <button
+          onClick={() => handleVendorClick(value as string)}
+          className="text-blue-600 hover:text-blue-800 hover:underline focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-1 rounded px-1 py-0.5 inline-flex items-center gap-1 transition-colors"
+          title={`View ${value} vendor details`}
+        >
+          {value}
+          <ExternalLink className="h-3 w-3" />
+        </button>
+      )
     }
     
     return value || '-'
+  }
+
+  const handleVendorClick = (vendorName: string) => {
+    const encodedVendor = encodeURIComponent(vendorName)
+    window.open(`/vendors?vendor=${encodedVendor}`, '_blank')
   }
 
   const getRowClassName = (item: InventoryItem) => {

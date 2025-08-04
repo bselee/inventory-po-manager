@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { RefreshCw, Loader2 } from 'lucide-react'
-import { Toaster, toast } from '@/app/components/common/SimpleToast'
+import { Toaster, toast } from 'react-hot-toast'
 import CompactExportButtons from '@/app/components/inventory/CompactExportButtons'
 import CriticalItemsMonitor from '@/app/components/CriticalItemsMonitor'
 import useInventoryTableManager from '@/app/hooks/useInventoryTableManager'

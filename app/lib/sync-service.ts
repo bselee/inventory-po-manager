@@ -422,7 +422,7 @@ export class SyncService {
         product_name: finaleItem.itemName || finaleItem.name,
         stock: finaleItem.quantityOnHand || finaleItem.quantity || 0,
         cost: finaleItem.unitPrice || finaleItem.cost || 0,
-        vendor: finaleItem.supplier || finaleItem.vendor,
+        vendor: finaleItem.primarySupplierName || finaleItem.supplier || finaleItem.vendor,
         location: finaleItem.location || 'Default',
         finale_id: finaleItem.itemID || finaleItem.id,
         last_updated: new Date().toISOString()

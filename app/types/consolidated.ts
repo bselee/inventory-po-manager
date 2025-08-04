@@ -48,12 +48,14 @@ export interface InventoryItem {
   reorder_recommended?: boolean
   inventory_value?: number
   
+  // Visibility controls (for UI-level item hiding)
+  hidden?: boolean
+  
   // Metadata
   last_updated?: string
   created_at?: string
   finale_id?: string
   active?: boolean
-  hidden?: boolean // UI-level hiding (separate from Finale active status)
 }
 
 /**
@@ -285,20 +287,57 @@ export const settingsSchema = z.object({
 })
 
 // =============================================================================
+// FILTER AND TABLE TYPES
+// =============================================================================
+
+/**
+ * Table filter configuration
+ */
+export interface TableFilterConfig {
+  search: string
+  status: 'all' | 'in_stock' | 'low_stock' | 'out_of_stock'
+  vendor: string
+  location: string
+  minPrice: number
+  maxPrice: number
+  minStock: number
+  maxStock: number
+  salesVelocity: 'all' | 'high' | 'medium' | 'low'
+  stockDays: 'all' | 'critical' | 'low' | 'adequate' | 'high'
+  reorderNeeded: boolean
+  hasValue: boolean
+  showManufactured: boolean
+  showPurchased: boolean
+  showHidden: boolean
+}
+
+/**
+ * Preset filter definition
+ */
+export interface PresetFilter {
+  id: string
+  name: string
+  color: string
+  config: Partial<TableFilterConfig>
+}
+
+/**
+ * Column configuration
+ */
+export interface ColumnConfig {
+  key: keyof InventoryItem | 'actions'
+  label: string
+  visible: boolean
+  sortable: boolean
+  width?: string
+  align?: 'left' | 'center' | 'right'
+}
+
+// =============================================================================
 // UTILITY TYPES
 // =============================================================================
 
 export type ViewMode = 'table' | 'planning' | 'analytics'
-
-export type PresetFilter = {
-  id: string
-  label: string
-  icon: any // Lucide icon component
-  color: string
-  bgColor: string
-  borderColor: string
-  config: InventoryFilters
-}
 
 // Type guards
 export function isInventoryItem(item: any): item is InventoryItem {

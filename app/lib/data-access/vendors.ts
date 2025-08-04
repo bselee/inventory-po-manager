@@ -218,16 +218,66 @@ export async function getVendorStats(vendorId: string) {
     .select('*', { count: 'exact', head: true })
     .eq('vendor', vendor.name)
 
-  // Get purchase order count
-  // Note: Using vendor column until migration is complete
-  const { count: poCount } = await supabase
+  // Get purchase order count and total spending
+  const { data: purchaseOrders } = await supabase
     .from('purchase_orders')
-    .select('*', { count: 'exact', head: true })
+    .select('id, total_amount, order_date, status')
     .eq('vendor', vendor.name)
+    .order('order_date', { ascending: false })
+
+  // Calculate purchase order statistics
+  const totalOrders = purchaseOrders?.length || 0
+  const totalSpend = purchaseOrders?.reduce((sum, po) => sum + (po.total_amount || 0), 0) || 0
+  const averageOrderValue = totalOrders > 0 ? totalSpend / totalOrders : 0
+  const lastOrderDate = purchaseOrders?.[0]?.order_date || null
+  
+  // Count orders by status
+  const draftOrders = purchaseOrders?.filter(po => po.status === 'draft').length || 0
+  const submittedOrders = purchaseOrders?.filter(po => po.status === 'submitted').length || 0
+  const approvedOrders = purchaseOrders?.filter(po => po.status === 'approved').length || 0
+
+  // Get inventory breakdown for this vendor
+  const { data: inventoryItems } = await supabase
+    .from('inventory_items')
+    .select('id, stock, reorder_point, cost, unit_price, sales_last_30_days')
+    .eq('vendor', vendor.name)
+
+  // Calculate inventory statistics
+  const totalInventoryValue = inventoryItems?.reduce((sum, item) => {
+    const value = (item.cost || item.unit_price || 0) * (item.stock || 0)
+    return sum + value
+  }, 0) || 0
+
+  const lowStockItems = inventoryItems?.filter(item => 
+    (item.stock || 0) > 0 && (item.stock || 0) <= (item.reorder_point || 0)
+  ).length || 0
+
+  const outOfStockItems = inventoryItems?.filter(item => 
+    (item.stock || 0) === 0
+  ).length || 0
+
+  const fastMovingItems = inventoryItems?.filter(item => 
+    (item.sales_last_30_days || 0) > 10 // More than 10 sales in 30 days
+  ).length || 0
 
   return {
     vendor,
     totalItems: itemCount || 0,
-    totalPurchaseOrders: poCount || 0
+    totalPurchaseOrders: totalOrders,
+    totalSpend,
+    averageOrderValue,
+    lastOrderDate,
+    ordersByStatus: {
+      draft: draftOrders,
+      submitted: submittedOrders,
+      approved: approvedOrders
+    },
+    inventoryStats: {
+      totalValue: totalInventoryValue,
+      lowStockItems,
+      outOfStockItems,
+      fastMovingItems,
+      inStockItems: (itemCount || 0) - outOfStockItems
+    }
   }
 }
