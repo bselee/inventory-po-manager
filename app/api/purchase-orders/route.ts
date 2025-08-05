@@ -2,10 +2,28 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/app/lib/supabase';
 import { getSettings, getFinaleConfig } from '@/app/lib/data-access';
 import { FinaleReportApiService } from '@/app/lib/finale-report-api';
+import { z } from 'zod';
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
+
+// Validation schema for purchase orders
+const purchaseOrderSchema = z.object({
+  id: z.string(),
+  orderNumber: z.string(),
+  vendor: z.string(),
+  vendor_email: z.string().default(''),
+  status: z.enum(['draft', 'sent', 'approved', 'received', 'cancelled']).default('draft'),
+  total_amount: z.number().nonnegative(),
+  created_at: z.string(),
+  updated_at: z.string(),
+  expected_date: z.string().nullable(),
+  items: z.array(z.any()).default([]),
+  shipping_cost: z.number().nonnegative().default(0),
+  tax_amount: z.number().nonnegative().default(0),
+  notes: z.string().default('')
+});
 
 // GET /api/purchase-orders - Fetch purchase orders
 export async function GET() {
@@ -25,28 +43,47 @@ export async function GET() {
         console.log('[Purchase Orders API] Fetching from Finale report');
         const reportData = await reportApi.fetchReport(settings.finale_purchase_orders_url);
         
-        // Transform report data to purchase order format
-        const purchaseOrders = reportData.map((row: any, index: number) => ({
-          id: row['Purchase Order ID'] || row['PO Number'] || `PO-${index}`,
-          orderNumber: row['PO Number'] || row['Purchase Order Number'] || `PO-${new Date().getFullYear()}-${index}`,
-          vendor: row['Vendor'] || row['Supplier'] || 'Unknown Vendor',
-          vendor_email: row['Vendor Email'] || row['Supplier Email'] || '',
-          status: (row['Status'] || 'draft').toLowerCase(),
-          total_amount: parseFloat(row['Total Amount'] || row['Total'] || '0'),
-          created_at: row['Created Date'] || row['Date Created'] || new Date().toISOString(),
-          updated_at: row['Updated Date'] || row['Last Modified'] || new Date().toISOString(),
-          expected_date: row['Expected Date'] || row['Due Date'] || null,
-          items: [],
-          // Additional fields from report
-          shipping_cost: parseFloat(row['Shipping Cost'] || '0'),
-          tax_amount: parseFloat(row['Tax Amount'] || '0'),
-          notes: row['Notes'] || row['Comments'] || ''
-        }));
+        // Transform and validate report data
+        const validPurchaseOrders = [];
+        const invalidOrders = [];
+        
+        reportData.forEach((row: any, index: number) => {
+          try {
+            const mappedOrder = {
+              id: row['Purchase Order ID'] || row['PO Number'] || `PO-${index}`,
+              orderNumber: row['PO Number'] || row['Purchase Order Number'] || `PO-${new Date().getFullYear()}-${index}`,
+              vendor: row['Vendor'] || row['Supplier'] || 'Unknown Vendor',
+              vendor_email: row['Vendor Email'] || row['Supplier Email'] || '',
+              status: (row['Status'] || 'draft').toLowerCase(),
+              total_amount: parseFloat(row['Total Amount'] || row['Total'] || '0'),
+              created_at: row['Created Date'] || row['Date Created'] || new Date().toISOString(),
+              updated_at: row['Updated Date'] || row['Last Modified'] || new Date().toISOString(),
+              expected_date: row['Expected Date'] || row['Due Date'] || null,
+              items: [],
+              // Additional fields from report
+              shipping_cost: parseFloat(row['Shipping Cost'] || '0'),
+              tax_amount: parseFloat(row['Tax Amount'] || '0'),
+              notes: row['Notes'] || row['Comments'] || ''
+            };
+            
+            // Validate the order
+            const validatedOrder = purchaseOrderSchema.parse(mappedOrder);
+            validPurchaseOrders.push(validatedOrder);
+          } catch (error) {
+            console.warn(`[Purchase Orders API] Invalid order data at index ${index}:`, error);
+            invalidOrders.push({ index, error: error instanceof Error ? error.message : 'Unknown error' });
+          }
+        });
+        
+        if (invalidOrders.length > 0) {
+          console.log(`[Purchase Orders API] ${invalidOrders.length} orders failed validation`);
+        }
         
         return NextResponse.json({ 
-          purchaseOrders,
+          purchaseOrders: validPurchaseOrders,
           source: 'finale-report',
-          totalCount: purchaseOrders.length
+          totalCount: validPurchaseOrders.length,
+          invalidCount: invalidOrders.length
         });
       } catch (error) {
         console.error('[Purchase Orders API] Error fetching from Finale:', error);

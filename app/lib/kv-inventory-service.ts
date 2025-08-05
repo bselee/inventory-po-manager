@@ -1,4 +1,4 @@
-import { redis } from './redis-client'
+import { redis, getRedisClient } from './redis-client'
 import { FinaleReportApiService } from './finale-report-api'
 import { getFinaleConfig } from './finale-api'
 import { withRedisRetry, withApiRetry } from './retry-utils'
@@ -214,6 +214,37 @@ export class KVInventoryService {
   private async refreshInventoryCache(): Promise<CachedInventoryItem[]> {
     await this.initialize()
     
+    // Try to acquire sync lock
+    const lockKey = `${CACHE_KEYS.SYNC_STATUS}:lock`
+    const lockValue = `${Date.now()}-${Math.random()}`
+    const lockTTL = 300 // 5 minutes max lock time
+    
+    // Try to set lock with NX (only if not exists)
+    const client = await getRedisClient()
+    const lockAcquired = await client.set(lockKey, lockValue, {
+      NX: true,
+      EX: lockTTL
+    })
+    
+    if (!lockAcquired) {
+      // Check if existing sync is stuck
+      const lockAge = await this.checkLockAge(lockKey)
+      if (lockAge > 300000) { // 5 minutes
+        console.log('[KV Inventory] Clearing stuck sync lock')
+        await redis.del(lockKey)
+        // Try once more
+        const retryLock = await client.set(lockKey, lockValue, {
+          NX: true,
+          EX: lockTTL
+        })
+        if (!retryLock) {
+          throw new Error('Another sync is already in progress')
+        }
+      } else {
+        throw new Error('Another sync is already in progress')
+      }
+    }
+    
     // Set sync status
     await redis.setex(CACHE_KEYS.SYNC_STATUS, CACHE_TTL.SYNC_STATUS, true)
     
@@ -252,29 +283,39 @@ export class KVInventoryService {
       
       // Cache the data with retry
       await withRedisRetry(async () => {
-        await Promise.all([
-          // Full inventory cache
-          redis.setex(CACHE_KEYS.INVENTORY_FULL, CACHE_TTL.INVENTORY, inventory),
-          
-          // Individual item caches (for first 100 items to avoid too many keys)
-          ...inventory.slice(0, 100).map(item =>
-            redis.setex(
-              `${CACHE_KEYS.INVENTORY_BY_SKU}${item.sku}`,
-              CACHE_TTL.INVENTORY,
-              item
-            )
-          ),
-          
-          // Update last sync time
-          redis.set(CACHE_KEYS.LAST_SYNC, new Date().toISOString()),
-          
-          // Clear sync status
-          redis.del(CACHE_KEYS.SYNC_STATUS),
-          redis.del(`${CACHE_KEYS.SYNC_STATUS}:error`),
-          
-          // Clear summary cache to force recalculation
-          redis.del(CACHE_KEYS.INVENTORY_SUMMARY)
-        ])
+        const client = await getRedisClient()
+        
+        // Prepare batch operations
+        const multi = client.multi()
+        
+        // Full inventory cache
+        multi.setEx(CACHE_KEYS.INVENTORY_FULL, CACHE_TTL.INVENTORY, JSON.stringify(inventory))
+        
+        // Use hash for individual SKU lookups (much more efficient)
+        const inventoryHash: Record<string, string> = {}
+        inventory.forEach(item => {
+          inventoryHash[item.sku] = JSON.stringify(item)
+        })
+        
+        // Store all items in a single hash
+        if (Object.keys(inventoryHash).length > 0) {
+          multi.hSet(CACHE_KEYS.INVENTORY_BY_SKU + 'hash', inventoryHash)
+          multi.expire(CACHE_KEYS.INVENTORY_BY_SKU + 'hash', CACHE_TTL.INVENTORY)
+        }
+        
+        // Update last sync time
+        multi.set(CACHE_KEYS.LAST_SYNC, new Date().toISOString())
+        
+        // Clear sync status and lock
+        multi.del(CACHE_KEYS.SYNC_STATUS)
+        multi.del(`${CACHE_KEYS.SYNC_STATUS}:error`)
+        multi.del(lockKey)
+        
+        // Clear summary cache to force recalculation
+        multi.del(CACHE_KEYS.INVENTORY_SUMMARY)
+        
+        // Execute all operations atomically
+        await multi.exec()
       }, 'refreshInventoryCache:save')
       
       console.log(`[KV Inventory] Cached ${inventory.length} items`)
@@ -288,9 +329,25 @@ export class KVInventoryService {
         error instanceof Error ? error.message : 'Unknown error'
       )
       await redis.del(CACHE_KEYS.SYNC_STATUS)
+      // Always clean up the lock on error
+      await redis.del(lockKey)
       
       throw error
     }
+  }
+  
+  /**
+   * Check age of a lock
+   */
+  private async checkLockAge(lockKey: string): Promise<number> {
+    const lockValue = await redis.get<string>(lockKey)
+    if (!lockValue) return 0
+    
+    // Extract timestamp from lock value
+    const timestamp = parseInt(lockValue.split('-')[0])
+    if (isNaN(timestamp)) return 0
+    
+    return Date.now() - timestamp
   }
   
   /**
@@ -346,11 +403,10 @@ export class KVInventoryService {
       redis.del(CACHE_KEYS.LAST_SYNC),
       redis.del(CACHE_KEYS.SYNC_STATUS),
       redis.del(`${CACHE_KEYS.SYNC_STATUS}:error`),
+      redis.del(`${CACHE_KEYS.SYNC_STATUS}:lock`),
       
-      // Clear individual item caches
-      ...(inventory || []).slice(0, 100).map(item =>
-        redis.del(`${CACHE_KEYS.INVENTORY_BY_SKU}${item.sku}`)
-      )
+      // Clear the inventory hash
+      redis.del(CACHE_KEYS.INVENTORY_BY_SKU + 'hash')
     ])
     
     console.log('[KV Inventory] Cache cleared')

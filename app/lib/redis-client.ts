@@ -1,7 +1,11 @@
 import { createClient } from 'redis'
 
 // Redis client configuration
-const redisUrl = process.env.REDIS_URL || 'redis://default:hebQ4Koq72dxMZmJVS0iLam7hJslRUPI@redis-17074.c52.us-east-1-4.ec2.redns.redis-cloud.com:17074'
+const redisUrl = process.env.REDIS_URL
+
+if (!redisUrl) {
+  throw new Error('REDIS_URL environment variable is required. Please set it in your .env file.')
+}
 
 let redisClient: ReturnType<typeof createClient> | null = null
 let connectionPromise: Promise<void> | null = null
@@ -32,11 +36,23 @@ export async function getRedisClient() {
     })
   }
   
-  // Ensure connection
+  // Ensure connection with error handling
   if (!connectionPromise && !redisClient.isOpen) {
     connectionPromise = redisClient.connect()
-    await connectionPromise
-    connectionPromise = null
+      .catch((error) => {
+        console.error('[Redis] Connection failed:', error)
+        connectionPromise = null
+        redisClient = null
+        throw new Error(`Failed to connect to Redis: ${error.message}`)
+      })
+    
+    try {
+      await connectionPromise
+      connectionPromise = null
+    } catch (error) {
+      // Re-throw the error after cleanup
+      throw error
+    }
   }
   
   return redisClient

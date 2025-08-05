@@ -133,7 +133,6 @@ export class KVStorageService {
   async increment(key: string, by: number = 1): Promise<number> {
     const redis = getRedisClient();
     return await redis.incrby(key, by);
-  })
   }
 
   // List operations

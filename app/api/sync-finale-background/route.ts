@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { getFinaleConfig } from '@/app/lib/finale-api'
 import { supabase } from '@/app/lib/supabase'
-import { rateLimitedFetch } from '@/lib/finale-rate-limiter'
+import { rateLimitedFetch } from '@/app/lib/finale-rate-limiter'
 import { formatFinaleError } from '@/app/lib/finale-error-messages'
 
 export const runtime = 'nodejs'

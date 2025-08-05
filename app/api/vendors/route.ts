@@ -8,6 +8,17 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
+// Type definitions for vendor statistics
+interface VendorStats {
+  id: string
+  name: string
+  active: boolean
+  totalItems: number
+  totalValue: number
+  lowStockItems: number
+  outOfStockItems: number
+}
+
 // Get all vendors
 export async function GET(request: NextRequest) {
   try {
@@ -25,7 +36,7 @@ export async function GET(request: NextRequest) {
       const inventory = await kvInventoryService.getInventory(forceRefresh)
       
       // Create vendor objects with stats from cached inventory
-      const vendorMap = new Map<string, any>()
+      const vendorMap = new Map<string, VendorStats>()
       
       inventory.forEach(item => {
         if (item.vendor) {
@@ -42,13 +53,15 @@ export async function GET(request: NextRequest) {
           }
           
           const vendor = vendorMap.get(item.vendor)
-          vendor.totalItems++
-          vendor.totalValue += (item.current_stock || 0) * (item.cost || 0)
-          
-          if (item.current_stock === 0) {
-            vendor.outOfStockItems++
-          } else if (item.stock_status_level === 'low' || item.stock_status_level === 'critical') {
-            vendor.lowStockItems++
+          if (vendor) {
+            vendor.totalItems++
+            vendor.totalValue += (item.current_stock || 0) * (item.cost || 0)
+            
+            if (item.current_stock === 0) {
+              vendor.outOfStockItems++
+            } else if (item.stock_status_level === 'low' || item.stock_status_level === 'critical') {
+              vendor.lowStockItems++
+            }
           }
         }
       })
