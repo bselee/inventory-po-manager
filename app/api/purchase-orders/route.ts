@@ -1,4 +1,7 @@
 import { NextResponse } from 'next/server';
+import { supabase } from '@/app/lib/supabase';
+import { getSettings, getFinaleConfig } from '@/app/lib/data-access';
+import { FinaleReportApiService } from '@/app/lib/finale-report-api';
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -7,35 +10,102 @@ export const maxDuration = 60
 // GET /api/purchase-orders - Fetch purchase orders
 export async function GET() {
   try {
-    // Placeholder: Fetch purchase orders from database
-    const purchaseOrders = [
-      {
-        id: '1',
-        orderNumber: 'PO-2024-001',
-        vendor: 'Vendor ABC',
-        status: 'pending',
-        items: [
-          { productId: '1', quantity: 50, unitPrice: 20.00 }
-        ],
-        totalAmount: 1000.00,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      },
-      {
-        id: '2',
-        orderNumber: 'PO-2024-002',
-        vendor: 'Vendor XYZ',
-        status: 'sent',
-        items: [
-          { productId: '2', quantity: 100, unitPrice: 15.00 }
-        ],
-        totalAmount: 1500.00,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+    const settings = await getSettings();
+    const finaleConfig = await getFinaleConfig();
+    
+    // Try to fetch from Finale report first if configured
+    if (finaleConfig && settings?.finale_purchase_orders_url) {
+      try {
+        const reportApi = new FinaleReportApiService({
+          apiKey: finaleConfig.apiKey,
+          apiSecret: finaleConfig.apiSecret,
+          accountPath: finaleConfig.accountPath
+        });
+        
+        console.log('[Purchase Orders API] Fetching from Finale report');
+        const reportData = await reportApi.fetchReport(settings.finale_purchase_orders_url);
+        
+        // Transform report data to purchase order format
+        const purchaseOrders = reportData.map((row: any, index: number) => ({
+          id: row['Purchase Order ID'] || row['PO Number'] || `PO-${index}`,
+          orderNumber: row['PO Number'] || row['Purchase Order Number'] || `PO-${new Date().getFullYear()}-${index}`,
+          vendor: row['Vendor'] || row['Supplier'] || 'Unknown Vendor',
+          vendor_email: row['Vendor Email'] || row['Supplier Email'] || '',
+          status: (row['Status'] || 'draft').toLowerCase(),
+          total_amount: parseFloat(row['Total Amount'] || row['Total'] || '0'),
+          created_at: row['Created Date'] || row['Date Created'] || new Date().toISOString(),
+          updated_at: row['Updated Date'] || row['Last Modified'] || new Date().toISOString(),
+          expected_date: row['Expected Date'] || row['Due Date'] || null,
+          items: [],
+          // Additional fields from report
+          shipping_cost: parseFloat(row['Shipping Cost'] || '0'),
+          tax_amount: parseFloat(row['Tax Amount'] || '0'),
+          notes: row['Notes'] || row['Comments'] || ''
+        }));
+        
+        return NextResponse.json({ 
+          purchaseOrders,
+          source: 'finale-report',
+          totalCount: purchaseOrders.length
+        });
+      } catch (error) {
+        console.error('[Purchase Orders API] Error fetching from Finale:', error);
+        // Fall through to database
       }
-    ];
+    }
+    
+    // Fallback to database
+    const { data, error } = await supabase
+      .from('purchase_orders')
+      .select('*')
+      .order('created_at', { ascending: false });
+    
+    if (error) {
+      console.error('[Purchase Orders API] Database error:', error);
+      
+      // If database fails too, return sample data for development
+      const samplePOs = [
+        {
+          id: '1',
+          orderNumber: 'PO-2024-001',
+          vendor: 'Widget Corp',
+          vendor_email: 'orders@widgetcorp.com',
+          status: 'draft',
+          items: [
+            { productId: '1', sku: 'WIDGET001', product_name: 'Premium Widget', quantity: 50, unit_cost: 12.99 }
+          ],
+          total_amount: 649.50,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        {
+          id: '2',
+          orderNumber: 'PO-2024-002',
+          vendor: 'Gadget Inc',
+          vendor_email: 'purchasing@gadgetinc.com',
+          status: 'sent',
+          items: [
+            { productId: '2', sku: 'GADGET002', product_name: 'Smart Gadget', quantity: 30, unit_cost: 45.00 }
+          ],
+          total_amount: 1350.00,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ];
+      
+      return NextResponse.json({ 
+        purchaseOrders: samplePOs,
+        source: 'sample-data',
+        totalCount: samplePOs.length,
+        error: 'Using sample data - configure Finale Purchase Orders Report URL in settings'
+      });
+    }
 
-    return NextResponse.json({ purchaseOrders });
+    return NextResponse.json({ 
+      purchaseOrders: data || [],
+      source: 'database',
+      totalCount: data?.length || 0
+    });
   } catch (error) {
     return NextResponse.json(
       { error: 'Failed to fetch purchase orders' },
@@ -49,18 +119,37 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     
-    // Placeholder: Validate and save to database
-    const newOrder = {
-      id: Date.now().toString(),
-      orderNumber: `PO-${new Date().getFullYear()}-${Date.now().toString().slice(-3)}`,
-      ...body,
-      status: 'draft',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
+    // Generate order number
+    const orderNumber = `PO-${new Date().getFullYear()}-${Date.now().toString().slice(-6)}`;
+    
+    // Insert into database
+    const { data, error } = await supabase
+      .from('purchase_orders')
+      .insert({
+        order_number: orderNumber,
+        vendor: body.vendor,
+        vendor_email: body.vendor_email,
+        status: body.status || 'draft',
+        items: body.items || [],
+        total_amount: body.total_amount || 0,
+        shipping_cost: body.shipping_cost || 0,
+        tax_amount: body.tax_amount || 0,
+        notes: body.notes || '',
+        expected_date: body.expected_date || null
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('[Purchase Orders API] Error creating PO:', error);
+      return NextResponse.json(
+        { error: 'Failed to create purchase order' },
+        { status: 500 }
+      );
+    }
 
     return NextResponse.json(
-      { message: 'Purchase order created successfully', purchaseOrder: newOrder },
+      { message: 'Purchase order created successfully', purchaseOrder: data },
       { status: 201 }
     );
   } catch (error) {

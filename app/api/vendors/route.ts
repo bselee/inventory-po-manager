@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { FinaleApiService, getFinaleConfig } from '@/app/lib/finale-api'
 import { supabase } from '@/app/lib/supabase'
+import { kvInventoryService } from '@/app/lib/kv-inventory-service'
+import { getSettings } from '@/app/lib/data-access'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -9,6 +11,58 @@ export const maxDuration = 60
 // Get all vendors
 export async function GET(request: NextRequest) {
   try {
+    const { searchParams } = new URL(request.url)
+    const useCache = searchParams.get('useCache') !== 'false'
+    const forceRefresh = searchParams.get('forceRefresh') === 'true'
+    
+    // Check if we should use cache
+    const settings = await getSettings()
+    const shouldUseCache = useCache && settings?.inventory_data_source === 'redis-cache'
+    
+    if (shouldUseCache) {
+      // Get vendors from inventory cache
+      const vendors = await kvInventoryService.getVendors()
+      const inventory = await kvInventoryService.getInventory(forceRefresh)
+      
+      // Create vendor objects with stats from cached inventory
+      const vendorMap = new Map<string, any>()
+      
+      inventory.forEach(item => {
+        if (item.vendor) {
+          if (!vendorMap.has(item.vendor)) {
+            vendorMap.set(item.vendor, {
+              id: item.vendor.toLowerCase().replace(/\s+/g, '-'),
+              name: item.vendor,
+              active: true,
+              totalItems: 0,
+              totalValue: 0,
+              lowStockItems: 0,
+              outOfStockItems: 0
+            })
+          }
+          
+          const vendor = vendorMap.get(item.vendor)
+          vendor.totalItems++
+          vendor.totalValue += (item.current_stock || 0) * (item.cost || 0)
+          
+          if (item.current_stock === 0) {
+            vendor.outOfStockItems++
+          } else if (item.stock_status_level === 'low' || item.stock_status_level === 'critical') {
+            vendor.lowStockItems++
+          }
+        }
+      })
+      
+      const vendorData = Array.from(vendorMap.values()).sort((a, b) => a.name.localeCompare(b.name))
+      
+      return NextResponse.json({ 
+        data: vendorData,
+        source: 'cache',
+        totalCount: vendorData.length
+      })
+    }
+    
+    // Fallback to database
     const { data, error } = await supabase
       .from('vendors')
       .select('*')
@@ -22,7 +76,11 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    return NextResponse.json({ data: data || [] })
+    return NextResponse.json({ 
+      data: data || [],
+      source: 'database',
+      totalCount: data?.length || 0
+    })
   } catch (error) {
     console.error('Error in GET /api/vendors:', error)
     return NextResponse.json(
