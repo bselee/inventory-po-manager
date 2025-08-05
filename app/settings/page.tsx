@@ -9,6 +9,7 @@ import SalesDataUploader from '@/app/components/SalesDataUploader'
 import FinaleDebugPanel from '@/app/components/FinaleDebugPanel'
 import RateLimiterStatus from '@/app/components/RateLimiterStatus'
 import SyncProgressIndicator from '@/app/components/SyncProgressIndicator'
+import RedisCacheStatus from '@/app/components/RedisCacheStatus'
 import { validateFinaleCredentials, getValidationErrorMessage } from '@/app/lib/validation/finale-credentials'
 
 interface Settings {
@@ -18,6 +19,12 @@ interface Settings {
   finale_username?: string
   finale_password?: string
   finale_account_path?: string
+  finale_inventory_report_url?: string
+  finale_consumption_14day_url?: string
+  finale_consumption_30day_url?: string
+  finale_stock_report_url?: string
+  finale_purchase_orders_url?: string
+  inventory_data_source?: 'supabase' | 'redis-cache' | 'finale-cache' | 'enhanced'
   google_sheet_id?: string
   google_sheets_api_key?: string
   sendgrid_api_key?: string
@@ -37,6 +44,12 @@ export default function SettingsPage() {
     finale_username: '',
     finale_password: '',
     finale_account_path: '',
+    finale_inventory_report_url: '',
+    finale_consumption_14day_url: '',
+    finale_consumption_30day_url: '',
+    finale_stock_report_url: '',
+    finale_purchase_orders_url: '',
+    inventory_data_source: 'enhanced',
     google_sheet_id: '',
     google_sheets_api_key: '',
     sendgrid_api_key: '',
@@ -56,6 +69,11 @@ export default function SettingsPage() {
   const [autoRefresh, setAutoRefresh] = useState(true)
   const [validationErrors, setValidationErrors] = useState<Record<string, string>>({})
   const [validationWarnings, setValidationWarnings] = useState<Record<string, string>>({})
+  const [cacheLoading, setCacheLoading] = useState<{ refresh: boolean; clear: boolean; health: boolean }>({
+    refresh: false,
+    clear: false,
+    health: false
+  })
 
   // Parse Google Sheet ID from URL
   const parseGoogleSheetId = (url: string): string | null => {
@@ -223,6 +241,12 @@ export default function SettingsPage() {
         finale_api_key: settings.finale_api_key || null,
         finale_api_secret: settings.finale_api_secret || null,
         finale_account_path: settings.finale_account_path || null,
+        finale_inventory_report_url: settings.finale_inventory_report_url || null,
+        finale_consumption_14day_url: settings.finale_consumption_14day_url || null,
+        finale_consumption_30day_url: settings.finale_consumption_30day_url || null,
+        finale_stock_report_url: settings.finale_stock_report_url || null,
+        finale_purchase_orders_url: settings.finale_purchase_orders_url || null,
+        inventory_data_source: settings.inventory_data_source || 'enhanced',
         finale_username: settings.finale_username || null,
         finale_password: settings.finale_password || null,
         google_sheet_id: settings.google_sheet_id || null,
@@ -784,6 +808,447 @@ export default function SettingsPage() {
                 Test Report
               </button>
             </div>
+            
+            {/* Consumption Reports Section */}
+            <div className="border-t pt-4 mt-4">
+              <h3 className="text-sm font-semibold text-gray-700 mb-2">
+                Consumption Reports (Optional)
+              </h3>
+              <p className="text-xs text-gray-500 mb-3">
+                Add consumption reports to track material usage in manufacturing/builds. 
+                This provides true inventory velocity by combining sales and consumption data.
+              </p>
+              
+              {/* 14-Day Consumption Report */}
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  14-Day Consumption Report URL
+                </label>
+                <input
+                  type="text"
+                  value={settings.finale_consumption_14day_url || ''}
+                  onChange={(e) => handleChange('finale_consumption_14day_url', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="https://app.finaleinventory.com/.../report/pivotTable/..."
+                />
+                <button
+                  onClick={async () => {
+                    if (!settings.finale_consumption_14day_url) {
+                      setMessage({ type: 'error', text: 'Please enter a report URL first' })
+                      return
+                    }
+                    try {
+                      const response = await fetch('/api/test-report-api', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ reportUrl: settings.finale_consumption_14day_url })
+                      })
+                      const result = await response.json()
+                      if (result.success) {
+                        setMessage({ 
+                          type: 'success', 
+                          text: `14-day report: ${result.analysis.totalRows} consumed items found` 
+                        })
+                      } else {
+                        setMessage({ type: 'error', text: result.error || 'Failed to test report' })
+                      }
+                    } catch (error) {
+                      setMessage({ type: 'error', text: 'Failed to test report URL' })
+                    }
+                  }}
+                  className="mt-2 px-3 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700"
+                  type="button"
+                >
+                  Test 14-Day
+                </button>
+              </div>
+              
+              {/* 30-Day Consumption Report */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  30-Day Consumption Report URL
+                </label>
+                <input
+                  type="text"
+                  value={settings.finale_consumption_30day_url || ''}
+                  onChange={(e) => handleChange('finale_consumption_30day_url', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="https://app.finaleinventory.com/.../report/pivotTable/..."
+                />
+                <button
+                  onClick={async () => {
+                    if (!settings.finale_consumption_30day_url) {
+                      setMessage({ type: 'error', text: 'Please enter a report URL first' })
+                      return
+                    }
+                    try {
+                      const response = await fetch('/api/test-report-api', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ reportUrl: settings.finale_consumption_30day_url })
+                      })
+                      const result = await response.json()
+                      if (result.success) {
+                        setMessage({ 
+                          type: 'success', 
+                          text: `30-day report: ${result.analysis.totalRows} consumed items found` 
+                        })
+                      } else {
+                        setMessage({ type: 'error', text: result.error || 'Failed to test report' })
+                      }
+                    } catch (error) {
+                      setMessage({ type: 'error', text: 'Failed to test report URL' })
+                    }
+                  }}
+                  className="mt-2 px-3 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700"
+                  type="button"
+                >
+                  Test 30-Day
+                </button>
+              </div>
+              
+              {/* Stock Detail Report */}
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Stock Detail Report URL
+                </label>
+                <p className="text-xs text-gray-500 mb-2">
+                  Report showing inventory by location with QoH, Packed, Transit, and WIP quantities.
+                </p>
+                <input
+                  type="text"
+                  value={settings.finale_stock_report_url || ''}
+                  onChange={(e) => handleChange('finale_stock_report_url', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="https://app.finaleinventory.com/.../report/pivotTable/..."
+                />
+                <button
+                  onClick={async () => {
+                    if (!settings.finale_stock_report_url) {
+                      setMessage({ type: 'error', text: 'Please enter a report URL first' })
+                      return
+                    }
+                    try {
+                      const response = await fetch('/api/test-report-api', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ reportUrl: settings.finale_stock_report_url })
+                      })
+                      const result = await response.json()
+                      if (result.success) {
+                        setMessage({ 
+                          type: 'success', 
+                          text: `Stock report: ${result.analysis.totalRows} items with detailed stock positions` 
+                        })
+                      } else {
+                        setMessage({ type: 'error', text: result.error || 'Failed to test report' })
+                      }
+                    } catch (error) {
+                      setMessage({ type: 'error', text: 'Failed to test report URL' })
+                    }
+                  }}
+                  className="mt-2 px-3 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700"
+                  type="button"
+                >
+                  Test Stock Report
+                </button>
+              </div>
+              
+              {/* Purchase Orders Report */}
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Purchase Orders Report URL
+                </label>
+                <p className="text-xs text-gray-500 mb-2">
+                  Report for syncing purchase order data from Finale.
+                </p>
+                <input
+                  type="text"
+                  value={settings.finale_purchase_orders_url || ''}
+                  onChange={(e) => handleChange('finale_purchase_orders_url', e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  placeholder="https://app.finaleinventory.com/.../report/pivotTable/..."
+                />
+                <button
+                  onClick={async () => {
+                    if (!settings.finale_purchase_orders_url) {
+                      setMessage({ type: 'error', text: 'Please enter a report URL first' })
+                      return
+                    }
+                    try {
+                      const response = await fetch('/api/test-report-api', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ reportUrl: settings.finale_purchase_orders_url })
+                      })
+                      const result = await response.json()
+                      if (result.success) {
+                        setMessage({ type: 'success', text: `PO Report valid! Found ${result.analysis.totalRows} rows` })
+                      } else {
+                        setMessage({ type: 'error', text: result.error || 'Failed to test report' })
+                      }
+                    } catch (error) {
+                      setMessage({ type: 'error', text: 'Failed to test report URL' })
+                    }
+                  }}
+                  className="mt-2 px-3 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700"
+                  type="button"
+                >
+                  Test PO Report
+                </button>
+              </div>
+            </div>
+            
+            {/* Data Source Selection */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Inventory Data Source
+              </label>
+              <p className="text-xs text-gray-500 mb-2">
+                Choose where to load inventory data from. Vercel KV provides faster loading with 15-minute cache.
+              </p>
+              <div className="flex gap-4">
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="inventory_data_source"
+                    value="supabase"
+                    checked={settings.inventory_data_source === 'supabase'}
+                    onChange={(e) => handleChange('inventory_data_source', e.target.value)}
+                    className="mr-2"
+                  />
+                  <span className="text-sm">Supabase (Real-time)</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="inventory_data_source"
+                    value="redis-cache"
+                    checked={settings.inventory_data_source === 'redis-cache'}
+                    onChange={(e) => handleChange('inventory_data_source', e.target.value)}
+                    className="mr-2"
+                  />
+                  <span className="text-sm">Redis Cache (High Performance)</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="inventory_data_source"
+                    value="finale-cache"
+                    checked={settings.inventory_data_source === 'finale-cache'}
+                    onChange={(e) => handleChange('inventory_data_source', e.target.value)}
+                    className="mr-2"
+                  />
+                  <span className="text-sm">Finale Cache (Optimized)</span>
+                </label>
+                <label className="flex items-center">
+                  <input
+                    type="radio"
+                    name="inventory_data_source"
+                    value="enhanced"
+                    checked={settings.inventory_data_source === 'enhanced'}
+                    onChange={(e) => handleChange('inventory_data_source', e.target.value)}
+                    className="mr-2"
+                  />
+                  <span className="text-sm">Enhanced (Sales + Consumption)</span>
+                </label>
+              </div>
+              {(settings.inventory_data_source === 'redis-cache' || settings.inventory_data_source === 'finale-cache' || settings.inventory_data_source === 'enhanced') && settings.finale_inventory_report_url && (
+                <div className="mt-2 flex gap-2">
+                  <button
+                    onClick={async () => {
+                      setCacheLoading(prev => ({ ...prev, refresh: true }))
+                      try {
+                        let response, result;
+                        
+                        if (settings.inventory_data_source === 'enhanced') {
+                          // Use enhanced multi-report service
+                          response = await fetch('/api/inventory-enhanced/sync', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({})
+                          })
+                          result = await response.json()
+                          if (result.success) {
+                            setMessage({ 
+                              type: 'success', 
+                              text: `Enhanced sync complete! ${result.stats.itemsSynced} items with ${result.stats.itemsWithConsumption} consumption data.` 
+                            })
+                          } else {
+                            setMessage({ type: 'error', text: result.error || 'Failed to sync enhanced data' })
+                          }
+                        } else if (settings.inventory_data_source === 'finale-cache') {
+                          // Use new finale cache service
+                          response = await fetch('/api/inventory/cache', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'warmUpCache' })
+                          })
+                          result = await response.json()
+                          if (result.success) {
+                            setMessage({ 
+                              type: 'success', 
+                              text: `Cache refreshed! ${result.metrics?.totalItems || 'Unknown'} items loaded.` 
+                            })
+                          } else {
+                            const errorText = result.hint 
+                              ? `${result.error || 'Failed to refresh cache'}: ${result.hint}`
+                              : result.error || 'Failed to refresh cache'
+                            setMessage({ type: 'error', text: errorText })
+                          }
+                        } else {
+                          // Use legacy kv cache service
+                          response = await fetch('/api/inventory-cache', {
+                            method: 'POST',  
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'warmUpCache' })
+                          })
+                          result = await response.json()
+                          if (result.success) {
+                            setMessage({ 
+                              type: 'success', 
+                              text: `Cache refreshed! ${result.stats?.itemsCached || 'Unknown'} items loaded.` 
+                            })
+                          } else {
+                            const errorText = result.hint 
+                              ? `${result.error || 'Failed to refresh cache'}: ${result.hint}`
+                              : result.error || 'Failed to refresh cache'
+                            setMessage({ type: 'error', text: errorText })
+                          }
+                        }
+                      } catch (error) {
+                        console.error('Cache refresh error:', error)
+                        setMessage({ 
+                          type: 'error', 
+                          text: error instanceof Error 
+                            ? `Failed to refresh cache: ${error.message}` 
+                            : 'Failed to refresh cache: Network or connection error'
+                        })
+                      } finally {
+                        setCacheLoading(prev => ({ ...prev, refresh: false }))
+                      }
+                    }}
+                    disabled={cacheLoading.refresh}
+                    className="px-3 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-1"
+                    type="button"
+                  >
+                    {cacheLoading.refresh ? (
+                      <>
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Refreshing...
+                      </>
+                    ) : (
+                      'Refresh Cache'
+                    )}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      setCacheLoading(prev => ({ ...prev, health: true }))
+                      try {
+                        let response, result;
+                        
+                        if (settings.inventory_data_source === 'finale-cache') {
+                          // Use new finale cache service
+                          response = await fetch('/api/inventory/cache', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'healthCheck' })
+                          })
+                          result = await response.json()
+                          if (result.success && result.health) {
+                            setMessage({ 
+                              type: 'success', 
+                              text: `Cache: ${result.health.metrics.totalItems} items, ${result.health.metrics.cacheAge || 'unknown age'}` 
+                            })
+                          } else {
+                            setMessage({ type: 'error', text: 'Failed to get cache stats' })
+                          }
+                        } else {
+                          // Use legacy kv cache service
+                          response = await fetch('/api/inventory-cache', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ action: 'healthCheck' })
+                          })
+                          result = await response.json()
+                          if (result.success && result.cache) {
+                            setMessage({ 
+                              type: 'success', 
+                              text: `Cache: ${result.cache.totalItems} items, ${result.cache.cacheAge || 'unknown age'}` 
+                            })
+                          } else {
+                            setMessage({ type: 'error', text: 'Failed to get cache stats' })
+                          }
+                        }
+                      } catch (error) {
+                        setMessage({ type: 'error', text: 'Failed to get cache stats' })
+                      } finally {
+                        setCacheLoading(prev => ({ ...prev, health: false }))
+                      }
+                    }}
+                    disabled={cacheLoading.health}
+                    className="px-3 py-1 text-xs bg-gray-600 text-white rounded hover:bg-gray-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-1"
+                    type="button"
+                  >
+                    {cacheLoading.health ? (
+                      <>
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Checking...
+                      </>
+                    ) : (
+                      'Cache Stats'
+                    )}
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!confirm('Are you sure you want to clear the cache? This will force a full refresh on next access.')) {
+                        return
+                      }
+                      setCacheLoading(prev => ({ ...prev, clear: true }))
+                      try {
+                        const response = await fetch('/api/inventory-cache', {
+                          method: 'POST',
+                          headers: { 'Content-Type': 'application/json' },
+                          body: JSON.stringify({ action: 'clearCache' })
+                        })
+                        const result = await response.json()
+                        if (result.success) {
+                          setMessage({ 
+                            type: 'success', 
+                            text: 'Cache cleared successfully! Next access will fetch fresh data.' 
+                          })
+                        } else {
+                          setMessage({ type: 'error', text: result.error || 'Failed to clear cache' })
+                        }
+                      } catch (error) {
+                        setMessage({ type: 'error', text: 'Failed to clear cache. Please check Redis connection.' })
+                      } finally {
+                        setCacheLoading(prev => ({ ...prev, clear: false }))
+                      }
+                    }}
+                    disabled={cacheLoading.clear}
+                    className="px-3 py-1 text-xs bg-red-600 text-white rounded hover:bg-red-700 disabled:bg-gray-400 disabled:cursor-not-allowed flex items-center gap-1"
+                    type="button"
+                  >
+                    {cacheLoading.clear ? (
+                      <>
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Clearing...
+                      </>
+                    ) : (
+                      'Clear Cache'
+                    )}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* Redis Cache Status Component */}
+            {settings.inventory_data_source === 'redis-cache' && (
+              <div className="mt-6">
+                <RedisCacheStatus />
+              </div>
+            )}
             
             {/* Alternative Authentication Section */}
             <div className="border-t pt-4 mt-4">

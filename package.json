@@ -35,8 +35,14 @@
     "dashboard": "node scripts/open-dashboard.js",
     "monitor": "node scripts/monitor-fixes.js",
     "db:migrate": "node scripts/run-migrations.js",
+    "db:migrate:cache": "node scripts/migrate-inventory-cache.js",
     "db:validate": "node scripts/validate-database.js",
-    "db:backup": "node scripts/backup-database.js"
+    "db:backup": "node scripts/backup-database.js",
+    "cache:clear": "curl -X POST \"http://localhost:3000/api/inventory/cache\" -H \"Content-Type: application/json\" -d '{\"action\": \"clearCache\"}'",
+    "cache:warm": "curl -X POST \"http://localhost:3000/api/inventory/cache\" -H \"Content-Type: application/json\" -d '{\"action\": \"warmUpCache\"}'",
+    "cache:health": "curl -X POST \"http://localhost:3000/api/inventory/cache\" -H \"Content-Type: application/json\" -d '{\"action\": \"healthCheck\"}'",
+    "cache:test": "curl \"http://localhost:3000/api/inventory/cache?forceRefresh=true\"",
+    "redis:test": "node scripts/test-redis-connection.js"
   },
   "dependencies": {
     "@sendgrid/mail": "^8.1.5",
@@ -63,6 +69,7 @@
     "react-dom": "^18.2.0",
     "react-hot-toast": "^2.4.1",
     "react-to-print": "^3.1.1",
+    "redis": "^5.8.0",
     "tailwindcss": "^3.3.6",
     "xlsx": "^0.18.5"
   },

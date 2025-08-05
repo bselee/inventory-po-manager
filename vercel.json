@@ -15,6 +15,12 @@
     },
     "app/api/finale-verify/route.ts": {
       "maxDuration": 300
+    },
+    "app/api/inventory/sync/route.ts": {
+      "maxDuration": 300
+    },
+    "app/api/cron/sync-inventory-kv/route.ts": {
+      "maxDuration": 300
     }
   },
   "headers": [
@@ -70,6 +76,10 @@
     {
       "path": "/api/cron/sync-vendors",
       "schedule": "0 4 * * *"
+    },
+    {
+      "path": "/api/cron/sync-inventory-kv",
+      "schedule": "*/15 * * * *"
     }
   ]
 }

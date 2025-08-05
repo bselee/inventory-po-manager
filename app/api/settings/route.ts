@@ -38,7 +38,16 @@ const updateSettingsSchema = z.object({
   sync_vendors: z.boolean().optional(),
   sync_purchase_orders: z.boolean().optional(),
   sync_schedule: z.string().optional(),
-  sync_time: z.string().optional()
+  sync_time: z.string().optional(),
+  
+  // Report URLs
+  finale_inventory_report_url: z.string().url().optional().nullable(),
+  finale_consumption_14day_url: z.string().url().optional().nullable(),
+  finale_consumption_30day_url: z.string().url().optional().nullable(),
+  finale_stock_report_url: z.string().url().optional().nullable(),
+  
+  // Data source
+  inventory_data_source: z.enum(['supabase', 'redis-cache', 'finale-cache', 'enhanced']).optional()
 })
 
 // GET /api/settings - Fetch application settings
@@ -72,10 +81,18 @@ export const GET = createApiHandler(async () => {
       companyName: 'BuildASoil',
       timezone: 'America/Denver',
       currency: 'USD'
+    },
+    // Add cache settings
+    cache: {
+      enabled: settings?.inventory_data_source === 'redis-cache',
+      dataSource: settings?.inventory_data_source || 'supabase'
     }
   }
 
   return apiResponse({ settings: transformedSettings })
+}, {
+  // Remove authentication requirement for settings read
+  requireAuth: false
 })
 
 // PUT /api/settings - Update application settings
@@ -88,7 +105,9 @@ export const PUT = createApiHandler(async ({ body }) => {
     { message: 'Settings updated successfully' }
   )
 }, {
-  validateBody: updateSettingsSchema
+  validateBody: updateSettingsSchema,
+  // Remove authentication requirement for settings updates
+  requireAuth: false
 })
 
 // POST /api/settings/test-finale - Test Finale API connection

@@ -521,7 +521,7 @@ if (!isValid) {
 ```
 
 ### Caching (Redis)
-Optional Redis caching for performance:
+Redis caching for performance (required for inventory caching):
 ```typescript
 import { getCachedData, setCachedData } from '@/app/lib/cache/redis-client'
 

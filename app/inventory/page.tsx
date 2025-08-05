@@ -8,12 +8,14 @@ import CompactExportButtons from '@/app/components/inventory/CompactExportButton
 import CriticalItemsMonitor from '@/app/components/CriticalItemsMonitor'
 import useInventoryTableManager from '@/app/hooks/useInventoryTableManager'
 import { useEnhancedInventoryFiltering } from '@/app/hooks/useEnhancedInventoryFiltering'
+import { useInventoryDataSource, getInventoryEndpoint } from '@/app/hooks/useInventoryDataSource'
 import EnhancedQuickFilters from '@/app/components/inventory/EnhancedQuickFilters'
 import AdvancedFilterPanel from '@/app/components/inventory/AdvancedFilterPanel'
 import ColumnSelector from '@/app/components/inventory/ColumnSelector'
 import EnhancedInventoryTable from '@/app/components/inventory/EnhancedInventoryTable'
 import PaginationControls from '@/app/components/inventory/PaginationControls'
 import InventoryTableSkeleton, { FilterPanelSkeleton } from '@/app/components/inventory/InventoryTableSkeleton'
+import CacheStatusIndicator from '@/app/components/inventory/CacheStatusIndicator'
 import { InventoryItem } from '@/app/types'
 import ErrorBoundary, { PageErrorFallback } from '@/app/components/common/ErrorBoundary'
 import { InventoryLoadingFallback } from '@/app/components/common/LoadingFallback'
@@ -68,6 +70,10 @@ function InventoryPageContent() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [useEnhancedFilters, setUseEnhancedFilters] = useState(true) // Toggle between filter systems
+  const [cacheInfo, setCacheInfo] = useState<{ lastSync?: string; source?: string } | null>(null)
+  
+  // Get the data source configuration
+  const { dataSource } = useInventoryDataSource()
   
   // Use the comprehensive table manager for legacy support
   const {
@@ -156,15 +162,21 @@ function InventoryPageContent() {
       console.log('🔄 Loading all inventory items with pagination...')
       
       while (hasMore) {
-        const response = await fetch(`/api/inventory?limit=1000&page=${page}`)
+        const endpoint = getInventoryEndpoint(dataSource)
+        const response = await fetch(`${endpoint}?limit=1000&page=${page}`)
         const data = await response.json()
         
         if (data.error) {
           throw new Error(data.error)
         }
         
-        const items = data.data?.inventory || []
-        const pagination = data.data?.pagination || {}
+        const items = data.data?.inventory || data.items || []
+        const pagination = data.data?.pagination || data.pagination || {}
+        
+        // Capture cache info from the first response
+        if (page === 1 && data.cacheInfo) {
+          setCacheInfo(data.cacheInfo)
+        }
         
         allInventoryItems = allInventoryItems.concat(items)
         
@@ -418,6 +430,11 @@ function InventoryPageContent() {
                 : 'Unknown'
               }
             </span>
+            {cacheInfo && cacheInfo.source && (
+              <span className="ml-2 px-2 py-0.5 text-xs bg-blue-100 text-blue-700 rounded-full">
+                {cacheInfo.source === 'redis-cache' ? '⚡ Redis Cache' : cacheInfo.source}
+              </span>
+            )}
           </div>
 
           {/* Column Selector */}
@@ -471,6 +488,9 @@ function InventoryPageContent() {
           onResetColumns={resetColumns}
         />
       )}
+
+      {/* Cache Status Indicator */}
+      <CacheStatusIndicator dataSource={dataSource} />
 
       {/* Critical Items Monitor - Show when critical filters are active */}
       {(activePresetFilter === 'critical' || (useEnhancedFilters && activeFilterId === 'critical-stock')) && <CriticalItemsMonitor />}

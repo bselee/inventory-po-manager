@@ -86,49 +86,34 @@ export class FinaleReportApiService {
     try {
       const rows = await this.fetchReport(reportUrl, 'jsonObject')
       
-      // Process the hierarchical report data
-      // Reports with grouping will have null values for repeated fields
-      const products = []
-      let currentProduct: any = null
-      
-      for (const row of rows) {
-        // Check if this is a new product (has Product ID)
-        if (row['Product ID']) {
-          // Save previous product if exists
-          if (currentProduct) {
-            products.push(currentProduct)
-          }
-          
-          // Start new product
-          currentProduct = {
-            sku: row['Product ID'],
-            productName: row['Description'] || row['Product Name'] || '',
-            supplier: row['Supplier'] || row['Vendor'] || row['Primary Supplier'] || '',
-            totalStock: 0,
-            locations: []
-          }
+      // For flat reports (not hierarchical), each row is a complete product
+      const products = rows.map(row => {
+        // Map common field variations
+        const product: any = {
+          sku: row['Product ID'] || row['SKU'] || row['Item ID'] || '',
+          productName: row['Product Name'] || row['Description'] || row['Name'] || '',
+          supplier: row['Supplier 1'] || row['Supplier'] || row['Vendor'] || row['Primary Supplier'] || '',
+          totalStock: Number(row['Units in stock'] || row['On hand'] || row['Stock'] || 0),
+          locations: []
         }
         
-        // Add location/stock data if present
-        if (currentProduct && row['Location'] && row['On hand'] !== undefined) {
-          currentProduct.locations.push({
+        // Add location data if available
+        if (row['Location']) {
+          product.locations.push({
             location: row['Location'],
-            stock: Number(row['On hand']) || 0,
-            onOrder: Number(row['On order']) || 0
+            stock: Number(row['Units in stock'] || row['On hand'] || 0),
+            onOrder: Number(row['On order'] || 0)
           })
-          currentProduct.totalStock += Number(row['On hand']) || 0
         }
         
-        // Update supplier if found in sub-rows
-        if (currentProduct && !currentProduct.supplier && (row['Supplier'] || row['Vendor'])) {
-          currentProduct.supplier = row['Supplier'] || row['Vendor'] || ''
-        }
-      }
-      
-      // Don't forget the last product
-      if (currentProduct) {
-        products.push(currentProduct)
-      }
+        // Add additional fields that might be useful
+        product['Sales last 30 days'] = Number(row['Sales last 30 days'] || 0)
+        product['Sales last 90 days'] = Number(row['Sales last 90 days'] || 0)
+        product.url = row['url'] || ''
+        
+        // Pass through all original fields for flexibility
+        return { ...row, ...product }
+      })
       
       console.log(`[Report API] Processed ${products.length} products from report`)
       
