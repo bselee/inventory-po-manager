@@ -6,7 +6,23 @@ import { supabase } from './supabase'
 import { AuthenticationError, AuthorizationError } from './errors'
 
 // Configuration
-const JWT_SECRET = new TextEncoder().encode(process.env.JWT_SECRET || 'development-secret-change-in-production')
+const getJWTSecret = () => {
+  const secret = process.env.JWT_SECRET
+  // Use a default secret for build time only - this will be replaced at runtime
+  if (!secret) {
+    if (process.env.NODE_ENV === 'production') {
+      console.warn('JWT_SECRET not set - authentication will not work')
+    }
+    // Use a placeholder for build time
+    return new TextEncoder().encode('build-time-placeholder-secret-32-characters-long')
+  }
+  if (secret.length < 32) {
+    throw new Error('JWT_SECRET environment variable must be at least 32 characters long')
+  }
+  return new TextEncoder().encode(secret)
+}
+
+const JWT_SECRET = getJWTSecret()
 const COOKIE_NAME = 'auth-token'
 const TOKEN_EXPIRY = '24h'
 const SALT_ROUNDS = 10
@@ -64,7 +80,7 @@ export class AuthTokens {
         iat: payload.iat as number
       }
     } catch (error) {
-      console.error('Token verification failed:', error)
+      logError('Token verification failed:', error)
       return null
     }
   }
@@ -146,7 +162,7 @@ export async function authMiddleware(
     if (error instanceof AuthenticationError || error instanceof AuthorizationError) {
       throw error
     }
-    console.error('Authentication middleware error:', error)
+    logError('Authentication middleware error:', error)
     throw new AuthenticationError('Authentication failed')
   }
 }
@@ -223,7 +239,7 @@ export async function validateCredentials(email: string, password: string): Prom
       is_active: user.is_active,
     }
   } catch (error) {
-    console.error('Credential validation error:', error)
+    logError('Credential validation error:', error)
     return null
   }
 }
@@ -250,7 +266,7 @@ export async function createUser(
       .single()
 
     if (error || !user) {
-      console.error('User creation error:', error)
+      logError('User creation error:', error)
       return null
     }
 
@@ -262,7 +278,7 @@ export async function createUser(
       is_active: user.is_active,
     }
   } catch (error) {
-    console.error('User creation error:', error)
+    logError('User creation error:', error)
     return null
   }
 }
@@ -288,7 +304,7 @@ export async function logAuthEvent(
         metadata,
       })
   } catch (error) {
-    console.error('Audit log error:', error)
+    logError('Audit log error:', error)
   }
 }
 

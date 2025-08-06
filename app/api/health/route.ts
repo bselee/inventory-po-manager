@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { checkDatabaseHealth } from '../../../lib/supabase';
+import { supabase } from '@/app/lib/supabase';
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -10,7 +10,25 @@ export async function GET(request: NextRequest) {
   
   try {
     // Check database health
-    const dbHealth = await checkDatabaseHealth();
+    const dbStartTime = Date.now();
+    let dbHealth = { connected: false, latency_ms: 0 };
+    
+    try {
+      const { data, error } = await supabase
+        .from('inventory_items')
+        .select('id')
+        .limit(1);
+      
+      dbHealth = {
+        connected: !error,
+        latency_ms: Date.now() - dbStartTime
+      };
+    } catch (err) {
+      dbHealth = {
+        connected: false,
+        latency_ms: Date.now() - dbStartTime
+      };
+    }
     
     // Check environment variables
     const requiredEnvVars = [
