@@ -38,7 +38,7 @@ export default function RedisCacheStatus() {
       }
     } catch (err) {
       setError('Failed to connect to cache service')
-      console.error('Cache health check error:', err)
+      logError('Cache health check error:', err)
     } finally {
       setLoading(false)
     }

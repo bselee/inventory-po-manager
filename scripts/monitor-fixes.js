@@ -73,59 +73,30 @@ function clearScreen() {
 }
 
 function printHeader() {
-  console.log(colors.bright + colors.cyan + '╔════════════════════════════════════════════════════════════════╗');
-  console.log('║          🤖 AUTONOMOUS TEST FIXING - LIVE MONITOR 🤖           ║');
-  console.log('╚════════════════════════════════════════════════════════════════╝' + colors.reset);
-  console.log();
 }
 
 function printStats() {
   const successRate = ((stats.successfulFixes / stats.totalFixes) * 100).toFixed(1);
-  
-  console.log(colors.bright + '📊 STATISTICS' + colors.reset);
-  console.log('├─ Total Fixes Applied: ' + colors.green + stats.totalFixes + colors.reset);
-  console.log('├─ Success Rate: ' + colors.green + successRate + '%' + colors.reset);
-  console.log('├─ Pending Fixes: ' + colors.yellow + stats.pendingFixes + colors.reset);
-  console.log('└─ Time Saved: ' + colors.blue + '~11.5 hours' + colors.reset);
-  console.log();
 }
 
 function printFixLog() {
-  console.log(colors.bright + '🔧 RECENT FIXES' + colors.reset);
   console.log('─'.repeat(66));
   
   fixEvents.forEach((fix, index) => {
     const timeAgo = getTimeAgo(fix.time);
     const statusIcon = fix.result === 'passed' ? '✅' : fix.result === 'pending' ? '🔄' : '❌';
     const statusColor = fix.result === 'passed' ? colors.green : fix.result === 'pending' ? colors.yellow : colors.red;
-    
-    console.log(`${colors.bright}${timeAgo}${colors.reset} - ${statusIcon} ${fix.test}`);
-    console.log(`  ${colors.red}Problem:${colors.reset} ${fix.error}`);
-    console.log(`  ${colors.green}Fix:${colors.reset} ${fix.fix}`);
-    console.log(`  ${statusColor}Result:${colors.reset} ${fix.result} (${fix.attempts} attempt${fix.attempts > 1 ? 's' : ''})`);
-    
     if (index < fixEvents.length - 1) {
       console.log('─'.repeat(66));
     }
   });
-  console.log();
 }
 
 function printCurrentActivity() {
-  console.log(colors.bright + '🔄 CURRENT ACTIVITY' + colors.reset);
-  console.log('├─ Test Running: ' + colors.cyan + 'inventory > bulk operations' + colors.reset);
-  console.log('├─ Progress: ' + colors.green + '████████████████████░░░░░' + colors.reset + ' 78%');
-  console.log('├─ Fixes This Run: ' + colors.blue + '2' + colors.reset);
-  console.log('└─ Next Run In: ' + colors.magenta + '3:24' + colors.reset);
-  console.log();
 }
 
 function printInsights() {
-  console.log(colors.bright + '💡 INSIGHTS' + colors.reset);
   console.log('├─ Most Common Fix: ' + colors.yellow + 'Selector fallbacks (43%)' + colors.reset);
-  console.log('├─ Flaky Tests Found: ' + colors.yellow + '3' + colors.reset);
-  console.log('├─ Performance Impact: ' + colors.green + '26% faster test runs' + colors.reset);
-  console.log('└─ Recommendation: ' + colors.cyan + 'Add data-testid to 15 elements' + colors.reset);
 }
 
 function getTimeAgo(date) {
@@ -188,8 +159,6 @@ function render() {
   printFixLog();
   printCurrentActivity();
   printInsights();
-  
-  console.log('\n' + colors.bright + colors.green + 'Press Ctrl+C to exit' + colors.reset);
 }
 
 // Initial render
@@ -206,6 +175,5 @@ setInterval(() => {
 
 // Handle graceful shutdown
 process.on('SIGINT', () => {
-  console.log('\n\n' + colors.bright + colors.yellow + 'Stopping monitor...' + colors.reset);
   process.exit(0);
 });

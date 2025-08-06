@@ -25,7 +25,7 @@ export async function POST() {
     
     return NextResponse.json(result)
   } catch (error) {
-    console.error('[Vendor Sync] Error:', error)
+    logError('[Vendor Sync] Error:', error)
     return NextResponse.json({ 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error occurred'

@@ -16,9 +16,6 @@ const filesToFix = [
   'app/api/debug-db/route.ts',
   'app/api/load-env-settings/route.ts'
 ];
-
-console.log('Fixing import paths in API routes...\n');
-
 filesToFix.forEach(file => {
   const filePath = path.join(process.cwd(), file);
   
@@ -31,13 +28,8 @@ filesToFix.forEach(file => {
     
     if (content !== originalContent) {
       fs.writeFileSync(filePath, content);
-      console.log(`✅ Fixed imports in ${file}`);
     } else {
-      console.log(`⏭️  No changes needed in ${file}`);
     }
   } catch (error) {
-    console.log(`❌ Error processing ${file}: ${error.message}`);
   }
-});
-
-console.log('\nImport fixes complete!');
+});

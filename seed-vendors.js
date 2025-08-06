@@ -52,16 +52,12 @@ const vendors = [
 ]
 
 async function seedVendors() {
-  console.log('🌱 Seeding vendors into database...\n')
-  
   const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'
   let successCount = 0
   let errorCount = 0
   
   for (const vendor of vendors) {
     try {
-      console.log(`Creating vendor: ${vendor.name}`)
-      
       const response = await fetch(`${baseUrl}/api/vendors`, {
         method: 'POST',
         headers: {
@@ -72,38 +68,22 @@ async function seedVendors() {
       
       if (response.ok) {
         const result = await response.json()
-        console.log(`✅ Created: ${vendor.name} (ID: ${result.id})`)
         successCount++
       } else {
         const error = await response.text()
-        console.log(`❌ Failed to create ${vendor.name}: ${error}`)
         errorCount++
       }
     } catch (error) {
-      console.log(`❌ Network error creating ${vendor.name}: ${error.message}`)
       errorCount++
     }
   }
-  
-  console.log(`\n📊 Summary:`)
-  console.log(`✅ Successfully created: ${successCount} vendors`)
-  console.log(`❌ Failed to create: ${errorCount} vendors`)
-  
   if (successCount > 0) {
-    console.log(`\n🎉 Vendor seeding complete! Visit http://localhost:3000/vendors to see your vendors.`)
   } else {
-    console.log(`\n⚠️  No vendors were created. Please check:`)
-    console.log(`   - Server is running (npm run dev)`)
-    console.log(`   - Database connection is working`)
-    console.log(`   - API endpoints are accessible`)
   }
 }
 
 // Add error handling for fetch in Node.js environments
 if (typeof fetch === 'undefined') {
-  console.log('⚠️  This script requires Node.js 18+ or a fetch polyfill')
-  console.log('Please run: npm install node-fetch')
-  console.log('Or use Node.js 18+')
   process.exit(1)
 }
 

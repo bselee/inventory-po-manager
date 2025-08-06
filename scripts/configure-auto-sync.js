@@ -6,11 +6,9 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function configureAutoSync() {
-  console.log('⚙️  CONFIGURING AUTO-SYNC\n');
   console.log('=' .repeat(60));
   
   // 1. Check current settings
-  console.log('\n1. Checking current settings...');
   const { data: currentSettings, error: fetchError } = await supabase
     .from('settings')
     .select('*')
@@ -22,18 +20,10 @@ async function configureAutoSync() {
   }
   
   if (currentSettings) {
-    console.log('Current settings:');
-    console.log(`  Auto-sync enabled: ${currentSettings.finale_auto_sync_enabled || false}`);
-    console.log(`  Sync interval: ${currentSettings.finale_sync_interval_hours || 0} hours`);
-    console.log(`  sync_enabled: ${currentSettings.sync_enabled || false}`);
-    console.log(`  sync_frequency_minutes: ${currentSettings.sync_frequency_minutes || 0} minutes`);
   } else {
-    console.log('No settings found');
   }
   
   // 2. Update settings to enable auto-sync
-  console.log('\n2. Enabling auto-sync...');
-  
   const newSettings = {
     finale_auto_sync_enabled: true,
     finale_sync_interval_hours: 1, // Every hour
@@ -57,17 +47,7 @@ async function configureAutoSync() {
     console.error('Error updating settings:', updateError);
     return;
   }
-  
-  console.log('✅ Auto-sync enabled successfully');
-  console.log('Settings updated:');
-  console.log(`  Auto-sync enabled: ${updated.finale_auto_sync_enabled}`);
-  console.log(`  Sync interval: ${updated.finale_sync_interval_hours} hours`);
-  console.log(`  sync_enabled: ${updated.sync_enabled}`);
-  console.log(`  sync_frequency_minutes: ${updated.sync_frequency_minutes} minutes`);
-  
   // 3. Test auto-sync trigger
-  console.log('\n3. Testing auto-sync system...');
-  
   // Check if auto-sync would trigger
   const { data: lastSync } = await supabase
     .from('sync_logs')
@@ -80,19 +60,8 @@ async function configureAutoSync() {
   
   if (lastSync) {
     const minutesSince = Math.round((Date.now() - new Date(lastSync.synced_at).getTime()) / 1000 / 60);
-    console.log(`Last successful sync: ${minutesSince} minutes ago`);
-    console.log(`Next sync in: ${Math.max(0, 60 - minutesSince)} minutes`);
   } else {
-    console.log('No previous successful sync found');
-    console.log('Auto-sync will trigger on next check');
   }
-  
-  console.log('\n✅ AUTO-SYNC CONFIGURATION COMPLETE');
-  console.log('\nAuto-sync will:');
-  console.log('- Run every 60 minutes');
-  console.log('- Skip if a sync is already running');
-  console.log('- Log all sync attempts to sync_logs table');
-  console.log('- Send email alerts on failures');
 }
 
 configureAutoSync().catch(console.error);

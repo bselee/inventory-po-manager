@@ -1,9 +1,6 @@
 #!/usr/bin/env node
 
 const http = require('http');
-
-console.log('Testing direct Finale sync...\n');
-
 const testSync = async (filterYear) => {
   return new Promise((resolve, reject) => {
     const data = JSON.stringify({ 
@@ -21,9 +18,6 @@ const testSync = async (filterYear) => {
         'Content-Length': data.length
       }
     };
-
-    console.log(`Testing with filterYear: ${filterYear}`);
-    
     const req = http.request(options, (res) => {
       let responseData = '';
       
@@ -34,7 +28,6 @@ const testSync = async (filterYear) => {
       res.on('end', () => {
         try {
           const result = JSON.parse(responseData);
-          console.log('Result:', result);
           resolve(result);
         } catch (e) {
           console.log('Raw response:', responseData.substring(0, 500));

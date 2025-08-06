@@ -7,8 +7,6 @@ const accountPath = 'buildasoilorganics';
 const authString = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
 
 async function testFinaleData() {
-  console.log('🔍 TESTING ACTUAL FINALE DATA RETRIEVAL\n');
-  
   // First, let's see what the product endpoint actually returns
   const productUrl = `https://app.finaleinventory.com/${accountPath}/api/product?limit=3&expand=1`;
   
@@ -28,11 +26,7 @@ async function testFinaleData() {
       res.on('end', () => {
         try {
           const parsed = JSON.parse(data);
-          
-          console.log('✅ RAW FINALE RESPONSE:');
           console.log('Fields available:', Object.keys(parsed));
-          console.log('\n');
-          
           // Check what inventory-related fields we actually have
           const inventoryRelatedFields = Object.keys(parsed).filter(key => {
             const lowerKey = key.toLowerCase();
@@ -45,15 +39,11 @@ async function testFinaleData() {
                    lowerKey.includes('location') ||
                    lowerKey.includes('facility');
           });
-          
-          console.log('📊 INVENTORY-RELATED FIELDS FOUND:');
           inventoryRelatedFields.forEach(field => {
-            console.log(`- ${field}`);
           });
           
           // Convert first product to see actual data
           if (parsed.productId && parsed.productId.length > 0) {
-            console.log('\n📦 FIRST PRODUCT DATA:');
             const firstProduct = {};
             Object.keys(parsed).forEach(key => {
               if (Array.isArray(parsed[key]) && parsed[key].length > 0) {
@@ -63,8 +53,6 @@ async function testFinaleData() {
             console.log(JSON.stringify(firstProduct, null, 2));
             
             // Check nested data structures
-            console.log('\n🔍 CHECKING NESTED DATA:');
-            
             // Check reorderGuidelineList
             if (firstProduct.reorderGuidelineList) {
               console.log('\nreorderGuidelineList:', JSON.stringify(firstProduct.reorderGuidelineList, null, 2));
@@ -87,8 +75,6 @@ async function testFinaleData() {
           }
           
           // Now let's check if there's a separate inventory endpoint
-          console.log('\n\n📊 CHECKING FOR INVENTORY-SPECIFIC DATA...');
-          
           // Try facility inventory
           checkFacilityInventory();
           
@@ -117,9 +103,6 @@ function checkFacilityInventory() {
     });
     
     res.on('end', () => {
-      console.log('\n📍 FACILITY INVENTORY ENDPOINT:');
-      console.log('Status:', res.statusCode);
-      
       if (res.statusCode === 200) {
         try {
           const parsed = JSON.parse(data);
@@ -158,8 +141,6 @@ function checkProductInventory() {
     
     res.on('end', () => {
       console.log('\n📦 SINGLE PRODUCT DETAIL (BC101):');
-      console.log('Status:', res.statusCode);
-      
       if (res.statusCode === 200) {
         try {
           const parsed = JSON.parse(data);

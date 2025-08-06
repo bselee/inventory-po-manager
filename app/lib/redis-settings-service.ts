@@ -57,7 +57,7 @@ export class RedisSettingsService {
       
       return settings
     } catch (error) {
-      console.error('[Redis Settings] Error getting settings:', error)
+      logError('[Redis Settings] Error getting settings:', error)
       throw error
     }
   }
@@ -83,12 +83,10 @@ export class RedisSettingsService {
       
       // Save updated settings
       await redis.set(SETTINGS_KEY, updated)
-      
-      console.log('[Redis Settings] Settings updated successfully')
       return updated
       
     } catch (error) {
-      console.error('[Redis Settings] Error updating settings:', error)
+      logError('[Redis Settings] Error updating settings:', error)
       throw error
     }
   }
@@ -103,12 +101,10 @@ export class RedisSettingsService {
       
       const defaults = this.getDefaultSettings()
       await redis.set(SETTINGS_KEY, defaults)
-      
-      console.log('[Redis Settings] Settings reset to defaults')
       return defaults
       
     } catch (error) {
-      console.error('[Redis Settings] Error resetting settings:', error)
+      logError('[Redis Settings] Error resetting settings:', error)
       throw error
     }
   }
@@ -120,7 +116,7 @@ export class RedisSettingsService {
     try {
       return await redis.get<RedisSettings>(SETTINGS_BACKUP_KEY)
     } catch (error) {
-      console.error('[Redis Settings] Error getting backup:', error)
+      logError('[Redis Settings] Error getting backup:', error)
       return null
     }
   }
@@ -137,12 +133,10 @@ export class RedisSettingsService {
       }
       
       await redis.set(SETTINGS_KEY, backup)
-      console.log('[Redis Settings] Restored from backup')
-      
       return backup
       
     } catch (error) {
-      console.error('[Redis Settings] Error restoring from backup:', error)
+      logError('[Redis Settings] Error restoring from backup:', error)
       throw error
     }
   }
@@ -153,9 +147,8 @@ export class RedisSettingsService {
   private async createBackup(settings: RedisSettings): Promise<void> {
     try {
       await redis.set(SETTINGS_BACKUP_KEY, settings)
-      console.log('[Redis Settings] Backup created')
     } catch (error) {
-      console.error('[Redis Settings] Error creating backup:', error)
+      logError('[Redis Settings] Error creating backup:', error)
     }
   }
   
@@ -276,8 +269,6 @@ export class RedisSettingsService {
     }
     
     await redis.set(SETTINGS_KEY, migrated)
-    console.log('[Redis Settings] Migrated settings from Supabase')
-    
     return migrated
   }
 }

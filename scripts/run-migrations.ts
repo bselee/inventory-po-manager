@@ -20,16 +20,12 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 })
 
 async function runMigrations() {
-  console.log('🚀 Starting database migrations...\n')
-
   const migrations = [
     'add-sales-cost-fields.sql',
     'add-finale-po-sync.sql'
   ]
 
   for (const migrationFile of migrations) {
-    console.log(`📄 Running migration: ${migrationFile}`)
-    
     try {
       const sqlPath = path.join(__dirname, migrationFile)
       const sql = fs.readFileSync(sqlPath, 'utf8')
@@ -50,14 +46,10 @@ async function runMigrations() {
           console.error(`Statement: ${statement.substring(0, 100)}...`)
         }
       }
-
-      console.log(`✅ ${migrationFile} completed successfully\n`)
     } catch (error) {
       console.error(`❌ Failed to run ${migrationFile}:`, error)
     }
   }
-
-  console.log('🎉 All migrations completed!')
 }
 
 // Run migrations

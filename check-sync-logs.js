@@ -6,8 +6,6 @@ const supabase = createClient(
 );
 
 async function checkSyncLogs() {
-  console.log('🔍 Checking recent sync logs...');
-  
   const { data: syncLogs, error } = await supabase
     .from('sync_logs')
     .select('*')
@@ -21,21 +19,14 @@ async function checkSyncLogs() {
     
   if (syncLogs && syncLogs.length > 0) {
     syncLogs.forEach(log => {
-      console.log(`📊 ${log.synced_at}: ${log.sync_type} - ${log.status}`);
       if (log.metadata) {
-        console.log(`   Strategy: ${log.metadata.strategy || 'unknown'}`);
-        console.log(`   Progress: ${log.metadata.progress || 'unknown'}`);
         if (log.metadata.totalProducts) {
-          console.log(`   Total Products: ${log.metadata.totalProducts}`);
         }
         if (log.metadata.insertedCount) {
-          console.log(`   Inserted: ${log.metadata.insertedCount}`);
         }
       }
-      console.log('');
     });
   } else {
-    console.log('No sync logs found');
   }
 }
 

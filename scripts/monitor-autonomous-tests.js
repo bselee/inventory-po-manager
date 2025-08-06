@@ -67,65 +67,29 @@ async function displayDashboard() {
   const summary = await getLatestSummary();
   
   if (!summary) {
-    console.log(`${colors.red}No test data available yet. Run the autonomous test runner first.${colors.reset}`);
     return;
   }
   
   // Header
-  console.log(`${colors.cyan}${colors.bright}╔═══════════════════════════════════════════════════════════════╗${colors.reset}`);
-  console.log(`${colors.cyan}${colors.bright}║         🤖 AUTONOMOUS TESTING MONITOR - LIVE VIEW 🤖          ║${colors.reset}`);
-  console.log(`${colors.cyan}${colors.bright}╚═══════════════════════════════════════════════════════════════╝${colors.reset}`);
-  console.log();
-  
   // Last update
-  console.log(`${colors.dim}Last Update: ${timeAgo(summary.lastRun)}${colors.reset}`);
-  console.log();
-  
   // Overall stats
-  console.log(`${colors.bright}📊 Overall Statistics${colors.reset}`);
-  console.log(`${colors.blue}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${colors.reset}`);
-  console.log(`Total Runs:     ${colors.bright}${summary.totalRuns}${colors.reset}`);
-  console.log(`Tests Passed:   ${colors.green}${summary.totalPassed}${colors.reset}`);
-  console.log(`Tests Failed:   ${colors.red}${summary.totalFailed}${colors.reset}`);
-  console.log(`Fixes Applied:  ${colors.yellow}${summary.fixesApplied}${colors.reset}`);
-  console.log(`Success Rate:   ${summary.successRate}`);
-  console.log();
-  
   // Success rate visualization
   const successNum = parseInt(summary.successRate) || 0;
   const barColor = successNum >= 80 ? colors.green : successNum >= 60 ? colors.yellow : colors.red;
-  console.log(`${colors.bright}Success Rate:${colors.reset}`);
-  console.log(`${barColor}${drawProgressBar(successNum, 100, 40)}${colors.reset}`);
-  console.log();
-  
   // Test health
   if (summary.testHistory && summary.testHistory.length > 0) {
-    console.log(`${colors.bright}🏥 Test Health Status${colors.reset}`);
-    console.log(`${colors.blue}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${colors.reset}`);
-    
     for (const test of summary.testHistory) {
       const statusIcon = test.status === 'healthy' ? '✅' : '⚠️';
       const statusColor = test.status === 'healthy' ? colors.green : colors.yellow;
-      console.log(`${statusIcon} ${test.test.padEnd(30)} ${statusColor}${test.status}${colors.reset} (${test.failures} failures)`);
     }
-    console.log();
   }
   
   // Savings calculation
   const timeSaved = summary.fixesApplied * 15;
   const moneySaved = summary.fixesApplied * 50;
-  
-  console.log(`${colors.bright}💰 Value Generated${colors.reset}`);
-  console.log(`${colors.blue}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${colors.reset}`);
-  console.log(`Time Saved:     ${colors.green}~${timeSaved} minutes${colors.reset}`);
-  console.log(`Money Saved:    ${colors.green}~$${moneySaved.toLocaleString()}${colors.reset}`);
-  console.log(`Efficiency:     ${colors.magenta}${(summary.fixesApplied / Math.max(1, summary.totalRuns)).toFixed(1)} fixes/run${colors.reset}`);
-  console.log();
-  
   // Animation
   const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
   const frame = frames[Math.floor(Date.now() / 100) % frames.length];
-  console.log(`${colors.dim}${frame} Monitoring... Press Ctrl+C to exit${colors.reset}`);
 }
 
 // Main monitoring loop
@@ -142,7 +106,6 @@ async function monitor() {
   process.on('SIGINT', () => {
     clearInterval(interval);
     clearScreen();
-    console.log(`${colors.bright}👋 Monitoring stopped${colors.reset}`);
     process.exit(0);
   });
 }

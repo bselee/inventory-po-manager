@@ -11,16 +11,12 @@ export async function GET(request: Request) {
     // Verify cron secret (Vercel cron jobs include this)
     const authHeader = request.headers.get('authorization')
     if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
-      console.warn('[Cron Inventory KV] Unauthorized cron request')
+      logWarn('[Cron Inventory KV] Unauthorized cron request')
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
-    
-    console.log('[Cron Inventory KV] Starting scheduled inventory cache refresh...')
-    
     // Check if sync is already running
     const syncStatus = await kvInventoryService.getSyncStatus()
     if (syncStatus.is_syncing) {
-      console.log('[Cron Inventory KV] Sync already in progress, skipping...')
       return NextResponse.json({
         message: 'Sync already in progress',
         status: syncStatus
@@ -47,14 +43,11 @@ export async function GET(request: Request) {
           timestamp: new Date().toISOString()
         }
       }
-      
-      console.log('[Cron Inventory KV] Sync completed:', result.stats)
-      
       return NextResponse.json(result)
       
     } catch (syncError) {
       const duration = Date.now() - startTime
-      console.error('[Cron Inventory KV] Sync failed:', syncError)
+      logError('[Cron Inventory KV] Sync failed:', syncError)
       
       return NextResponse.json({
         success: false,
@@ -65,7 +58,7 @@ export async function GET(request: Request) {
     }
     
   } catch (error) {
-    console.error('[Cron Inventory KV] Error:', error)
+    logError('[Cron Inventory KV] Error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Cron job failed' },
       { status: 500 }

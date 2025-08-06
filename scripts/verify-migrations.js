@@ -2,13 +2,6 @@
 import { createClient } from '@supabase/supabase-js'
 
 // Note: This is a verification script to help check if migrations ran successfully
-console.log(`
-📋 Database Migration Verification Checklist
-
-Please verify the following in your Supabase Table Editor:
-
-1. ✅ inventory_items table should have:
-   - cost (numeric/decimal)
    - sales_last_30_days (int8)
    - sales_last_90_days (int8)
    - last_sales_update (timestamptz)

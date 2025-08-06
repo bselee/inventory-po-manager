@@ -136,29 +136,24 @@ export class FinaleMultiReportService {
         try {
           const cached = await redis.get<EnhancedInventoryItem[]>(CACHE_KEYS.COMBINED_METRICS)
           if (cached) {
-            console.log('[Multi-Report] Serving from cache')
             return cached
           }
         } catch (error) {
-          console.log('[Multi-Report] Cache check failed:', error)
         }
       }
       
       // Fetch fresh data
-      console.log('[Multi-Report] Cache miss or force refresh, fetching all reports...')
       return await this.refreshAllData()
     } catch (error) {
-      console.error('[Multi-Report] Error getting combined inventory:', error)
+      logError('[Multi-Report] Error getting combined inventory:', error)
       
       // Try to return stale cache if available
       try {
         const stale = await redis.get<EnhancedInventoryItem[]>(CACHE_KEYS.COMBINED_METRICS)
         if (stale) {
-          console.log('[Multi-Report] Returning stale cache due to error')
           return stale
         }
       } catch (cacheError) {
-        console.log('[Multi-Report] Stale cache check failed:', cacheError)
       }
       throw error
     }
@@ -174,7 +169,6 @@ export class FinaleMultiReportService {
     try {
       await redis.setex(CACHE_KEYS.SYNC_STATUS, CACHE_TTL.SYNC_STATUS, { is_syncing: true })
     } catch (error) {
-      console.log('[Multi-Report] Failed to set sync status:', error)
     }
     
     try {
@@ -300,18 +294,13 @@ export class FinaleMultiReportService {
         // Clear sync status
         await redis.del(CACHE_KEYS.SYNC_STATUS)
       } catch (error) {
-        console.log('[Multi-Report] Failed to cache data:', error)
       }
-      
-      console.log(`[Multi-Report] Cached ${enhancedInventory.length} items with combined metrics`)
-      
       return enhancedInventory
       
     } catch (error) {
       try {
         await redis.del(CACHE_KEYS.SYNC_STATUS)
       } catch (redisError) {
-        console.log('[Multi-Report] Failed to clear sync status:', redisError)
       }
       throw error
     }
@@ -322,7 +311,7 @@ export class FinaleMultiReportService {
    */
   private async fetchInventoryReport(reportUrl?: string): Promise<any[]> {
     if (!reportUrl) {
-      console.warn('[Multi-Report] No inventory report URL configured')
+      logWarn('[Multi-Report] No inventory report URL configured')
       return []
     }
     
@@ -340,7 +329,7 @@ export class FinaleMultiReportService {
         finale_id: item.sku || item['Product ID']
       }))
     } catch (error) {
-      console.error('[Multi-Report] Error fetching inventory report:', error)
+      logError('[Multi-Report] Error fetching inventory report:', error)
       throw error
     }
   }
@@ -350,7 +339,7 @@ export class FinaleMultiReportService {
    */
   private async fetchConsumptionReport(reportUrl?: string, periodDays: number): Promise<ConsumptionData[]> {
     if (!reportUrl) {
-      console.warn(`[Multi-Report] No ${periodDays}-day consumption report URL configured`)
+      logWarn(`[Multi-Report] No ${periodDays}-day consumption report URL configured`)
       return []
     }
     
@@ -380,11 +369,9 @@ export class FinaleMultiReportService {
       })
       
       const consumptionData = Array.from(consumptionMap.values())
-      console.log(`[Multi-Report] Processed ${consumptionData.length} products from ${periodDays}-day consumption`)
-      
       return consumptionData
     } catch (error) {
-      console.error(`[Multi-Report] Error fetching ${periodDays}-day consumption:`, error)
+      logError(`[Multi-Report] Error fetching ${periodDays}-day consumption:`, error)
       return []
     }
   }
@@ -394,7 +381,7 @@ export class FinaleMultiReportService {
    */
   private async fetchStockReport(reportUrl?: string): Promise<StockData[]> {
     if (!reportUrl) {
-      console.warn('[Multi-Report] No stock report URL configured')
+      logWarn('[Multi-Report] No stock report URL configured')
       return []
     }
     
@@ -437,11 +424,9 @@ export class FinaleMultiReportService {
       })
       
       const stockData = Array.from(stockMap.values())
-      console.log(`[Multi-Report] Processed ${stockData.length} products from stock report`)
-      
       return stockData
     } catch (error) {
-      console.error('[Multi-Report] Error fetching stock report:', error)
+      logError('[Multi-Report] Error fetching stock report:', error)
       return []
     }
   }
@@ -482,7 +467,6 @@ export class FinaleMultiReportService {
       const reportUrls = await redisSettingsService.getReportUrls()
       
       if (reportUrls.inventory || reportUrls.consumption14 || reportUrls.consumption30 || reportUrls.stock) {
-        console.log('[Multi-Report] Using report URLs from Redis settings')
         return {
           inventory_report_url: reportUrls.inventory,
           consumption_14day_report_url: reportUrls.consumption14,
@@ -492,7 +476,6 @@ export class FinaleMultiReportService {
         }
       }
     } catch (error) {
-      console.log('[Multi-Report] Redis settings not available, falling back to Supabase')
     }
     
     // Fallback to Supabase settings
@@ -504,7 +487,6 @@ export class FinaleMultiReportService {
       .maybeSingle()
     
     if (settings) {
-      console.log('[Multi-Report] Using report URLs from Supabase settings')
       return {
         inventory_report_url: settings.finale_inventory_report_url,
         consumption_14day_report_url: settings.finale_consumption_14day_url,
@@ -521,8 +503,6 @@ export class FinaleMultiReportService {
    * Clear all caches
    */
   async clearCache(): Promise<void> {
-    console.log('[Multi-Report] Clearing all caches...')
-    
     try {
       await redis.del([
         CACHE_KEYS.INVENTORY,
@@ -534,10 +514,7 @@ export class FinaleMultiReportService {
         CACHE_KEYS.LAST_SYNC,
         CACHE_KEYS.SYNC_STATUS
       ])
-      
-      console.log('[Multi-Report] Cache cleared')
     } catch (error) {
-      console.log('[Multi-Report] Failed to clear cache:', error)
     }
   }
 }

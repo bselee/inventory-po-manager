@@ -24,15 +24,13 @@ export async function getRedisClient() {
     })
     
     redisClient.on('error', (err) => {
-      console.error('[Redis] Client error:', err)
+      logError('[Redis] Client error:', err)
     })
     
     redisClient.on('connect', () => {
-      console.log('[Redis] Connected successfully')
     })
     
     redisClient.on('ready', () => {
-      console.log('[Redis] Client ready')
     })
   }
   
@@ -40,7 +38,7 @@ export async function getRedisClient() {
   if (!connectionPromise && !redisClient.isOpen) {
     connectionPromise = redisClient.connect()
       .catch((error) => {
-        console.error('[Redis] Connection failed:', error)
+        logError('[Redis] Connection failed:', error)
         connectionPromise = null
         redisClient = null
         throw new Error(`Failed to connect to Redis: ${error.message}`)

@@ -19,7 +19,6 @@ const TEST_RESULTS = {
 
 // Helper functions
 async function test(name, fn) {
-  console.log(`\n${colors.blue('Testing:')} ${name}`)
   try {
     await fn()
     TEST_RESULTS.passed++
@@ -43,8 +42,6 @@ console.log(colors.yellow('\n=== Testing Finale API Improvements ===\n'))
 
 // Test 1: Rate Limiter
 test('Rate Limiter - Should limit requests to 2/second', async () => {
-  console.log('Making 5 rapid requests to test rate limiting...')
-  
   const startTime = Date.now()
   const requests = []
   
@@ -61,8 +58,6 @@ test('Rate Limiter - Should limit requests to 2/second', async () => {
   
   await Promise.all(requests)
   const duration = Date.now() - startTime
-  
-  console.log(`5 requests completed in ${duration}ms`)
   // With rate limiting at 2/sec, 5 requests should take at least 2 seconds
   assert(duration >= 2000, `Requests too fast: ${duration}ms (expected >= 2000ms)`)
 })
@@ -125,7 +120,6 @@ test('Debug Panel - Should provide debug functionality', async () => {
   const data = await response.json()
   assert(data.results, 'Should have results array')
   assert(data.summary, 'Should have summary')
-  console.log(`Debug tests run: ${data.results.length}`)
 })
 
 // Test 5: Sync Logger
@@ -148,8 +142,6 @@ test('Sync Logger - Should log sync operations', async () => {
   assert(summary.totalOperations >= 3, 'Should have logged operations')
   assert(summary.successCount >= 1, 'Should have successful operations')
   assert(summary.retryCount >= 1, 'Should have retry operations')
-  
-  console.log('Sync logger summary:', summary)
 })
 
 // Test 6: Inventory Data Warnings
@@ -201,15 +193,11 @@ test('API Methods - Should have all required methods', async () => {
   assert(typeof api.getInventoryLevels === 'function', 'Should have getInventoryLevels method')
   assert(typeof api.getActiveProducts === 'function', 'Should have getActiveProducts method')
   assert(typeof api.getProductsBySKUs === 'function', 'Should have getProductsBySKUs method')
-  
-  console.log('All required API methods are implemented')
 })
 
 // Test 8: Authentication Mapping
 test('Authentication Mapping - Should check both API keys and username/password', async () => {
   // We'll need to mock the database response to test this properly
-  console.log('Testing authentication mapping in getFinaleConfig...')
-  
   // This would need database access to test properly
   // For now, we'll check the code exists
   const fs = require('fs')
@@ -229,10 +217,6 @@ test('Rate Limiter Integration - All API calls should use rate limiter', async (
   // Count fetch calls vs rateLimitedFetch calls
   const fetchMatches = finaleApiCode.match(/[^rateLimited]fetch\(/g) || []
   const rateLimitedMatches = finaleApiCode.match(/rateLimitedFetch\(/g) || []
-  
-  console.log(`Regular fetch calls: ${fetchMatches.length}`)
-  console.log(`Rate limited fetch calls: ${rateLimitedMatches.length}`)
-  
   // Most fetch calls should be rate limited (allow a few for non-Finale APIs)
   assert(rateLimitedMatches.length > 5, 'Should have multiple rate limited calls')
 })
@@ -249,20 +233,15 @@ test('Error Response Format - Should include solutions and debug info', async ()
   // Test 404 error
   const error404 = formatFinaleError({ status: 404 }, 'test')
   assert(error404.solutions.includes('account'), 'Should mention account path')
-  
-  console.log('Error formatter provides solutions for common errors')
 })
 
 // Print summary
 console.log(colors.yellow('\n=== Test Summary ===\n'))
 console.log(colors.green(`Passed: ${TEST_RESULTS.passed}`))
 console.log(colors.red(`Failed: ${TEST_RESULTS.failed}`))
-console.log('\nDetailed Results:')
 TEST_RESULTS.tests.forEach(test => {
   const status = test.status === 'PASSED' ? colors.green('✓') : colors.red('✗')
-  console.log(`${status} ${test.name}`)
   if (test.error) {
-    console.log(`  ${colors.red(test.error)}`)
   }
 })
 

@@ -116,7 +116,7 @@ export class FinaleReportingService {
       // Transform the pivot table format to something more usable
       return this.transformReportData(data)
     } catch (error) {
-      console.error(`Error fetching report ${reportId}:`, error)
+      logError(`Error fetching report ${reportId}:`, error)
       throw error
     }
   }
@@ -150,8 +150,6 @@ export async function syncWithReports(config: FinaleApiConfig) {
   
   // 1. Get low stock items for priority sync
   const lowStock = await reporting.getLowStockReport(20)
-  console.log(`Found ${lowStock.length} low stock items`)
-  
   // 2. Get fast-moving items
   const salesVelocity = await reporting.getSalesVelocityReport(30)
   const fastMovers = salesVelocity
@@ -163,17 +161,12 @@ export async function syncWithReports(config: FinaleApiConfig) {
     ...lowStock.map((i: any) => i.productId),
     ...fastMovers.map((i: any) => i.productId)
   ])
-  
-  console.log(`Syncing ${prioritySKUs.size} priority items`)
-  
   // Now sync only these priority items
   return prioritySKUs
 }
 
 // Example: Daily smart sync using reports
 export async function dailySmartSync() {
-  console.log('🤖 Running daily smart sync with reporting data...')
-  
   const { getFinaleConfig } = await import('./data-access')
   const config = await getFinaleConfig()
   if (!config) return
@@ -190,13 +183,10 @@ export async function dailySmartSync() {
   )
   
   if (criticalItems.length > 0) {
-    console.log(`⚠️  CRITICAL: ${criticalItems.length} items are out of stock with no orders!`)
     // Send email alert
   }
   
   // 3. Sync only items that matter
   const itemsToSync = [...reorderNeeded, ...lowStock]
-  console.log(`Syncing ${itemsToSync.length} items based on report data`)
-  
   // Continue with targeted sync...
 }

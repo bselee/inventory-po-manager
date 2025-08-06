@@ -1,14 +1,4 @@
-console.log(`
-🚨 INVENTORY SYNC ISSUE IDENTIFIED
-===================================
 
-PROBLEM: Only 58 items in database, but should have 2,866+ products
-
-ROOT CAUSE: Missing Finale API credentials in settings table
-
-CURRENT STATE:
-✅ finale_account_path: 'buildasoilorganics'
-❌ finale_username: '' (EMPTY)  
 ❌ finale_password: '' (EMPTY)
 
 SOLUTION NEEDED:
@@ -44,40 +34,24 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 
 // Test the fixed function
 async function testFixedConfig() {
-  console.log('\n🔧 TESTING FIXED getFinaleConfig FUNCTION');
-  console.log('==========================================');
-  
   // Import the fixed function (this requires the .ts file to be compiled)
-  console.log('Note: This test simulates the fixed function logic');
-  
   const { data: settings, error } = await supabase
     .from('settings')
     .select('finale_username, finale_password, finale_account_path')
     .limit(1)
     .maybeSingle();
-
-  console.log('Query result:', { settings, error });
-
   if (error) {
     console.error('Database error:', error);
     return null;
   }
 
   if (!settings) {
-    console.log('No settings found');
     return null;
   }
 
   if (!settings.finale_username || !settings.finale_password || !settings.finale_account_path) {
-    console.log('Missing required fields:', {
-      hasUsername: !!settings.finale_username,
-      hasPassword: !!settings.finale_password,
-      hasAccountPath: !!settings.finale_account_path
-    });
     return null;
   }
-
-  console.log('Config would be created successfully!');
   return {
     apiKey: settings.finale_username,
     apiSecret: settings.finale_password,
@@ -87,8 +61,6 @@ async function testFixedConfig() {
 
 testFixedConfig().then(result => {
   if (result) {
-    console.log('\n✅ Fixed function would return config:', result);
   } else {
-    console.log('\n❌ Fixed function returns null - credentials still needed');
   }
 });

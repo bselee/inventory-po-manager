@@ -42,7 +42,7 @@ export function generateItemHash(item: any): string {
     const dataString = JSON.stringify(relevantData, Object.keys(relevantData).sort())
     return crypto.createHash('md5').update(dataString).digest('hex')
   } catch (error) {
-    console.error('Error generating item hash:', error)
+    logError('Error generating item hash:', error)
     // Return a default hash that will trigger a sync
     return 'error-hash-' + Date.now()
   }
@@ -102,7 +102,7 @@ export function detectChanges(
       hash: currentHash
     }
   } catch (error) {
-    console.error('Error detecting changes:', error)
+    logError('Error detecting changes:', error)
     // Return a result that will trigger a sync
     return {
       hasChanged: true,
@@ -201,7 +201,7 @@ export function calculateSyncStats(
       efficiencyGain: isFinite(efficiencyGain) ? efficiencyGain : 0
     }
   } catch (error) {
-    console.error('Error calculating sync stats:', error)
+    logError('Error calculating sync stats:', error)
     return {
       changeRate: 0,
       itemsPerSecond: 0,

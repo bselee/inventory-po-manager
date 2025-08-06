@@ -21,7 +21,6 @@ async function cleanupSettingsTable() {
   }
 
   if (!data || data.length <= 1) {
-    console.log('No cleanup needed. Only one or zero settings rows found.');
     return;
   }
 
@@ -37,8 +36,6 @@ async function cleanupSettingsTable() {
     console.error('Error deleting extra settings rows:', delError);
     process.exit(1);
   }
-
-  console.log(`Cleanup complete. Kept row with id: ${keep.id}, deleted ${idsToDelete.length} extra rows.`);
 }
 
 cleanupSettingsTable();

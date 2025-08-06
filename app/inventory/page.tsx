@@ -158,9 +158,7 @@ function InventoryPageContent() {
       let allInventoryItems: any[] = []
       let page = 1
       let hasMore = true
-      
-      console.log('🔄 Loading all inventory items with pagination...')
-      
+
       while (hasMore) {
         const endpoint = getInventoryEndpoint(dataSource)
         const response = await fetch(`${endpoint}?limit=1000&page=${page}`)
@@ -179,16 +177,14 @@ function InventoryPageContent() {
         }
         
         allInventoryItems = allInventoryItems.concat(items)
-        
-        console.log(`📄 Page ${page}: ${items.length} items (Total: ${allInventoryItems.length}/${pagination.total || 'unknown'})`)
-        
+
         // Check if there are more items
         hasMore = items.length === 1000 && page < (pagination.totalPages || 0)
         page++
         
         // Safety break to prevent infinite loops
         if (page > 20) {
-          console.warn('⚠️ Stopped at page 20 to prevent infinite loop')
+          logWarn('⚠️ Stopped at page 20 to prevent infinite loop')
           break
         }
       }
@@ -197,8 +193,7 @@ function InventoryPageContent() {
         items: allInventoryItems,
         total: allInventoryItems.length
       }
-      
-      console.log(`✅ Successfully loaded ${result.items.length} total inventory items`)
+
       setAllItems(result.items as InventoryItem[])
       
       // Calculate data quality metrics
@@ -221,23 +216,23 @@ function InventoryPageContent() {
       
       // Log data quality warnings
       if (result.items.length === 0) {
-        console.warn('⚠️ No inventory data found - sync may be needed')
+        logWarn('⚠️ No inventory data found - sync may be needed')
       } else if (result.items.length < 10) {
-        console.warn(`⚠️ Only ${result.items.length} items in inventory - this seems low`)
+        logWarn(`⚠️ Only ${result.items.length} items in inventory - this seems low`)
       }
       
       const salesDataPercent = result.items.length > 0 
         ? (metrics.itemsWithSalesData / result.items.length * 100).toFixed(1)
         : 0
       if (Number(salesDataPercent) < 20) {
-        console.warn(`⚠️ Only ${salesDataPercent}% of items have sales data`)
+        logWarn(`⚠️ Only ${salesDataPercent}% of items have sales data`)
       }
       
     } catch (error) {
-      console.error('Error loading inventory:', error)
+      logError('Error loading inventory:', error)
       // Show more detailed error information
       if (error instanceof Error) {
-        console.error('Error details:', {
+        logError('Error details:', {
           message: error.message,
           stack: error.stack
         })
@@ -259,7 +254,7 @@ function InventoryPageContent() {
       
       setSummary(data.data)
     } catch (error) {
-      console.error('Error loading summary:', error)
+      logError('Error loading summary:', error)
     }
   }
 
@@ -278,7 +273,7 @@ function InventoryPageContent() {
       if (useEnhancedFilters) {
         // For enhanced filters, we need to apply a vendor filter
         // This would require checking the enhanced filtering hook implementation
-        console.log('Enhanced vendor filtering not yet implemented for URL params')
+
       } else {
         // For legacy filters, update the filter config
         updateFilter({ vendor: decodedVendor })
@@ -314,7 +309,7 @@ function InventoryPageContent() {
       await loadInventory()
       toast.success('Cost updated successfully!')
     } catch (error) {
-      console.error('Error updating cost:', error)
+      logError('Error updating cost:', error)
       toast.error('Failed to update cost. Please try again.')
     }
   }
@@ -356,7 +351,7 @@ function InventoryPageContent() {
       
       toast.success(`Item ${!hidden ? 'hidden' : 'shown'} successfully`)
     } catch (error) {
-      console.error('Error updating item visibility:', error)
+      logError('Error updating item visibility:', error)
       toast.error('Failed to update item visibility')
     }
   }

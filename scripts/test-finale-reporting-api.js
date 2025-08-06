@@ -7,8 +7,6 @@ const accountPath = 'buildasoilorganics';
 const authString = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
 
 async function testReportingAPI() {
-  console.log('🔍 TESTING FINALE REPORTING API\n');
-  
   // Common inventory reports that might exist
   const reportTests = [
     // Try stock status report
@@ -37,8 +35,6 @@ async function testReportingAPI() {
   ];
   
   for (const test of reportTests) {
-    console.log(`\n📊 Testing: ${test.name}`);
-    console.log(`Path: ${test.path}`);
     console.log('-'.repeat(50));
     
     const url = `https://app.finaleinventory.com/${accountPath}/api${test.path}`;
@@ -50,8 +46,6 @@ async function testReportingAPI() {
           'Accept': 'application/json'
         }
       }, (res) => {
-        console.log('Status:', res.statusCode);
-        
         let data = '';
         res.on('data', (chunk) => {
           data += chunk;
@@ -59,13 +53,9 @@ async function testReportingAPI() {
         
         res.on('end', () => {
           if (res.statusCode === 200) {
-            console.log('✅ Success!');
             try {
               const parsed = JSON.parse(data);
-              console.log('Response type:', typeof parsed);
-              
               if (Array.isArray(parsed)) {
-                console.log('Array length:', parsed.length);
                 if (parsed.length > 0) {
                   console.log('First item:', JSON.stringify(parsed[0], null, 2).substring(0, 300));
                 }
@@ -77,20 +67,17 @@ async function testReportingAPI() {
               console.log('Response preview:', data.substring(0, 300));
             }
           } else {
-            console.log('❌ Failed');
             console.log('Response:', data.substring(0, 200));
           }
           resolve();
         });
       }).on('error', (err) => {
-        console.log('❌ Error:', err.message);
         resolve();
       });
     });
   }
   
   // Also try to access reports through the UI endpoint
-  console.log('\n\n📈 CHECKING FOR STANDARD REPORTS');
   console.log('=' .repeat(50));
   
   // These are common report IDs in Finale
@@ -103,8 +90,6 @@ async function testReportingAPI() {
   ];
   
   for (const reportId of standardReports) {
-    console.log(`\nTrying report ID: ${reportId}`);
-    
     const reportUrl = `https://app.finaleinventory.com/${accountPath}/api/report/${reportId}?format=json`;
     
     await new Promise((resolve) => {
@@ -114,15 +99,12 @@ async function testReportingAPI() {
           'Accept': 'application/json'
         }
       }, (res) => {
-        console.log('Status:', res.statusCode);
-        
         if (res.statusCode === 200) {
           let data = '';
           res.on('data', (chunk) => {
             data += chunk;
           });
           res.on('end', () => {
-            console.log('✅ Found report!');
             console.log('Preview:', data.substring(0, 200));
             resolve();
           });

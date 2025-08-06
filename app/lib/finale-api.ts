@@ -2,6 +2,7 @@
 import { supabase } from './supabase'
 import { emailAlerts } from './email-alerts'
 import { rateLimitedFetch } from './finale-rate-limiter'
+import { logInfo, logError, logWarn } from './logger'
 
 interface FinaleProduct {
   productId: string
@@ -80,7 +81,7 @@ export class FinaleApiService {
       })
       return response.ok
     } catch (error) {
-      console.error('Finale connection test failed:', error)
+      logError('Finale connection test failed:', error)
       return false
     }
   }
@@ -94,14 +95,11 @@ export class FinaleApiService {
     const yearFilter = filterYear === undefined ? new Date().getFullYear() : filterYear
     
     if (yearFilter) {
-      console.log(`[Finale Sync] Fetching products modified since year ${yearFilter}`)
     } else {
-      console.log(`[Finale Sync] Fetching all products (no date filter)`)
     }
 
     try {
       // Step 1: Get all products first
-      console.log('[Finale Sync] Step 1: Fetching product catalog...')
       let offset = 0
       const limit = 100
       let hasMore = true
@@ -141,11 +139,7 @@ export class FinaleApiService {
           hasMore = false
         }
       }
-      
-      console.log(`[Finale Sync] Found ${productMap.size} products`)
-      
       // Step 2: Get inventory items with stock levels
-      console.log('[Finale Sync] Step 2: Fetching inventory quantities...')
       const inventoryUrl = `${this.baseUrl}/inventoryitem/?limit=1000`
       const inventoryResponse = await rateLimitedFetch(inventoryUrl, {
         headers: {
@@ -186,12 +180,7 @@ export class FinaleApiService {
           existing.quantityReserved += quantityReserved
         }
       }
-      
-      console.log(`[Finale Sync] Found inventory data for ${inventoryMap.size} products`)
-      
       // Step 3: Combine product and inventory data
-      console.log('[Finale Sync] Step 3: Combining product and inventory data...')
-      
       for (const [productId, product] of productMap) {
         const inventory = inventoryMap.get(productId) || {
           quantityOnHand: 0,
@@ -242,9 +231,7 @@ export class FinaleApiService {
           
           // Log the structure for debugging
           if (firstSupplier && Object.keys(firstSupplier).length > 0) {
-            console.log('[Finale Sync] Supplier structure found:', {
-              productId: productId,
-              supplierFields: Object.keys(firstSupplier),
+            logInfo('Supplier structure found', {
               supplierData: firstSupplier
             })
           }
@@ -260,22 +247,13 @@ export class FinaleApiService {
           products.push(finaleProduct)
         }
       }
-
-      console.log(`[Finale Sync] Total products with inventory: ${products.length}`)
-      
       // Log sample for debugging
       if (products.length > 0) {
-        console.log('[Finale Sync] Sample product with inventory:', {
-          productId: products[0].productId,
-          productName: products[0].productName,
-          quantityOnHand: products[0].quantityOnHand,
-          quantityAvailable: products[0].quantityAvailable
-        })
       }
       
       return products
     } catch (error) {
-      console.error('[Finale Sync] Error fetching inventory:', error)
+      logError('[Finale Sync] Error fetching inventory:', error)
       throw error
     }
   }
@@ -299,7 +277,7 @@ export class FinaleApiService {
 
       return await response.json()
     } catch (error) {
-      console.error('Error fetching facility inventory:', error)
+      logError('Error fetching facility inventory:', error)
       throw error
     }
   }
@@ -321,7 +299,6 @@ export class FinaleApiService {
 
   // Sync inventory data to Supabase
   async syncToSupabase(dryRun = false, filterYear?: number | null) {
-    console.log('Starting Finale to Supabase sync...')
     const syncStartTime = Date.now()
     let syncLogId: number | null = null
     
@@ -347,7 +324,7 @@ export class FinaleApiService {
           .single()
         
         if (logError) {
-          console.error('Failed to create sync log:', logError)
+          logError('Failed to create sync log:', logError)
         } else if (syncLog) {
           syncLogId = syncLog.id
         }
@@ -355,10 +332,7 @@ export class FinaleApiService {
 
       // Get all products from Finale with optional year filter
       const finaleProducts = await this.getInventoryData(filterYear)
-      console.log(`Fetched ${finaleProducts.length} products from Finale`)
-
       if (dryRun) {
-        console.log('DRY RUN - No data will be written')
         return {
           success: true,
           totalProducts: finaleProducts.length,
@@ -402,7 +376,6 @@ export class FinaleApiService {
               lastError = error
               if (retryCount < maxRetries) {
                 const backoffMs = Math.min(1000 * Math.pow(2, retryCount), 10000) // Max 10 seconds
-                console.log(`Batch ${batchNumber} failed, retrying in ${backoffMs}ms... (attempt ${retryCount + 1}/${maxRetries})`)
                 await new Promise(resolve => setTimeout(resolve, backoffMs))
                 retryCount++
               } else {
@@ -420,7 +393,7 @@ export class FinaleApiService {
             }
           } catch (error) {
             if (retryCount >= maxRetries) {
-              console.error(`Error upserting batch ${batchNumber} after ${maxRetries} retries:`, error)
+              logError(`Error upserting batch ${batchNumber} after ${maxRetries} retries:`, error)
               results.push({ 
                 batch: batchNumber, 
                 error: error instanceof Error ? error.message : 'Unknown error',
@@ -478,9 +451,6 @@ export class FinaleApiService {
           })
           .eq('id', syncLogId)
       }
-
-      console.log(`Sync complete. Processed ${processed} items in ${syncDuration}ms.`)
-
       // Send email alerts based on sync result
       await emailAlerts.initialize()
       
@@ -533,7 +503,7 @@ export class FinaleApiService {
         filterYear: filterYear === undefined ? new Date().getFullYear() : filterYear
       }
     } catch (error) {
-      console.error('Sync failed:', error)
+      logError('Sync failed:', error)
       
       // Update sync log with error status
       if (syncLogId) {
@@ -603,7 +573,7 @@ export class FinaleApiService {
 
       return await response.json()
     } catch (error) {
-      console.error('Error creating purchase order in Finale:', error)
+      logError('Error creating purchase order in Finale:', error)
       throw error
     }
   }
@@ -612,7 +582,7 @@ export class FinaleApiService {
   
   // Strategy 1: Inventory-only sync (fastest - just updates stock levels)
   async syncInventoryOnly(): Promise<any> {
-    console.log('🚀 Running inventory-only sync (stock levels only)...')
+    logInfo('Running inventory-only sync (stock levels only)...', undefined, 'Finale')
     const startTime = Date.now()
     
     try {
@@ -727,7 +697,7 @@ export class FinaleApiService {
       }
       
     } catch (error) {
-      console.error('Inventory sync error:', error)
+      logError('Inventory sync error:', error)
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -737,7 +707,7 @@ export class FinaleApiService {
   
   // Strategy 2: Critical items sync (low stock and reorder needed)
   async syncCriticalItems(): Promise<any> {
-    console.log('🚨 Syncing critical items (low stock/reorder needed)...')
+    logInfo('Syncing critical items (low stock/reorder needed)...', undefined, 'Finale')
     
     try {
       // Get items that need attention from our database
@@ -756,8 +726,6 @@ export class FinaleApiService {
       }
       
       const criticalSKUs = criticalItems.map(item => item.sku)
-      console.log(`Found ${criticalSKUs.length} critical items to sync`)
-      
       // Get full product data for these SKUs
       const products = await this.getInventoryData()
       const criticalProducts = products.filter(p => 
@@ -804,7 +772,7 @@ export class FinaleApiService {
       }
       
     } catch (error) {
-      console.error('Critical sync error:', error)
+      logError('Critical sync error:', error)
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -814,8 +782,6 @@ export class FinaleApiService {
   
   // Strategy 3: Smart sync (decides what to sync based on conditions)
   async syncSmart(): Promise<any> {
-    console.log('🤖 Running smart sync...')
-    
     // Check last sync time
     const { data: lastSync } = await supabase
       .from('sync_logs')
@@ -827,7 +793,6 @@ export class FinaleApiService {
       .maybeSingle()
     
     if (!lastSync) {
-      console.log('No previous sync - running full sync')
       return this.syncToSupabase(false, new Date().getFullYear())
     }
     
@@ -835,27 +800,21 @@ export class FinaleApiService {
     
     if (minutesSince < 30) {
       // Very recent - only critical items
-      console.log(`Last sync ${Math.round(minutesSince)} min ago - syncing critical items only`)
       return this.syncCriticalItems()
     } else if (minutesSince < 120) {
       // Recent - inventory levels only
-      console.log(`Last sync ${Math.round(minutesSince)} min ago - syncing inventory levels`)
       return this.syncInventoryOnly()
     } else if (minutesSince < 1440) { // 24 hours
       // Daily - active products with inventory
-      console.log(`Last sync ${Math.round(minutesSince / 60)} hours ago - syncing active products`)
       return this.syncActiveProducts()
     } else {
       // Overdue - full sync
-      console.log(`Last sync ${Math.round(minutesSince / 60)} hours ago - running full sync`)
       return this.syncToSupabase(false)
     }
   }
   
   // Strategy 4: Active products only (skip discontinued)
   async syncActiveProducts(): Promise<any> {
-    console.log('📦 Syncing active products only...')
-    
     try {
       // Get all products but filter to active only
       const allProducts = await this.getInventoryData()
@@ -874,9 +833,6 @@ export class FinaleApiService {
         
         return true
       })
-      
-      console.log(`Found ${activeProducts.length} active products (of ${allProducts.length} total)`)
-      
       // Transform and update
       const updates = activeProducts.map(p => this.transformToInventoryItem(p))
       
@@ -908,7 +864,7 @@ export class FinaleApiService {
       }
       
     } catch (error) {
-      console.error('Active products sync error:', error)
+      logError('Active products sync error:', error)
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error'
@@ -932,7 +888,7 @@ export class FinaleApiService {
 
       return await response.json()
     } catch (error) {
-      console.error('Error fetching purchase order from Finale:', error)
+      logError('Error fetching purchase order from Finale:', error)
       throw error
     }
   }
@@ -943,9 +899,6 @@ export class FinaleApiService {
     let offset = 0
     const limit = 100
     let hasMore = true
-
-    console.log('[Finale Sync] Starting vendor fetch...')
-
     // Try multiple endpoint patterns as Finale API varies
     const endpointPatterns = [
       'vendor',        // Singular - might work for some accounts
@@ -959,8 +912,6 @@ export class FinaleApiService {
 
     for (const endpoint of endpointPatterns) {
       try {
-        console.log(`[Finale Sync] Trying ${endpoint} endpoint...`)
-        
         const testUrl = `${this.baseUrl}/${endpoint}?limit=1`
         const testResponse = await rateLimitedFetch(testUrl, {
           headers: {
@@ -972,22 +923,18 @@ export class FinaleApiService {
 
         if (testResponse.ok) {
           const testData = await testResponse.json()
-          console.log(`[Finale Sync] ${endpoint} endpoint works!`)
           successfulEndpoint = endpoint
           
           // Log response structure for debugging
-          console.log(`[Finale Sync] Response structure:`, {
-            isArray: Array.isArray(testData),
+          logInfo('Vendor endpoint test response', {
             hasDataKey: !!testData.data,
             sampleKeys: Array.isArray(testData) ? 'array response' : Object.keys(testData).slice(0, 10)
           })
           break
         } else {
-          console.log(`[Finale Sync] ${endpoint} endpoint failed with ${testResponse.status}`)
           lastError = `${endpoint}: ${testResponse.status}`
         }
       } catch (error) {
-        console.log(`[Finale Sync] ${endpoint} endpoint error:`, error instanceof Error ? error.message : 'Unknown error')
         lastError = `${endpoint}: ${error instanceof Error ? error.message : 'Unknown error'}`
       }
     }
@@ -1000,8 +947,6 @@ export class FinaleApiService {
       // Now fetch all vendors using the working endpoint
       while (hasMore) {
         const url = `${this.baseUrl}/${successfulEndpoint}?limit=${limit}&offset=${offset}`
-        console.log(`[Finale Sync] Fetching vendors from URL: ${url}`)
-        
         const response = await rateLimitedFetch(url, {
           headers: {
             'Authorization': this.authHeader,
@@ -1012,7 +957,7 @@ export class FinaleApiService {
 
         if (!response.ok) {
           const errorText = await response.text()
-          console.error(`[Finale Sync] Vendor API error: ${response.status}`, errorText)
+          logError(`[Finale Sync] Vendor API error: ${response.status}`, errorText)
           throw new Error(`Finale API error: ${response.status} - ${errorText.substring(0, 200)}`)
         }
 
@@ -1034,7 +979,7 @@ export class FinaleApiService {
           // Object with results key (e.g., { results: [...] })
           vendorBatch = data.results
         } else {
-          console.log(`[Finale Sync] Unexpected vendor response format for ${successfulEndpoint}:`, Object.keys(data))
+          logWarn(`Unexpected vendor response format for ${successfulEndpoint}`, Object.keys(data), 'Finale')
           hasMore = false
           break
         }
@@ -1042,16 +987,10 @@ export class FinaleApiService {
         vendors.push(...vendorBatch)
         hasMore = vendorBatch.length === limit
         offset += limit
-        
-        console.log(`[Finale Sync] Vendor page retrieved: ${vendorBatch.length} items (total: ${vendors.length})`)
       }
-
-      console.log(`[Finale Sync] Total vendors fetched: ${vendors.length} using ${successfulEndpoint} endpoint`)
-      
       // Log sample vendor structure for debugging
       if (vendors.length > 0) {
-        console.log('[Finale Sync] Sample vendor structure:', {
-          sampleVendor: Object.keys(vendors[0]),
+        logInfo('Vendor structure', {
           hasVendorName: 'vendorName' in vendors[0],
           hasName: 'name' in vendors[0],
           hasPartyName: 'partyName' in vendors[0],
@@ -1061,7 +1000,7 @@ export class FinaleApiService {
       
       return vendors
     } catch (error) {
-      console.error('[Finale Sync] Error fetching vendors:', error)
+      logError('[Finale Sync] Error fetching vendors:', error)
       throw error
     }
   }
@@ -1084,7 +1023,7 @@ export class FinaleApiService {
 
       return await response.json()
     } catch (error) {
-      console.error('Error updating purchase order in Finale:', error)
+      logError('Error updating purchase order in Finale:', error)
       throw error
     }
   }
@@ -1115,7 +1054,7 @@ export class FinaleApiService {
 
       return await response.json()
     } catch (error) {
-      console.error('Error creating vendor in Finale:', error)
+      logError('Error creating vendor in Finale:', error)
       throw error
     }
   }
@@ -1146,7 +1085,7 @@ export class FinaleApiService {
 
       return await response.json()
     } catch (error) {
-      console.error('Error updating vendor in Finale:', error)
+      logError('Error updating vendor in Finale:', error)
       throw error
     }
   }
@@ -1155,7 +1094,6 @@ export class FinaleApiService {
 
   // Get all products (wrapper for getInventoryData)
   async getAllProducts(options: { filterYear?: number } = {}): Promise<any[]> {
-    console.log('[Finale API] Getting all products with options:', options)
     try {
       const products = await this.getInventoryData(options.filterYear)
       
@@ -1174,14 +1112,13 @@ export class FinaleApiService {
         lastModified: product.lastModifiedDate
       }))
     } catch (error) {
-      console.error('[Finale API] Error getting all products:', error)
+      logError('[Finale API] Error getting all products:', error)
       throw error
     }
   }
 
   // Get inventory levels only (lightweight)
   async getInventoryLevels(): Promise<any[]> {
-    console.log('[Finale API] Getting inventory levels only')
     try {
       const inventoryUrl = `${this.baseUrl}/inventoryitem/?limit=5000`
       const response = await rateLimitedFetch(inventoryUrl, {
@@ -1214,14 +1151,13 @@ export class FinaleApiService {
       
       return inventoryItems
     } catch (error) {
-      console.error('[Finale API] Error getting inventory levels:', error)
+      logError('[Finale API] Error getting inventory levels:', error)
       throw error
     }
   }
 
   // Get active products only (non-discontinued)
   async getActiveProducts(options: { filterYear?: number } = {}): Promise<any[]> {
-    console.log('[Finale API] Getting active products only')
     try {
       const allProducts = await this.getAllProducts(options)
       
@@ -1242,14 +1178,13 @@ export class FinaleApiService {
         return true
       })
     } catch (error) {
-      console.error('[Finale API] Error getting active products:', error)
+      logError('[Finale API] Error getting active products:', error)
       throw error
     }
   }
 
   // Get products by SKUs (batch lookup)
   async getProductsBySKUs(skus: string[]): Promise<any[]> {
-    console.log(`[Finale API] Getting products for ${skus.length} SKUs`)
     if (skus.length === 0) return []
     
     try {
@@ -1260,14 +1195,13 @@ export class FinaleApiService {
       const skuSet = new Set(skus)
       return allProducts.filter(product => skuSet.has(product.itemSKU))
     } catch (error) {
-      console.error('[Finale API] Error getting products by SKUs:', error)
+      logError('[Finale API] Error getting products by SKUs:', error)
       throw error
     }
   }
 
   // Import sales data (placeholder - needs implementation based on Finale's format)
   async importSalesData(csvData: string): Promise<any> {
-    console.log('[Finale API] Import sales data not yet implemented')
     throw new Error('Sales data import not yet implemented')
   }
 }
@@ -1281,43 +1215,29 @@ export async function getFinaleConfig(): Promise<FinaleApiConfig | null> {
     const envAccountPath = process.env.FINALE_ACCOUNT_PATH
 
     if (envApiKey && envApiSecret && envAccountPath) {
-      console.log('[getFinaleConfig] Using environment variables')
       return {
         apiKey: envApiKey,
         apiSecret: envApiSecret,
         accountPath: envAccountPath.replace('https://app.finaleinventory.com/', '').replace('/1', '')
       }
     }
-
-    console.log('[getFinaleConfig] Environment variables not found, checking database...')
-
     // Fallback to database settings - check for both API keys and username/password
     const { data: settings, error } = await supabase
       .from('settings')
       .select('finale_api_key, finale_api_secret, finale_username, finale_password, finale_account_path')
       .limit(1)
       .maybeSingle() // Use maybeSingle instead of single to handle no records
-
-    console.log('[getFinaleConfig] Database query result:', { 
-      hasSettings: !!settings, 
-      error,
-      hasApiKey: !!settings?.finale_api_key,
-      hasUsername: !!settings?.finale_username 
-    })
-
     if (error) {
-      console.error('[getFinaleConfig] Database error:', error)
+      logError('[getFinaleConfig] Database error:', error)
       return null
     }
 
     if (!settings) {
-      console.log('[getFinaleConfig] No settings found in database')
       return null
     }
 
     // Try API key/secret first (preferred method)
     if (settings.finale_api_key && settings.finale_api_secret && settings.finale_account_path) {
-      console.log('[getFinaleConfig] Using API key/secret from database')
       return {
         apiKey: settings.finale_api_key,
         apiSecret: settings.finale_api_secret,
@@ -1327,24 +1247,16 @@ export async function getFinaleConfig(): Promise<FinaleApiConfig | null> {
 
     // Fallback to username/password if available
     if (settings.finale_username && settings.finale_password && settings.finale_account_path) {
-      console.log('[getFinaleConfig] Using username/password from database (legacy)')
+      logInfo('Using username/password from database (legacy)', undefined, 'FinaleConfig')
       return {
         apiKey: settings.finale_username,
         apiSecret: settings.finale_password,
         accountPath: settings.finale_account_path
       }
     }
-
-    console.log('[getFinaleConfig] Missing required fields in database:', {
-      hasApiKey: !!settings.finale_api_key,
-      hasApiSecret: !!settings.finale_api_secret,
-      hasUsername: !!settings.finale_username,
-      hasPassword: !!settings.finale_password,
-      hasAccountPath: !!settings.finale_account_path
-    })
     return null
   } catch (error) {
-    console.error('[getFinaleConfig] Unexpected error:', error)
+    logError('[getFinaleConfig] Unexpected error:', error)
     return null
   }
 }

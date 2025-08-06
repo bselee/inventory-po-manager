@@ -45,7 +45,7 @@ export async function GET(request: NextRequest) {
     })
 
   } catch (error) {
-    console.error('Cron vendor sync error:', error)
+    logError('Cron vendor sync error:', error)
     return NextResponse.json({ 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error' 

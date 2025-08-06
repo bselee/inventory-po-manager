@@ -438,7 +438,7 @@ export default function EnhancedQuickFilters({
         }))
         setSavedFilters(parsedFilters)
       } catch (error) {
-        console.error('Error loading saved filters:', error)
+        logError('Error loading saved filters:', error)
       }
     }
   }, [])

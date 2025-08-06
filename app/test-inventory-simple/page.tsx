@@ -8,11 +8,11 @@ export default function SimpleTestPage() {
   
   const addResult = (message: string) => {
     setResults(prev => [...prev, message])
-    console.log(message)
+
   }
   
   const runTests = async () => {
-    console.log('Button clicked!')
+
     setTesting(true)
     setResults([])
     
@@ -50,7 +50,7 @@ export default function SimpleTestPage() {
       <div className="mb-4">
         <button
           onClick={() => {
-            console.log('onClick triggered')
+
             runTests()
           }}
           disabled={testing}
@@ -61,7 +61,7 @@ export default function SimpleTestPage() {
         
         <button
           onClick={() => {
-            console.log('Test console log')
+
             alert('Button works!')
           }}
           className="ml-4 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"

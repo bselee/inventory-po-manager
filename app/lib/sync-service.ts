@@ -189,7 +189,7 @@ export class SyncService {
 
     try {
       // Sync vendors first
-      console.log('[Sync] Syncing vendors...')
+
       const vendors = await this.finaleApi!.getVendors()
       
       for (const vendor of vendors) {
@@ -203,7 +203,7 @@ export class SyncService {
       }
 
       // Sync all products
-      console.log('[Sync] Syncing all products...')
+
       const products = await this.finaleApi!.getAllProducts({
         filterYear: options.filterYear
       })
@@ -247,7 +247,7 @@ export class SyncService {
         
         // Log progress
         const progress = Math.round((i + batch.length) / products.length * 100)
-        console.log(`[Sync] Progress: ${progress}% (${i + batch.length}/${products.length})`)
+
       }
 
       const duration = Date.now() - startTime
@@ -273,8 +273,7 @@ export class SyncService {
     const errors: string[] = []
 
     try {
-      console.log('[Sync] Syncing inventory levels...')
-      
+
       // Get all current items from database
       const { items: dbItems } = await getInventoryItems({}, { limit: 10000 })
       const skuMap = new Map(dbItems.map(item => [item.sku, item]))
@@ -321,8 +320,7 @@ export class SyncService {
     let itemsFailed = 0
 
     try {
-      console.log('[Sync] Syncing critical items...')
-      
+
       // Get critical items from database
       const { items: criticalItems } = await getInventoryItems(
         { status: 'critical' },
@@ -358,8 +356,7 @@ export class SyncService {
     let itemsFailed = 0
 
     try {
-      console.log('[Sync] Syncing active items...')
-      
+
       // Get active products from Finale
       const products = await this.finaleApi!.getActiveProducts({
         filterYear: options.filterYear
@@ -397,7 +394,7 @@ export class SyncService {
    */
   private async processBatch(items: any[], options: SyncOptions): Promise<void> {
     if (options.dryRun) {
-      console.log(`[Sync] DRY RUN: Would sync ${items.length} items`)
+
       return
     }
 

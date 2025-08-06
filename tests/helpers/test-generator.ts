@@ -374,8 +374,6 @@ import { withSelfHealing } from '../helpers/self-healing';
     
     await fs.mkdir(path.dirname(filePath), { recursive: true });
     await fs.writeFile(filePath, content);
-    
-    console.log(`Generated ${tests.length} tests in ${filePath}`);
   }
 }
 
@@ -387,8 +385,6 @@ export async function generateTestsForPage(page: Page, pageName: string) {
   
   // Discover elements
   const elements = await generator.discoverElements();
-  console.log(`Discovered ${elements.length} interactive elements on ${pageName}`);
-  
   // Generate tests
   const tests = await generator.generateTests(pageName);
   

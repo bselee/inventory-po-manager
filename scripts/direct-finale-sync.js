@@ -41,12 +41,10 @@ async function fetchFinaleData(endpoint) {
 }
 
 async function syncFinaleToSupabase() {
-  console.log('🚀 DIRECT FINALE TO SUPABASE SYNC\n');
   console.log('=' .repeat(60));
   
   try {
     // 1. Clear any stuck sync logs
-    console.log('\n1. Clearing stuck sync logs...');
     const { error: updateError } = await supabase
       .from('sync_logs')
       .update({ status: 'error', errors: ['Manually terminated'] })
@@ -54,13 +52,10 @@ async function syncFinaleToSupabase() {
       .eq('status', 'running');
     
     if (updateError) {
-      console.log('Error clearing stuck logs:', updateError.message);
     } else {
-      console.log('✅ Cleared any stuck sync logs');
     }
     
     // 2. Create new sync log
-    console.log('\n2. Creating sync log...');
     const { data: syncLog, error: logError } = await supabase
       .from('sync_logs')
       .insert({
@@ -75,23 +70,14 @@ async function syncFinaleToSupabase() {
       .single();
     
     if (logError) {
-      console.log('Error creating sync log:', logError.message);
     } else {
-      console.log('✅ Created sync log:', syncLog.id);
     }
     
     // 3. Fetch products from Finale
-    console.log('\n3. Fetching products from Finale...');
     const products = await fetchFinaleData('/product?limit=100');
-    console.log(`✅ Found ${products.productId?.length || 0} products`);
-    
     // 4. Fetch inventory from Finale
-    console.log('\n4. Fetching inventory data from Finale...');
     const inventory = await fetchFinaleData('/inventoryitem/?limit=1000');
-    console.log(`✅ Found ${inventory.productId?.length || 0} inventory records`);
-    
     // 5. Aggregate inventory by product
-    console.log('\n5. Aggregating inventory by product...');
     const inventoryMap = new Map();
     
     if (inventory.productId && Array.isArray(inventory.productId)) {
@@ -111,11 +97,7 @@ async function syncFinaleToSupabase() {
         inv.quantityOnOrder += parseFloat(inventory.quantityOnOrder?.[i] || 0);
       }
     }
-    
-    console.log(`✅ Aggregated inventory for ${inventoryMap.size} products`);
-    
     // 6. Prepare data for Supabase
-    console.log('\n6. Preparing data for Supabase...');
     const itemsToUpsert = [];
     
     if (products.productId && Array.isArray(products.productId)) {
@@ -136,11 +118,7 @@ async function syncFinaleToSupabase() {
         });
       }
     }
-    
-    console.log(`✅ Prepared ${itemsToUpsert.length} items for upsert`);
-    
     // 7. Upsert to Supabase
-    console.log('\n7. Upserting to Supabase...');
     const { data: upserted, error: upsertError } = await supabase
       .from('inventory_items')
       .upsert(itemsToUpsert, {
@@ -152,12 +130,10 @@ async function syncFinaleToSupabase() {
     if (upsertError) {
       console.error('❌ Upsert error:', upsertError);
     } else {
-      console.log(`✅ Successfully upserted ${upserted?.length || 0} items`);
     }
     
     // 8. Update sync log
     if (syncLog) {
-      console.log('\n8. Updating sync log...');
       await supabase
         .from('sync_logs')
         .update({
@@ -168,28 +144,18 @@ async function syncFinaleToSupabase() {
           duration_ms: Date.now() - new Date(syncLog.synced_at).getTime()
         })
         .eq('id', syncLog.id);
-      
-      console.log('✅ Updated sync log');
     }
     
     // 9. Show sample synced data
-    console.log('\n9. Sample synced items:');
     if (upserted && upserted.length > 0) {
       upserted.slice(0, 5).forEach((item, i) => {
-        console.log(`\n${i + 1}. ${item.sku} - ${item.product_name}`);
-        console.log(`   Stock: ${item.stock}`);
-        console.log(`   Location: ${item.location}`);
       });
     }
     
     // 10. Final inventory count
-    console.log('\n10. Checking final inventory count...');
     const { count } = await supabase
       .from('inventory_items')
       .select('*', { count: 'exact', head: true });
-    
-    console.log(`\n✅ Total items in database: ${count}`);
-    
   } catch (error) {
     console.error('\n❌ Sync error:', error.message);
     console.error(error.stack);

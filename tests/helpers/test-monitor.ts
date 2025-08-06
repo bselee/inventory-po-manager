@@ -513,15 +513,12 @@ export class TestMonitor {
 `;
 
     await fs.writeFile(this.dashboardFile, html);
-    console.log(`Dashboard updated: ${this.dashboardFile}`);
   }
 
   /**
    * Run continuous monitoring
    */
   async startMonitoring(intervalMinutes: number = 5) {
-    console.log(`Starting test monitoring (interval: ${intervalMinutes} minutes)`);
-    
     const runTests = async () => {
       try {
         // Run tests and capture results
@@ -529,12 +526,8 @@ export class TestMonitor {
         
         // Parse results and record them
         // This is a simplified version - in reality you'd parse the JSON output
-        console.log('Tests completed, updating dashboard...');
-        
         // Generate report
         const report = await this.generateReport();
-        console.log(`Health Score: ${report.summary.healthScore}%`);
-        
       } catch (error) {
         console.error('Test run failed:', error);
       }

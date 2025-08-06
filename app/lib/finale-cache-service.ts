@@ -66,7 +66,6 @@ export class FinaleCacheService {
         const cached = await redis.get<CachedInventoryItem[]>(cacheKey);
         if (cached && Array.isArray(cached)) {
           this.metrics.cacheHits++;
-          console.log(`✅ Cache hit: ${cached.length} items loaded from Redis`);
           return cached;
         }
       }
@@ -74,9 +73,6 @@ export class FinaleCacheService {
       // Cache miss or force refresh - fetch from Finale
       this.metrics.cacheMisses++;
       this.metrics.apiCalls++;
-      
-      console.log('📡 Cache miss - fetching fresh data from Finale Reporting API...');
-      
       const reportUrl = await this.getReportUrl();
       const freshData = await this.reportApi.fetchInventoryWithSuppliers(reportUrl);
 
@@ -91,17 +87,14 @@ export class FinaleCacheService {
       this.metrics.totalItems = simplified.length;
       this.metrics.lastFetch = new Date().toISOString();
       await redis.set('inventory:metrics', this.metrics, 86400); // 24h
-
-      console.log(`✅ Cached ${simplified.length} items for ${ttlMinutes} minutes`);
       return simplified;
 
     } catch (error) {
-      console.error('❌ Error in getInventoryData:', error);
+      logError('❌ Error in getInventoryData:', error);
       
       // Try to return stale cache as fallback
       const staleCache = await redis.get<CachedInventoryItem[]>(cacheKey);
       if (staleCache && Array.isArray(staleCache)) {
-        console.log('⚠️ Returning stale cache data due to API error');
         return staleCache;
       }
 
@@ -160,7 +153,6 @@ export class FinaleCacheService {
    */
   async clearCache(): Promise<void> {
     await redis.del('inventory:full');
-    console.log('🗑️ Cache cleared manually');
   }
 
   /**
@@ -227,9 +219,7 @@ export class FinaleCacheService {
    * Warm up cache (useful for cron jobs)
    */
   async warmUpCache(): Promise<void> {
-    console.log('🔥 Warming up cache...');
     await this.getInventoryData({ forceRefresh: true });
-    console.log('✅ Cache warmed up');
   }
 
   /**
@@ -267,7 +257,7 @@ export class FinaleCacheService {
         return reportUrl;
       }
     } catch (error) {
-      console.warn('Could not fetch report URL from settings');
+      logWarn('Could not fetch report URL from settings');
     }
 
     throw new Error('Finale Report URL not configured');

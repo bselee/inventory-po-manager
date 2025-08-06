@@ -22,15 +22,9 @@ async function syncFinale() {
       accountPath = match[1];
     }
   }
-
-  console.log('✅ Using credentials:');
-  console.log('  Account Path:', accountPath);
-
   try {
     const authHeader = `Basic ${Buffer.from(`${apiKey}:${apiSecret}`).toString('base64')}`;
     const baseUrl = `https://app.finaleinventory.com/${accountPath}/api`;
-    
-    console.log('\n🔄 Fetching products from Finale...');
     const url = `${baseUrl}/product?limit=500`;
     
     const response = await fetch(url, {
@@ -51,7 +45,6 @@ async function syncFinale() {
     
     if (data.productId && Array.isArray(data.productId)) {
       // This is column format - transform to row format
-      console.log('📊 Converting from column format...');
       const numProducts = data.productId.length;
       
       for (let i = 0; i < numProducts; i++) {
@@ -65,11 +58,7 @@ async function syncFinale() {
         products.push(product);
       }
     }
-
-    console.log(`✅ Found ${products.length} products`);
-
     // Clear existing inventory
-    console.log('\n🗑️  Clearing old inventory...');
     const { error: deleteError } = await supabase
       .from('inventory_items')
       .delete()
@@ -80,8 +69,6 @@ async function syncFinale() {
     }
 
     // Transform and insert products
-    console.log('💾 Inserting inventory data...\n');
-    
     const inventoryItems = products.map(product => ({
       sku: product.productId || 'NO-SKU',
       product_name: product.internalName || product.productName || product.productId || 'Unknown',
@@ -115,7 +102,6 @@ async function syncFinale() {
     }
 
     // Save credentials to Supabase settings
-    console.log('\n\n💾 Saving credentials to Supabase settings...');
     const { error: settingsError } = await supabase
       .from('settings')
       .upsert({
@@ -131,15 +117,8 @@ async function syncFinale() {
     if (settingsError) {
       console.error('Settings error:', settingsError);
     }
-
-    console.log('\n✅ SYNC COMPLETE!');
-    console.log(`📦 ${inserted} inventory items imported`);
-    console.log('\n🎉 Your inventory is now available at http://localhost:3000/inventory');
-
     // Show first few items
-    console.log('\nFirst 5 items imported:');
     inventoryItems.slice(0, 5).forEach(item => {
-      console.log(`  - ${item.sku}: ${item.product_name} (Stock: ${item.current_stock})`);
     });
 
   } catch (error) {

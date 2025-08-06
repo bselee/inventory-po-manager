@@ -177,7 +177,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(healthCheck)
   } catch (error) {
-    console.error('Health check error:', error)
+    logError('Health check error:', error)
     return NextResponse.json({
       timestamp: new Date().toISOString(),
       status: 'unhealthy',

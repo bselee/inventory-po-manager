@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getVendorStats } from '@/app/lib/data-access/vendors'
+import { getVendorStats } from '@/lib/data-access/vendors'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -13,7 +13,7 @@ export async function GET(
     const vendorStats = await getVendorStats(params.id)
     return NextResponse.json(vendorStats)
   } catch (error) {
-    console.error('Error fetching vendor statistics:', error)
+    logError('Error fetching vendor statistics:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to fetch vendor statistics' },
       { status: 500 }

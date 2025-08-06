@@ -38,7 +38,7 @@ export default function RateLimiterStatus() {
           setRecentRequests(data.recentRequests || [])
         }
       } catch (error) {
-        console.error('Failed to load rate limiter stats:', error)
+        logError('Failed to load rate limiter stats:', error)
       }
     }
 

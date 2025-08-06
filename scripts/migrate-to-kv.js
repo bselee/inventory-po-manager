@@ -27,8 +27,6 @@ const supabase = createClient(
 async function log(message) {
   const timestamp = new Date().toISOString();
   const logMessage = `[${timestamp}] ${message}\n`;
-  console.log(message);
-  
   try {
     await fs.appendFile(config.logFile, logMessage);
   } catch (error) {
@@ -267,11 +265,6 @@ async function runMigration() {
     await log(`   Purchase Orders: ${stats.purchaseOrders}`);
     await log(`   Vendors: ${stats.vendors}`);
     await log(`   Sync Logs: ${stats.syncLogs}`);
-    
-    console.log('\n✅ Migration Complete!');
-    console.log(`📄 Full migration log: ${config.logFile}`);
-    console.log(`📦 Data backups: ${config.backupDir}`);
-    
   } catch (error) {
     await log(`💥 Migration failed: ${error.message}`);
     console.error('\n❌ Migration Failed!');
@@ -286,7 +279,6 @@ const args = process.argv.slice(2);
 const isDryRun = args.includes('--dry-run');
 
 if (isDryRun) {
-  console.log('🔍 Dry run mode - no data will be migrated');
   // In dry run mode, only backup data and show what would be migrated
 } else {
   // Run the migration

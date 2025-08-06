@@ -179,7 +179,7 @@ export function useFinaleConfig() {
         const finaleConfig = await getFinaleConfig()
         setConfig(finaleConfig)
       } catch (error) {
-        console.error('Error loading Finale config:', error)
+        logError('Error loading Finale config:', error)
       } finally {
         setLoading(false)
       }

@@ -33,9 +33,6 @@ function logResult(testName, passed, message = '', details = null) {
   const status = passed ? 'PASS' : 'FAIL';
   const color = passed ? '\x1b[32m' : '\x1b[31m'; // Green or Red
   const reset = '\x1b[0m';
-  
-  console.log(`${color}[${status}]${reset} ${testName}: ${message}`);
-  
   results.tests[testName] = {
     passed,
     message,
@@ -71,8 +68,6 @@ async function makeRequest(url, options = {}) {
 
 // Test suites
 async function testDatabaseConnection() {
-  console.log('\n🔍 Testing Database Connection...');
-  
   try {
     const health = await checkDatabaseHealth();
     logResult(
@@ -89,8 +84,6 @@ async function testDatabaseConnection() {
 }
 
 async function testDatabaseIntegrity() {
-  console.log('\n🔍 Testing Database Integrity...');
-  
   if (!supabaseAdmin) {
     logResult('Database Integrity', false, 'Service role key required');
     return;
@@ -114,8 +107,6 @@ async function testDatabaseIntegrity() {
 }
 
 async function testApiEndpoints() {
-  console.log('\n🔍 Testing API Endpoints...');
-  
   const endpoints = [
     { name: 'Health Check', path: '/api/health', method: 'GET' },
     { name: 'Inventory List', path: '/api/inventory', method: 'GET' },
@@ -141,8 +132,6 @@ async function testApiEndpoints() {
 }
 
 async function testEnvironmentVariables() {
-  console.log('\n🔍 Testing Environment Variables...');
-  
   const requiredVars = [
     'NEXT_PUBLIC_SUPABASE_URL',
     'NEXT_PUBLIC_SUPABASE_ANON_KEY',
@@ -188,8 +177,6 @@ async function testEnvironmentVariables() {
 }
 
 async function testSyncFunctionality() {
-  console.log('\n🔍 Testing Sync Functionality...');
-  
   try {
     // Test sync metrics endpoint
     const metricsResult = await makeRequest(`${config.baseUrl}/api/sync/metrics`);
@@ -225,8 +212,6 @@ async function testSyncFunctionality() {
 }
 
 async function testFileSystemPermissions() {
-  console.log('\n🔍 Testing File System Permissions...');
-  
   try {
     // Test log file creation
     const testLogPath = './health-check.log';
@@ -248,8 +233,6 @@ async function testFileSystemPermissions() {
 }
 
 async function generateReport() {
-  console.log('\n📊 Generating Health Report...');
-  
   const passRate = (results.summary.passed / results.summary.total * 100).toFixed(1);
   results.overall = results.summary.failed === 0 ? 'healthy' : 'unhealthy';
   
@@ -287,19 +270,13 @@ async function generateReport() {
       JSON.stringify(report, null, 2),
       'utf8'
     );
-    console.log('✅ Health report saved to health-report.json');
   } catch (error) {
-    console.log(`❌ Could not save report: ${error.message}`);
   }
   
   return report;
 }
 
 async function main() {
-  console.log('🚀 Starting Comprehensive Health Check...');
-  console.log(`Base URL: ${config.baseUrl}`);
-  console.log(`Timestamp: ${results.timestamp}\n`);
-  
   // Run all test suites
   await testEnvironmentVariables();
   await testDatabaseConnection();
@@ -312,16 +289,9 @@ async function main() {
   const report = await generateReport();
   
   console.log('\n' + '='.repeat(50));
-  console.log('📋 HEALTH CHECK SUMMARY');
   console.log('='.repeat(50));
-  console.log(`Overall Status: ${report.overall.toUpperCase()}`);
-  console.log(`Pass Rate: ${report.passRate}`);
-  console.log(`Tests Passed: ${report.summary.passed}/${report.summary.total}`);
-  
   if (report.recommendations.length > 0) {
-    console.log('\n🔧 RECOMMENDATIONS:');
     report.recommendations.forEach((rec, i) => {
-      console.log(`${i + 1}. ${rec}`);
     });
   }
   

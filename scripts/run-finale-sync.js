@@ -2,18 +2,13 @@
 const { execSync } = require('child_process');
 
 async function runSync() {
-  console.log('🚀 RUNNING FINALE SYNC\n');
   console.log('=' .repeat(60));
   
   try {
     // First, let's check if we have the stuck sync
-    console.log('\n1. Checking for stuck syncs...');
     execSync('curl -s http://localhost:3000/api/sync-finale/check-stuck', { stdio: 'inherit' });
     
     // Run the actual sync
-    console.log('\n\n2. Starting Finale sync...');
-    console.log('This will sync thousands of products and may take several minutes...\n');
-    
     const startTime = Date.now();
     
     // Use curl with extended timeout
@@ -23,21 +18,10 @@ async function runSync() {
     );
     
     const elapsed = Math.round((Date.now() - startTime) / 1000);
-    console.log(`\n\nSync completed in ${elapsed} seconds`);
-    
     try {
       const response = JSON.parse(result);
-      console.log('\n📊 SYNC RESULT:');
-      console.log(`Success: ${response.success}`);
-      console.log(`Message: ${response.message}`);
-      console.log(`Processed: ${response.processed}`);
-      console.log(`Updated: ${response.updated}`);
-      console.log(`Errors: ${response.errors?.length || 0}`);
-      
       if (response.errors?.length > 0) {
-        console.log('\nFirst 3 errors:');
         response.errors.slice(0, 3).forEach((err, i) => {
-          console.log(`${i + 1}. ${err}`);
         });
       }
     } catch (e) {
@@ -45,11 +29,9 @@ async function runSync() {
     }
     
     // Check sync status
-    console.log('\n\n3. Checking sync status...');
     execSync('curl -s http://localhost:3000/api/sync-finale/status | jq .', { stdio: 'inherit' });
     
     // Check inventory count
-    console.log('\n\n4. Checking inventory count...');
     execSync(`node -e "
       const { createClient } = require('@supabase/supabase-js');
       const supabase = createClient(

@@ -78,7 +78,7 @@ export function VirtualInventoryTable({
       await onUpdateStock(id, editStock)
       setEditingItem(null)
     } catch (error) {
-      console.error('Failed to update stock:', error)
+      logError('Failed to update stock:', error)
     } finally {
       setUpdatingItem(null)
     }
@@ -90,7 +90,7 @@ export function VirtualInventoryTable({
       await onUpdateCost(id, editCost)
       setEditingItem(null)
     } catch (error) {
-      console.error('Failed to update cost:', error)
+      logError('Failed to update cost:', error)
     } finally {
       setUpdatingItem(null)
     }

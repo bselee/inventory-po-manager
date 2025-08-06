@@ -14,7 +14,7 @@ export async function GET() {
       data: settings
     })
   } catch (error) {
-    console.error('[Settings KV API] Error getting settings:', error)
+    logError('[Settings KV API] Error getting settings:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to get settings' },
       { status: 500 }
@@ -48,7 +48,7 @@ export async function PUT(request: Request) {
       message: 'Settings updated successfully'
     })
   } catch (error) {
-    console.error('[Settings KV API] Error updating settings:', error)
+    logError('[Settings KV API] Error updating settings:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to update settings' },
       { status: 500 }
@@ -84,7 +84,7 @@ export async function POST(request: Request) {
       { status: 404 }
     )
   } catch (error) {
-    console.error('[Settings KV API] Error:', error)
+    logError('[Settings KV API] Error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Operation failed' },
       { status: 500 }

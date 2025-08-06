@@ -17,17 +17,11 @@ async function testFinaleUrl() {
     `https://app.finaleinventory.com/api/${accountPath}/product?limit=1`,
     `https://app.finaleinventory.com/${accountPath}/api/auth/api/product?limit=1`
   ];
-  
-  console.log('Testing Finale API URLs...\n');
-  
   for (const url of urls) {
-    console.log(`Testing: ${url}`);
     try {
       const response = await fetch(url, { headers });
-      console.log(`Status: ${response.status}`);
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ SUCCESS! Found working URL');
         console.log('Sample response:', JSON.stringify(data).substring(0, 100) + '...');
         return;
       } else {
@@ -35,9 +29,7 @@ async function testFinaleUrl() {
         console.log('❌ Failed:', text.substring(0, 100));
       }
     } catch (error) {
-      console.log('❌ Error:', error.message);
     }
-    console.log('');
   }
 }
 

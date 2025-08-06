@@ -64,7 +64,7 @@ export default function FinaleSyncManager() {
         })
       }
     } catch (error) {
-      console.error('Error checking sync status:', error)
+      logError('Error checking sync status:', error)
       setStatus({
         configured: false,
         error: 'Failed to check status'

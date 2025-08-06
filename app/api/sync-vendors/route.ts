@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { FinaleApiService, getFinaleConfig } from '@/app/lib/finale-api'
 import { supabase } from '@/app/lib/supabase'
+import { logInfo, logError } from '@/app/lib/logger'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -8,28 +9,23 @@ export const maxDuration = 300 // Increase to 5 minutes for vendor sync
 
 export async function POST(request: NextRequest) {
   try {
-    console.log('[Vendor Sync] Starting vendor sync process...')
-    
     // Get Finale API config
     const config = await getFinaleConfig()
     
     if (!config) {
-      console.error('[Vendor Sync] No Finale API credentials configured')
+      logError('[Vendor Sync] No Finale API credentials configured')
       return NextResponse.json({ 
         success: false, 
         error: 'Finale API credentials not configured. Please update settings.' 
       }, { status: 400 })
     }
-
-    console.log('[Vendor Sync] Initializing Finale API service...')
     // Initialize Finale API service
     const finaleApi = new FinaleApiService(config)
 
     // Test connection first
-    console.log('[Vendor Sync] Testing Finale connection...')
     const isConnected = await finaleApi.testConnection()
     if (!isConnected) {
-      console.error('[Vendor Sync] Failed to connect to Finale API')
+      logError('[Vendor Sync] Failed to connect to Finale API')
       return NextResponse.json({ 
         success: false, 
         error: 'Failed to connect to Finale API. Please check your credentials.' 
@@ -37,19 +33,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Get vendors from Finale
-    console.log('[Vendor Sync] Fetching vendors from Finale...')
     const finaleVendors = await finaleApi.getVendors()
-    console.log(`[Vendor Sync] Fetched ${finaleVendors.length} vendors from Finale`)
-
     // Log sample vendor data structure for debugging
     if (finaleVendors.length > 0) {
-      console.log('[Vendor Sync] Sample vendor structure:', {
-        hasVendorName: 'vendorName' in finaleVendors[0],
-        hasName: 'name' in finaleVendors[0],
-        hasVendorId: 'vendorId' in finaleVendors[0],
-        hasId: 'id' in finaleVendors[0],
-        sampleKeys: Object.keys(finaleVendors[0]).slice(0, 10)
-      })
+      logInfo('Sample vendor data', finaleVendors.slice(0, 10), 'VendorSync')
     }
 
     // Transform and upsert vendors - handle different property names
@@ -69,15 +56,9 @@ export async function POST(request: NextRequest) {
     let processed = 0
     const results = []
     const errors = []
-
-    console.log(`[Vendor Sync] Processing ${vendorsToUpsert.length} vendors in batches of ${batchSize}...`)
-
     for (let i = 0; i < vendorsToUpsert.length; i += batchSize) {
       const batch = vendorsToUpsert.slice(i, i + batchSize)
       const batchNumber = Math.floor(i / batchSize) + 1
-      
-      console.log(`[Vendor Sync] Processing batch ${batchNumber} with ${batch.length} vendors...`)
-      
       const { data, error } = await supabase
         .from('vendors')
         .upsert(batch, { 
@@ -87,7 +68,7 @@ export async function POST(request: NextRequest) {
         .select()
 
       if (error) {
-        console.error(`[Vendor Sync] Error upserting vendor batch ${batchNumber}:`, error)
+        logError(`[Vendor Sync] Error upserting vendor batch ${batchNumber}:`, error)
         errors.push({ 
           batch: batchNumber, 
           error: error.message,
@@ -97,12 +78,8 @@ export async function POST(request: NextRequest) {
       } else {
         processed += batch.length
         results.push({ batch: batchNumber, success: true, count: batch.length })
-        console.log(`[Vendor Sync] Batch ${batchNumber} completed successfully`)
       }
     }
-
-    console.log(`[Vendor Sync] Sync completed. Processed ${processed} out of ${finaleVendors.length} vendors`)
-
     return NextResponse.json({
       success: errors.length === 0,
       totalVendors: finaleVendors.length,
@@ -114,7 +91,7 @@ export async function POST(request: NextRequest) {
         : `Successfully synced ${processed} vendors from Finale.`
     })
   } catch (error) {
-    console.error('Vendor sync error:', error)
+    logError('Vendor sync error:', error)
     return NextResponse.json({ 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error occurred' 

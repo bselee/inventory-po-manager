@@ -7,23 +7,15 @@ require('dotenv').config({ path: '.env.local' });
 const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
 async function importInventoryData() {
-  console.log('🚀 AGENTIC INVENTORY DATA IMPORT');
-  console.log('==================================');
-  
   try {
     // Step 1: Read and parse CSV
-    console.log('📖 Reading CSV file...');
     const csvContent = fs.readFileSync('ProductListScreenReport (45).csv', 'utf8');
     const records = csv.parse(csvContent, {
       columns: true,
       skip_empty_lines: true,
       trim: true
     });
-    
-    console.log(`📊 Found ${records.length} products in CSV`);
-    
     // Step 2: Transform data to match our database schema
-    console.log('🔄 Transforming data...');
     const transformedData = records.map((record, index) => {
       // Extract key fields from the CSV
       const productId = record['Product ID'] || `PRODUCT_${index + 1}`;
@@ -58,22 +50,16 @@ async function importInventoryData() {
         updated_at: new Date().toISOString()
       };
     });
-    
-    console.log(`✅ Transformed ${transformedData.length} records`);
-    
     // Step 3: Clear existing data (optional - comment out to keep existing)
-    console.log('🗑️ Clearing existing inventory data...');
     const { error: deleteError } = await supabase
       .from('inventory_items')
       .delete()
       .neq('id', 0); // Delete all records
       
     if (deleteError) {
-      console.log('⚠️ Warning: Could not clear existing data:', deleteError.message);
     }
     
     // Step 4: Batch insert new data
-    console.log('📥 Importing new inventory data...');
     const batchSize = 100; // Supabase recommends batches of 100
     let importedCount = 0;
     
@@ -90,11 +76,9 @@ async function importInventoryData() {
       }
       
       importedCount += batch.length;
-      console.log(`✅ Imported batch ${Math.floor(i/batchSize) + 1}: ${importedCount}/${transformedData.length} items`);
     }
     
     // Step 5: Verify import
-    console.log('🔍 Verifying import...');
     const { count: finalCount, error: countError } = await supabase
       .from('inventory_items')
       .select('*', { count: 'exact', head: true });
@@ -102,15 +86,7 @@ async function importInventoryData() {
     if (countError) {
       console.error('❌ Error counting final records:', countError);
     } else {
-      console.log(`✅ Import complete! Database now contains ${finalCount} inventory items`);
     }
-    
-    console.log('🎉 IMPORT SUCCESSFUL!');
-    console.log('=====================');
-    console.log(`📊 Original CSV: ${records.length} products`);
-    console.log(`📥 Imported: ${importedCount} products`);
-    console.log(`💾 Database total: ${finalCount} products`);
-    
   } catch (error) {
     console.error('❌ Import failed:', error);
   }
@@ -118,7 +94,6 @@ async function importInventoryData() {
 
 // Run the import
 importInventoryData().then(() => {
-  console.log('✅ Process complete - refresh your inventory page!');
   process.exit(0);
 }).catch(error => {
   console.error('💥 Fatal error:', error);

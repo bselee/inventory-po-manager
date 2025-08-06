@@ -53,7 +53,7 @@ export default function SyncProgressIndicator() {
           }
         }
       } catch (error) {
-        console.error('Failed to load sync progress:', error)
+        logError('Failed to load sync progress:', error)
       }
     }
 

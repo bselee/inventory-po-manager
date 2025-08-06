@@ -17,9 +17,6 @@ export class OptimizedFinaleSync extends FinaleApiService {
   // Main sync method with strategy selection
   async syncWithStrategy(options: SyncOptions = {}): Promise<any> {
     const strategy = options.strategy || 'smart'
-    
-    console.log(`🚀 Starting ${strategy} sync...`)
-    
     switch (strategy) {
       case 'full':
         return this.fullSync(options)
@@ -119,8 +116,6 @@ export class OptimizedFinaleSync extends FinaleApiService {
   
   // STRATEGY 2: Critical items sync
   private async criticalItemsSync(options: SyncOptions) {
-    console.log('🚨 Syncing critical items...')
-    
     // Get items that need immediate attention
     const { data: criticalItems } = await supabase
       .from('inventory_items')
@@ -143,8 +138,6 @@ export class OptimizedFinaleSync extends FinaleApiService {
   
   // STRATEGY 3: Smart sync based on conditions
   private async smartSync(options: SyncOptions) {
-    console.log('🤖 Running smart sync...')
-    
     // Check last sync time
     const { data: lastSync } = await supabase
       .from('sync_logs')
@@ -156,7 +149,6 @@ export class OptimizedFinaleSync extends FinaleApiService {
       .maybeSingle()
     
     if (!lastSync) {
-      console.log('No previous sync found - running full sync')
       return this.fullSync({ limit: 1000 }) // Limited full sync
     }
     
@@ -164,27 +156,21 @@ export class OptimizedFinaleSync extends FinaleApiService {
     
     if (hoursSinceSync < 1) {
       // Very recent - only critical items
-      console.log('Recent sync - only critical items')
       return this.criticalItemsSync(options)
     } else if (hoursSinceSync < 6) {
       // Few hours - inventory levels only
-      console.log('Hourly sync - inventory levels only')
       return this.inventoryOnlySync(options)
     } else if (hoursSinceSync < 24) {
       // Daily - active products
-      console.log('Daily sync - active products')
       return this.incrementalSync({ ...options, activeOnly: true })
     } else {
       // Weekly - full sync
-      console.log('Weekly maintenance - full sync')
       return this.fullSync(options)
     }
   }
   
   // Helper: Sync specific SKUs
   private async syncSpecificSKUs(skus: string[]) {
-    console.log(`Syncing ${skus.length} specific SKUs...`)
-    
     // Fetch products for these SKUs
     const products = await this.getAllProducts()
     const targetProducts = products.filter((p: any) => 
@@ -207,9 +193,6 @@ export class OptimizedFinaleSync extends FinaleApiService {
   // Full sync with pagination and limits
   private async fullSync(options: SyncOptions) {
     const limit = options.limit || 10000 // Default limit to prevent timeout
-    
-    console.log(`Running full sync (limited to ${limit} items)...`)
-    
     // Use existing syncToSupabase but with limits
     return this.syncToSupabase(false, null)
   }
@@ -217,9 +200,6 @@ export class OptimizedFinaleSync extends FinaleApiService {
   // Incremental sync (products modified recently)
   private async incrementalSync(options: SyncOptions) {
     const since = options.modifiedSince || new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours
-    
-    console.log(`Syncing products modified since ${since.toISOString()}...`)
-    
     // Unfortunately Finale doesn't support modifiedSince filter
     // So we fetch all and filter client-side (not ideal but works)
     const products = await this.getAllProducts()
@@ -228,9 +208,6 @@ export class OptimizedFinaleSync extends FinaleApiService {
       const modified = new Date(p.lastUpdatedDate || p.createdDate || 0)
       return modified > since
     })
-    
-    console.log(`Found ${recentProducts.length} recently modified products`)
-    
     // Continue with sync for just these products
     return {
       success: true,

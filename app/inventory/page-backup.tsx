@@ -275,8 +275,6 @@ export default function InventoryPage() {
         items,
         total: items.length
       }
-      
-      console.log(`Loaded ${result.items.length} items from database`)
       setTotalItems(result.total)
       setAllItems(result.items as InventoryItem[]) // Items are already enhanced by the data access layer
       
@@ -300,23 +298,23 @@ export default function InventoryPage() {
       
       // Log data quality warnings
       if (result.items.length === 0) {
-        console.warn('⚠️ No inventory data found - sync may be needed')
+        logWarn('⚠️ No inventory data found - sync may be needed')
       } else if (result.items.length < 10) {
-        console.warn(`⚠️ Only ${result.items.length} items in inventory - this seems low`)
+        logWarn(`⚠️ Only ${result.items.length} items in inventory - this seems low`)
       }
       
       const salesDataPercent = result.items.length > 0 
         ? (metrics.itemsWithSalesData / result.items.length * 100).toFixed(1)
         : 0
       if (Number(salesDataPercent) < 20) {
-        console.warn(`⚠️ Only ${salesDataPercent}% of items have sales data`)
+        logWarn(`⚠️ Only ${salesDataPercent}% of items have sales data`)
       }
       
       // Don't slice here - let the pagination useEffect handle this
       // The pagination logic will set the correct items based on current page and filters
       
     } catch (error) {
-      console.error('Error loading inventory:', error)
+      logError('Error loading inventory:', error)
     } finally {
       setLoading(false)
     }
@@ -333,7 +331,7 @@ export default function InventoryPage() {
       
       setSummary(data.data)
     } catch (error) {
-      console.error('Error loading summary:', error)
+      logError('Error loading summary:', error)
     }
   }
 
@@ -383,7 +381,7 @@ export default function InventoryPage() {
       setEditingItem(null)
       loadSummary() // Refresh summary
     } catch (error) {
-      console.error('Error updating stock:', error)
+      logError('Error updating stock:', error)
     }
   }
 
@@ -409,7 +407,7 @@ export default function InventoryPage() {
       setShowCostEdit(false)
       loadSummary() // Refresh summary
     } catch (error) {
-      console.error('Error updating cost:', error)
+      logError('Error updating cost:', error)
     }
   }
 
@@ -1198,5 +1196,4 @@ export default function InventoryPage() {
     </div>
   )
 }
-
 

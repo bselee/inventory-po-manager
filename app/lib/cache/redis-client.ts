@@ -49,7 +49,6 @@ class CacheService {
 
         this.client.on('connect', () => {
           this.isConnected = true
-          console.log('Redis connected successfully')
           resolve()
         })
 
@@ -63,7 +62,6 @@ class CacheService {
 
         this.client.on('close', () => {
           this.isConnected = false
-          console.log('Redis connection closed')
         })
       } catch (error) {
         logError(error, { operation: 'REDIS_INIT' })

@@ -11,16 +11,6 @@ if (!fs.existsSync(dashboardPath)) {
   console.error('Dashboard not found! Run the autonomous testing system first.');
   process.exit(1);
 }
-
-console.log('🎪 Opening the Autonomous Testing Magic Show...\n');
-console.log('✨ Features:');
-console.log('   • Live fix animations');
-console.log('   • Real-time health score');
-console.log('   • Matrix rain background');
-console.log('   • Performance charts');
-console.log('   • Sparkle effects on new fixes');
-console.log('   • Terminal activity log\n');
-
 // Determine the command based on the platform
 const platform = process.platform;
 let command;
@@ -40,9 +30,6 @@ if (platform === 'darwin') {
 exec(command, (error) => {
   if (error) {
     console.error('Failed to open dashboard:', error.message);
-    console.log(`\nManually open: ${dashboardPath}`);
   } else {
-    console.log('🚀 Dashboard opened in your browser!');
-    console.log('🎯 Watch the magic happen in real-time!');
   }
 });

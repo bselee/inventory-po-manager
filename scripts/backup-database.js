@@ -17,14 +17,11 @@ async function ensureBackupDirectory() {
     await fs.access(BACKUP_DIR);
   } catch {
     await fs.mkdir(BACKUP_DIR, { recursive: true });
-    console.log(`📁 Created backup directory: ${BACKUP_DIR}`);
   }
 }
 
 async function backupTable(tableName, filename) {
   try {
-    console.log(`📦 Backing up ${tableName}...`);
-    
     const { data, error } = await supabaseAdmin
       .from(tableName)
       .select('*');
@@ -41,8 +38,6 @@ async function backupTable(tableName, filename) {
     };
     
     await fs.writeFile(filename, JSON.stringify(backupData, null, 2), 'utf8');
-    console.log(`✅ ${tableName}: ${data.length} records backed up`);
-    
     return { success: true, recordCount: data.length };
   } catch (error) {
     console.error(`❌ ${tableName}: ${error.message}`);
@@ -51,8 +46,6 @@ async function backupTable(tableName, filename) {
 }
 
 async function createFullBackup() {
-  console.log('🚀 Starting Full Database Backup...');
-  
   await ensureBackupDirectory();
   
   const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
@@ -96,11 +89,6 @@ async function createFullBackup() {
     JSON.stringify(manifest, null, 2),
     'utf8'
   );
-  
-  console.log('\n📋 Backup Summary:');
-  console.log(`Total Records: ${totalRecords}`);
-  console.log(`Backup Location: ${backupPath}`);
-  
   // Clean up old backups
   await cleanupOldBackups();
   
@@ -124,7 +112,6 @@ async function cleanupOldBackups() {
       
       for (const backup of toDelete) {
         await fs.rm(backup.path, { recursive: true, force: true });
-        console.log(`🗑️  Removed old backup: ${backup.name}`);
       }
     }
   } catch (error) {
@@ -162,16 +149,11 @@ async function listBackups() {
     }
     
     backups.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
-    
-    console.log('📋 Available Backups:');
     if (backups.length === 0) {
-      console.log('No backups found');
     } else {
       backups.forEach((backup, i) => {
         const status = backup.incomplete ? '⚠️  INCOMPLETE' : '✅ COMPLETE';
-        console.log(`${i + 1}. ${backup.name} - ${backup.timestamp} ${status}`);
         if (!backup.incomplete) {
-          console.log(`   Total Records: ${backup.totalRecords || 'unknown'}`);
         }
       });
     }
@@ -184,21 +166,13 @@ async function listBackups() {
 }
 
 async function restoreFromBackup(backupName, options = {}) {
-  console.log(`🔄 Restoring from backup: ${backupName}`);
-  
   const backupPath = path.join(BACKUP_DIR, backupName);
   const manifestPath = path.join(backupPath, 'manifest.json');
   
   try {
     const manifestData = await fs.readFile(manifestPath, 'utf8');
     const manifest = JSON.parse(manifestData);
-    
-    console.log(`📅 Backup Date: ${manifest.timestamp}`);
-    console.log(`📊 Total Records: ${manifest.totalRecords}`);
-    
     if (!options.confirmed) {
-      console.log('\n⚠️  WARNING: This will replace existing data!');
-      console.log('Add --confirmed flag to proceed with restore');
       return { success: false, message: 'Confirmation required' };
     }
     
@@ -206,12 +180,8 @@ async function restoreFromBackup(backupName, options = {}) {
     
     for (const [tableName, tableInfo] of Object.entries(manifest.tables)) {
       if (!tableInfo.success) {
-        console.log(`⏭️  Skipping ${tableName} (backup failed)`);
         continue;
       }
-      
-      console.log(`🔄 Restoring ${tableName}...`);
-      
       try {
         const tableBackupPath = path.join(backupPath, `${tableName}.json`);
         const backupData = JSON.parse(await fs.readFile(tableBackupPath, 'utf8'));
@@ -253,8 +223,6 @@ async function restoreFromBackup(backupName, options = {}) {
           restoredCount,
           originalCount: backupData.recordCount,
         };
-        
-        console.log(`✅ ${tableName}: ${restoredCount} records restored`);
       } catch (error) {
         restoreResults[tableName] = {
           success: false,
@@ -263,12 +231,8 @@ async function restoreFromBackup(backupName, options = {}) {
         console.error(`❌ ${tableName}: ${error.message}`);
       }
     }
-    
-    console.log('\n📋 Restore Summary:');
     const successfulTables = Object.values(restoreResults).filter(r => r.success).length;
     const totalTables = Object.keys(restoreResults).length;
-    console.log(`Tables Restored: ${successfulTables}/${totalTables}`);
-    
     return { success: true, results: restoreResults };
   } catch (error) {
     console.error(`❌ Restore failed: ${error.message}`);
@@ -298,7 +262,6 @@ async function main() {
       const backupName = args[1];
       if (!backupName) {
         console.error('❌ Please specify backup name to restore');
-        console.log('Usage: node backup-database.js restore <backup-name> [--confirmed] [--clear-before]');
         process.exit(1);
       }
       
@@ -311,21 +274,6 @@ async function main() {
       break;
       
     default:
-      console.log('📖 Database Backup Utility');
-      console.log('');
-      console.log('Commands:');
-      console.log('  backup              Create a full database backup');
-      console.log('  list                List available backups');
-      console.log('  restore <name>      Restore from a specific backup');
-      console.log('');
-      console.log('Restore options:');
-      console.log('  --confirmed         Confirm the restore operation');
-      console.log('  --clear-before      Clear existing data before restore');
-      console.log('');
-      console.log('Examples:');
-      console.log('  node backup-database.js backup');
-      console.log('  node backup-database.js list');
-      console.log('  node backup-database.js restore backup-2023-12-01T10-00-00-000Z --confirmed');
   }
 }
 

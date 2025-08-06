@@ -12,10 +12,8 @@ async function getSettingsColumns() {
     .limit(1);
   
   if (!error && data && data[0]) {
-    console.log('Available columns in settings table:');
     Object.keys(data[0]).forEach(col => console.log(`  - ${col}`));
   } else {
-    console.log('Error:', error);
   }
 }
 

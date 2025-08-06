@@ -28,8 +28,6 @@ export class TestRepairService {
    * Main repair function - analyzes and fixes test failures
    */
   async repairTestFailure(failure: TestFailure): Promise<RepairResult> {
-    console.log(`🔧 Repairing ${failure.type} error in ${failure.test}`);
-
     switch (failure.type) {
       case 'selector':
         return await this.repairSelectorError(failure);
@@ -365,7 +363,6 @@ export class TestRepairService {
     try {
       await route.continue();
     } catch (error) {
-      console.log('Request failed, using fallback');
       await route.fulfill({
         status: 200,
         body: JSON.stringify({ error: 'Network error, using mock data' })

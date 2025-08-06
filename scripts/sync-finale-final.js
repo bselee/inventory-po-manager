@@ -8,8 +8,6 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function syncFinale() {
-  console.log('🚀 FINALE SYNC - IMPORTING YOUR INVENTORY\n');
-
   // Use credentials from environment
   const apiKey = process.env.FINALE_API_KEY;
   const apiSecret = process.env.FINALE_API_SECRET;
@@ -26,8 +24,6 @@ async function syncFinale() {
   try {
     const authHeader = `Basic ${Buffer.from(`${apiKey}:${apiSecret}`).toString('base64')}`;
     const baseUrl = `https://app.finaleinventory.com/${accountPath}/api`;
-    
-    console.log('🔄 Fetching products from Finale...');
     const url = `${baseUrl}/product?limit=1000`; // Get more products
     
     const response = await fetch(url, {
@@ -59,16 +55,10 @@ async function syncFinale() {
         products.push(product);
       }
     }
-
-    console.log(`✅ Found ${products.length} products from Finale\n`);
-
     // Clear existing inventory
-    console.log('🗑️  Clearing old inventory...');
     await supabase.from('inventory_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
     // Transform products - ONLY USE COLUMNS THAT EXIST IN THE TABLE
-    console.log('💾 Importing inventory to Supabase...\n');
-    
     const inventoryItems = products.map(product => ({
       sku: product.productId || 'NO-SKU',
       product_name: product.internalName || product.productName || product.productId || 'Unknown',
@@ -92,7 +82,6 @@ async function syncFinale() {
       console.error('❌ Error inserting inventory:', insertError);
       
       // Try smaller batches if bulk insert fails
-      console.log('Trying smaller batches...');
       let inserted = 0;
       const batchSize = 50;
       
@@ -108,14 +97,10 @@ async function syncFinale() {
           process.stdout.write(`\rInserted ${inserted}/${inventoryItems.length} items...`);
         }
       }
-      console.log('\n');
     } else {
-      console.log(`✅ Successfully inserted ${insertData.length} items!`);
     }
 
     // Save credentials to settings (with proper format)
-    console.log('\n💾 Saving Finale credentials for future use...');
-    
     // First check if settings exist
     const { data: existingSettings } = await supabase
       .from('settings')
@@ -146,17 +131,10 @@ async function syncFinale() {
     }
 
     console.log('\n' + '='.repeat(60));
-    console.log('✅ SYNC COMPLETE!');
     console.log('='.repeat(60));
-    console.log(`\n📦 ${inventoryItems.length} products imported from Finale`);
-    console.log('\n🎉 Your inventory is now in Supabase!');
-    console.log('👉 Visit http://localhost:3000/inventory to see your data\n');
-
     // Show sample of imported items
-    console.log('Sample of imported products:');
     console.log('-'.repeat(60));
     inventoryItems.slice(0, 10).forEach(item => {
-      console.log(`${item.sku.padEnd(15)} | ${item.product_name.substring(0, 40).padEnd(40)} | Stock: ${item.current_stock}`);
     });
     console.log('-'.repeat(60));
 

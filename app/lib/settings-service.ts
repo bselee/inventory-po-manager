@@ -53,7 +53,7 @@ export class SettingsService {
       this.lastFetch = now
       return this.settings
     } catch (error) {
-      console.error('Error fetching settings:', error)
+      logError('Error fetching settings:', error)
       throw new Error('Failed to fetch settings')
     }
   }
@@ -78,7 +78,7 @@ export class SettingsService {
       
       return updated
     } catch (error) {
-      console.error('Error saving settings:', error)
+      logError('Error saving settings:', error)
       throw new Error('Failed to save settings')
     }
   }
@@ -104,7 +104,7 @@ export class SettingsService {
         accountPath: settings.finale_account_path
       }
     } catch (error) {
-      console.error('Error getting Finale config:', error)
+      logError('Error getting Finale config:', error)
       return null
     }
   }

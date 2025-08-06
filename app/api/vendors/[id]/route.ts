@@ -40,7 +40,7 @@ export async function PUT(
           const finaleApi = new FinaleApiService(config)
           await finaleApi.updateVendor(updatedVendor.finale_vendor_id, updatedVendor)
         } catch (finaleError) {
-          console.error('Failed to sync vendor to Finale:', finaleError)
+          logError('Failed to sync vendor to Finale:', finaleError)
           // Don't fail the request if Finale sync fails
           return NextResponse.json({
             ...updatedVendor,
@@ -52,7 +52,7 @@ export async function PUT(
 
     return NextResponse.json(updatedVendor)
   } catch (error) {
-    console.error('Error updating vendor:', error)
+    logError('Error updating vendor:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to update vendor' },
       { status: 500 }

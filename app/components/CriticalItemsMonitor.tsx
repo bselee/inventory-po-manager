@@ -35,8 +35,6 @@ export default function CriticalItemsMonitor() {
           // Note: Can't filter on column comparison, will check in handler
         },
         (payload) => {
-          console.log('Critical item change:', payload)
-          
           if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
             const item = payload.new as any
             
@@ -81,7 +79,7 @@ export default function CriticalItemsMonitor() {
         .limit(1000)
 
       if (error) {
-        console.error('Error loading critical items:', error)
+        logError('Error loading critical items:', error)
         return
       }
 
@@ -97,7 +95,7 @@ export default function CriticalItemsMonitor() {
         setCriticalItems(critical)
       }
     } catch (error) {
-      console.error('Failed to load critical items:', error)
+      logError('Failed to load critical items:', error)
       // Optionally set an error state here
     }
   }
@@ -106,7 +104,7 @@ export default function CriticalItemsMonitor() {
     try {
       setNewAlerts(prev => prev.filter(s => s !== sku))
     } catch (error) {
-      console.error('Error dismissing alert:', error)
+      logError('Error dismissing alert:', error)
     }
   }
 

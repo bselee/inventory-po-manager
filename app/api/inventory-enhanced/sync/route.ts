@@ -9,9 +9,6 @@ export const maxDuration = 300
 export async function POST() {
   try {
     const startTime = Date.now()
-    
-    console.log('[Enhanced Sync] Starting sync of all Finale reports...')
-    
     // Force refresh all data
     const items = await finaleMultiReportService.getCombinedInventory(true)
     
@@ -42,10 +39,6 @@ export async function POST() {
         item.total_velocity === 0 && item.current_stock > 0
       ).length
     }
-    
-    console.log('[Enhanced Sync] Sync completed successfully')
-    console.log(`[Enhanced Sync] Stats:`, stats)
-    
     return NextResponse.json({
       success: true,
       message: 'Enhanced sync completed successfully',
@@ -63,7 +56,7 @@ export async function POST() {
     })
     
   } catch (error) {
-    console.error('[Enhanced Sync] Error:', error)
+    logError('[Enhanced Sync] Error:', error)
     return NextResponse.json(
       { 
         error: error instanceof Error ? error.message : 'Sync failed',

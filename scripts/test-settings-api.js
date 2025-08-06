@@ -43,14 +43,9 @@ function makeRequest(path, method = 'GET', data = null) {
 }
 
 async function runTests() {
-  console.log('Testing Settings API...\n');
-
   try {
     // Test 1: Check if settings page loads
-    console.log('1. Testing settings page HTML...');
     const pageResult = await makeRequest('/settings');
-    console.log('Status:', pageResult.status);
-    
     if (pageResult.status === 200 && typeof pageResult.data === 'string') {
       const html = pageResult.data;
       
@@ -59,68 +54,40 @@ async function runTests() {
       const hasSaveButton = html.includes('data-testid="save-settings"');
       const hasTestConnection = html.includes('Test Connection');
       const hasManualSync = html.includes('Start Manual Sync');
-      
-      console.log('\nChecking for required elements:');
-      console.log(`   - Setting input: ${hasSettingInput ? '✅ Found' : '❌ Not found'}`);
-      console.log(`   - Save button: ${hasSaveButton ? '✅ Found' : '❌ Not found'}`);
-      console.log(`   - Test Connection buttons: ${hasTestConnection ? '✅ Found' : '❌ Not found'}`);
-      console.log(`   - Manual Sync button: ${hasManualSync ? '✅ Found' : '❌ Not found'}`);
-      
       // Check if it's a Next.js error page
       if (html.includes('__next_error__') || html.includes('Error:')) {
-        console.log('\n   ⚠️  Page contains error indicators');
       }
     } else {
-      console.log('✗ Settings page not loading correctly\n');
     }
 
     // Test 2: GET /api/settings
-    console.log('\n2. Testing GET /api/settings');
     const getResult = await makeRequest('/api/settings');
-    console.log('Status:', getResult.status);
-    
     if (getResult.status === 200) {
-      console.log('✓ GET endpoint working correctly');
       if (getResult.data && getResult.data.low_stock_threshold !== undefined) {
-        console.log(`   - Has low_stock_threshold: ✅ Yes (value: ${getResult.data.low_stock_threshold})`);
       }
     } else {
-      console.log('✗ GET endpoint failed');
       console.log('Response:', JSON.stringify(getResult.data, null, 2));
     }
 
     // Test 3: Check sync status endpoint
-    console.log('\n3. Testing sync status endpoint...');
     const syncResult = await makeRequest('/api/sync-status-monitor');
-    console.log('Status:', syncResult.status);
     if (syncResult.status === 200) {
-      console.log('✓ Sync status endpoint working');
     } else {
-      console.log('✗ Sync status endpoint failed');
     }
 
     // Test 4: Check test connection endpoint
-    console.log('\n4. Testing Finale connection test endpoint...');
     const testResult = await makeRequest('/api/test-finale-simple', 'POST', {});
-    console.log('Status:', testResult.status);
     if (testResult.status === 200) {
-      console.log('✓ Test connection endpoint working');
     } else {
-      console.log('✗ Test connection endpoint returned:', testResult.status);
       if (testResult.data) {
         console.log('Response:', JSON.stringify(testResult.data, null, 2).substring(0, 200) + '...');
       }
     }
 
     // Test 5: Health check
-    console.log('\n5. Testing Health Check');
     const healthResult = await makeRequest('/api/health');
-    console.log('Status:', healthResult.status);
-    
     if (healthResult.status === 200) {
-      console.log('✓ Health check passed');
     } else {
-      console.log('✗ Health check failed');
     }
 
   } catch (error) {
@@ -131,7 +98,6 @@ async function runTests() {
 // Check if server is running
 http.get(baseUrl, (res) => {
   if (res.statusCode === 200 || res.statusCode === 308) {
-    console.log('Server is running at', baseUrl);
     runTests();
   }
 }).on('error', (err) => {

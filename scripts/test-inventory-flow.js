@@ -27,7 +27,6 @@ const colors = {
 };
 
 function log(message, color = colors.reset) {
-  console.log(`${color}${message}${colors.reset}`);
 }
 
 function logSection(title) {
@@ -121,12 +120,6 @@ async function testFinaleSync() {
     if (lastSync) {
       log('✓ Found sync logs', colors.green);
       log(`\nLast sync details:`, colors.cyan);
-      console.log(`  - Status: ${lastSync.status}`);
-      console.log(`  - Time: ${new Date(lastSync.synced_at).toLocaleString()}`);
-      console.log(`  - Items processed: ${lastSync.items_processed || 0}`);
-      console.log(`  - Items updated: ${lastSync.items_updated || 0}`);
-      console.log(`  - Duration: ${lastSync.duration_ms ? (lastSync.duration_ms / 1000).toFixed(2) + 's' : 'N/A'}`);
-      
       if (lastSync.errors && lastSync.errors.length > 0) {
         log('\n⚠ Sync errors found:', colors.yellow);
         lastSync.errors.slice(0, 3).forEach(err => console.log(`  - ${err}`));
@@ -171,16 +164,6 @@ async function testAPIEndpoint() {
       if (data.inventory.length > 0) {
         const item = data.inventory[0];
         log('\nAPI transformation check:', colors.cyan);
-        console.log('  Database fields mapped to frontend fields:');
-        console.log(`  - stock → current_stock: ${item.current_stock !== undefined ? '✓' : '✗'}`);
-        console.log(`  - reorder_point → minimum_stock: ${item.minimum_stock !== undefined ? '✓' : '✗'}`);
-        console.log(`  - cost → unit_price: ${item.unit_price !== undefined ? '✓' : '✗'}`);
-        console.log(`  - Calculated fields:`);
-        console.log(`    - sales_velocity: ${item.sales_velocity !== undefined ? '✓' : '✗'}`);
-        console.log(`    - days_until_stockout: ${item.days_until_stockout !== undefined ? '✓' : '✗'}`);
-        console.log(`    - stock_status_level: ${item.stock_status_level !== undefined ? '✓' : '✗'}`);
-        console.log(`    - reorder_recommended: ${item.reorder_recommended !== undefined ? '✓' : '✗'}`);
-        
         log('\nSample transformed item:', colors.cyan);
         console.log(JSON.stringify(item, null, 2));
       }
@@ -191,17 +174,11 @@ async function testAPIEndpoint() {
     // Test pagination
     if (data.pagination) {
       log('\n✓ Pagination data present', colors.green);
-      console.log(`  Total items: ${data.pagination.total}`);
-      console.log(`  Total pages: ${data.pagination.totalPages}`);
     }
     
     // Test summary
     if (data.summary) {
       log('\n✓ Summary statistics present', colors.green);
-      console.log(`  Out of stock: ${data.summary.out_of_stock_count}`);
-      console.log(`  Low stock: ${data.summary.low_stock_count}`);
-      console.log(`  Critical: ${data.summary.critical_count}`);
-      console.log(`  Reorder needed: ${data.summary.reorder_needed_count}`);
     }
     
   } catch (error) {
@@ -241,10 +218,6 @@ async function testDataConsistency() {
     const { count: dbCount } = await supabase
       .from('inventory_items')
       .select('*', { count: 'exact', head: true });
-    
-    console.log(`\n  Database total: ${dbCount || 0} items`);
-    console.log(`  API total: ${apiData.pagination?.total || 0} items`);
-    
     if (dbCount === apiData.pagination?.total) {
       log('  ✓ Counts match', colors.green);
     } else {
@@ -258,10 +231,6 @@ async function testDataConsistency() {
       
       if (apiItem) {
         log('\n✓ Field mapping verification:', colors.green);
-        console.log(`  SKU ${dbItem.sku}:`);
-        console.log(`  - DB stock (${dbItem.stock}) → API current_stock (${apiItem.current_stock}): ${dbItem.stock === apiItem.current_stock ? '✓' : '✗'}`);
-        console.log(`  - DB cost (${dbItem.cost}) → API unit_price (${apiItem.unit_price}): ${dbItem.cost === apiItem.unit_price ? '✓' : '✗'}`);
-        console.log(`  - DB reorder_point (${dbItem.reorder_point}) → API minimum_stock (${apiItem.minimum_stock}): ${dbItem.reorder_point === apiItem.minimum_stock ? '✓' : '✗'}`);
       }
     }
     
@@ -317,9 +286,6 @@ async function runTests() {
   if (failed > 0) {
     log('\nRecommendations:', colors.yellow);
     console.log('1. Ensure the development server is running (npm run dev)');
-    console.log('2. Check that environment variables are properly configured');
-    console.log('3. Verify database migrations have been run');
-    console.log('4. Run a Finale sync if no data is present');
   }
 }
 

@@ -67,15 +67,11 @@ const fixes = [
 ];
 
 // Apply fixes
-console.log('🔧 Fixing JSON parsing issues in finale-api.ts...');
-
 // Add the safe parse method after the constructor
 const constructorEndPattern = /(\s*this\.authHeader = .+?\n\s*})/;
 if (constructorEndPattern.test(content)) {
   content = content.replace(constructorEndPattern, `$1${safeParseJsonMethod}`);
-  console.log('✅ Added safeParseJson method');
 } else {
-  console.log('⚠️  Could not find constructor end to add safeParseJson method');
 }
 
 // Apply other fixes
@@ -83,9 +79,7 @@ fixes.forEach((fix, index) => {
   const before = content;
   content = content.replace(fix.find, fix.replace);
   if (content !== before) {
-    console.log(`✅ Applied fix ${index + 1}`);
   } else {
-    console.log(`⚠️  Fix ${index + 1} pattern not found`);
   }
 });
 
@@ -103,7 +97,6 @@ if (finaleProductInterface) {
     "$1  statusId?: string\n  discontinued?: boolean\n  active?: boolean"
   );
   content = content.replace(finaleProductInterface[0], updatedInterface);
-  console.log('✅ Added missing FinaleProduct properties');
 }
 
 // Fix date handling
@@ -114,16 +107,10 @@ content = content.replace(
 
 // Write the fixed file
 fs.writeFileSync(finaleApiPath, content);
-console.log('✅ Fixed finale-api.ts file saved');
-
 // Verify the file compiles
 const { execSync } = require('child_process');
 try {
   execSync('npm run type-check', { stdio: 'pipe' });
-  console.log('✅ TypeScript compilation successful');
 } catch (error) {
-  console.log('⚠️  TypeScript compilation has remaining issues:');
   console.log(error.stdout?.toString() || error.message);
-}
-
-console.log('🎉 Sync error fixes completed!');
+}

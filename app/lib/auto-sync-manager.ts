@@ -14,7 +14,6 @@ export async function startAutoSync() {
     .single()
   
   if (!settings?.sync_enabled) {
-    console.log('🔄 Auto-sync is disabled in settings')
     return
   }
   
@@ -24,9 +23,6 @@ export async function startAutoSync() {
   if (autoSyncInterval) {
     clearInterval(autoSyncInterval)
   }
-  
-  console.log(`🔄 Starting auto-sync every ${frequencyMinutes} minutes`)
-  
   // Run initial sync check
   await runAutoSync()
   
@@ -38,7 +34,6 @@ export async function startAutoSync() {
 
 export async function runAutoSync() {
   if (isAutoSyncRunning) {
-    console.log('🔄 Auto-sync already running, skipping...')
     return
   }
   
@@ -56,7 +51,6 @@ export async function runAutoSync() {
       .maybeSingle()
     
     if (runningSync) {
-      console.log('🔄 Sync already in progress, skipping auto-sync')
       return
     }
     
@@ -93,11 +87,8 @@ export async function runAutoSync() {
     }
     
     if (shouldSync) {
-      console.log(`🔄 Auto-sync triggered: ${reason}`)
-      
       const config = await getFinaleConfig()
       if (!config) {
-        console.log('❌ Auto-sync failed: Finale not configured')
         return
       }
       
@@ -106,7 +97,6 @@ export async function runAutoSync() {
       // Test connection first
       const isConnected = await finaleApi.testConnection()
       if (!isConnected) {
-        console.log('❌ Auto-sync failed: Cannot connect to Finale')
         return
       }
       
@@ -125,25 +115,20 @@ export async function runAutoSync() {
         })
       
       // Run the sync using smart strategy
-      console.log('🔄 Starting automatic sync...')
       const result = await finaleApi.syncSmart()
       
       if (result.success) {
-        console.log(`✅ Auto-sync complete: ${result.processed} items processed`)
-        
         // Update last sync time in settings
         await supabase
           .from('settings')
           .update({ last_sync_time: new Date().toISOString() })
           .eq('id', 1)
       } else {
-        console.log(`❌ Auto-sync failed: ${result.error}`)
       }
     } else {
-      console.log('🔄 Auto-sync check: No sync needed at this time')
     }
   } catch (error) {
-    console.error('❌ Auto-sync error:', error)
+    logError('❌ Auto-sync error:', error)
   } finally {
     isAutoSyncRunning = false
   }
@@ -153,7 +138,6 @@ export function stopAutoSync() {
   if (autoSyncInterval) {
     clearInterval(autoSyncInterval)
     autoSyncInterval = null
-    console.log('🔄 Auto-sync stopped')
   }
 }
 
@@ -166,11 +150,8 @@ export async function checkInitialSync() {
       .select('*', { count: 'exact', head: true })
     
     if (count === 0) {
-      console.log('📦 No inventory data found. Running initial sync...')
       await runAutoSync()
     } else {
-      console.log(`📦 Found ${count} inventory items.`)
-      
       // Check if sync is overdue
       const { data: lastSync } = await supabase
         .from('sync_logs')
@@ -184,12 +165,11 @@ export async function checkInitialSync() {
       if (lastSync) {
         const hoursSinceSync = (Date.now() - new Date(lastSync.synced_at).getTime()) / (1000 * 60 * 60)
         if (hoursSinceSync > 24) {
-          console.log(`⚠️  Last sync was ${Math.round(hoursSinceSync)} hours ago. Running sync...`)
           await runAutoSync()
         }
       }
     }
   } catch (error) {
-    console.error('Initial sync check error:', error)
+    logError('Initial sync check error:', error)
   }
 }

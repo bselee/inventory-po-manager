@@ -14,7 +14,7 @@ import { InventoryLoadingFallback } from '@/app/components/common/LoadingFallbac
 import PageHeader from '@/app/components/common/PageHeader'
 import UniversalQuickFilters from '@/app/components/common/UniversalQuickFilters'
 import { useUniversalPageData } from '@/app/hooks/useUniversalPageData'
-import { inventoryQuickFilters } from '@/app/lib/quickFilters'
+import { inventoryQuickFilters } from '@/lib/quickFilters'
 
 interface InventorySummary {
   total_items: number
@@ -117,7 +117,7 @@ function InventoryPageContent() {
       
       setSummary(data.data)
     } catch (error) {
-      console.error('Error loading summary:', error)
+      logError('Error loading summary:', error)
     }
   }
 
@@ -177,7 +177,7 @@ function InventoryPageContent() {
       // Refresh data
       await refresh()
     } catch (error) {
-      console.error('Error updating cost:', error)
+      logError('Error updating cost:', error)
       toast.error('Failed to update cost')
     }
   }

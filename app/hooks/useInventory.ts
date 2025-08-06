@@ -41,17 +41,31 @@ export function useInventory(
   const [currentPage, setCurrentPage] = useState(1)
   const [itemsPerPage, setItemsPerPage] = useState(100)
 
-  // Load inventory data
-  const loadInventory = useCallback(async () => {
+  // Load inventory data with server-side pagination
+  const loadInventory = useCallback(async (page: number = 1) => {
     try {
-      const result = await getInventoryItems({}, { limit: 5000 })
+      const result = await getInventoryItems(
+        {
+          status: filters.status,
+          vendor: filters.vendor,
+          location: filters.location,
+          search: searchTerm
+        },
+        {
+          page,
+          limit: itemsPerPage,
+          sortBy: sortConfig.key,
+          sortDirection: sortConfig.direction
+        }
+      )
       setAllItems(result.items)
-      return result.items
+      setCurrentPage(page)
+      return result
     } catch (error) {
-      console.error('Error loading inventory:', error)
-      return []
+      logError('Error loading inventory:', error)
+      return { items: [], total: 0, totalPages: 0, page: 1, limit: itemsPerPage }
     }
-  }, [])
+  }, [filters, searchTerm, itemsPerPage, sortConfig])
 
   // Load summary data
   const loadSummary = useCallback(async () => {
@@ -59,7 +73,7 @@ export function useInventory(
       const summaryData = await getInventorySummary()
       setSummary(summaryData)
     } catch (error) {
-      console.error('Error loading summary:', error)
+      logError('Error loading summary:', error)
     }
   }, [])
 

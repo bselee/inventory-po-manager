@@ -27,8 +27,8 @@ class FilteringErrorBoundary extends Component<Props, State> {
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     // Log error to console in development
     if (process.env.NODE_ENV === 'development') {
-      console.error('Filtering Error:', error)
-      console.error('Error Info:', errorInfo)
+      logError('Filtering Error:', error)
+      logError('Error Info:', errorInfo)
     }
     
     // TODO: Send error to error reporting service

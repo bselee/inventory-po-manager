@@ -90,7 +90,7 @@ export async function POST(request: Request) {
     })
 
   } catch (error) {
-    console.error('Inventory sync error:', error)
+    logError('Inventory sync error:', error)
     
     await supabase
       .from('sync_logs')

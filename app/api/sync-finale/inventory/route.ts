@@ -33,7 +33,7 @@ export async function POST() {
     
     return NextResponse.json(result)
   } catch (error) {
-    console.error('[Inventory Sync] Error:', error)
+    logError('[Inventory Sync] Error:', error)
     return NextResponse.json({ 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error occurred'

@@ -24,8 +24,6 @@ export async function POST(request: NextRequest) {
     
     // If specific SKUs provided, retry only those
     if (skus && Array.isArray(skus) && skus.length > 0) {
-      console.log(`Retrying sync for ${skus.length} specific SKUs`)
-      
       // Fetch product data from Finale for these SKUs
       const allProducts = await finaleApi.getInventoryData(null) // No year filter for retry
       const productsToRetry = allProducts.filter(p => skus.includes(p.productSku))
@@ -119,7 +117,7 @@ export async function POST(request: NextRequest) {
     })
     
   } catch (error) {
-    console.error('Retry failed:', error)
+    logError('Retry failed:', error)
     return NextResponse.json({ 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error' 

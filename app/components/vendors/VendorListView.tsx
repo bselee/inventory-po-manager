@@ -1,6 +1,6 @@
 'use client'
 
-import { Vendor } from '@/app/lib/data-access/vendors'
+import { Vendor } from '@/lib/data-access/vendors'
 import { ExternalLink, Mail, Phone, MapPin, Package, ChevronUp, ChevronDown } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import ErrorBoundary, { DefaultErrorFallback } from '@/app/components/common/ErrorBoundary'

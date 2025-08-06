@@ -21,15 +21,9 @@ async function syncFinale() {
       accountPath = match[1];
     }
   }
-
-  console.log('✅ Using credentials:');
-  console.log('  Account Path:', accountPath);
-
   try {
     const authHeader = `Basic ${Buffer.from(`${apiKey}:${apiSecret}`).toString('base64')}`;
     const baseUrl = `https://app.finaleinventory.com/${accountPath}/api`;
-    
-    console.log('\n🔄 Fetching products from Finale...');
     const url = `${baseUrl}/product?limit=500`;
     
     const response = await fetch(url, {
@@ -50,7 +44,6 @@ async function syncFinale() {
     
     if (data.productId && Array.isArray(data.productId)) {
       // This is column format - transform to row format
-      console.log('📊 Detected column format. Converting...');
       const numProducts = data.productId.length;
       
       for (let i = 0; i < numProducts; i++) {
@@ -63,37 +56,25 @@ async function syncFinale() {
         });
         products.push(product);
       }
-      
-      console.log(`✅ Converted ${products.length} products from column format`);
     } else if (data.productList) {
       products = data.productList;
     } else if (Array.isArray(data)) {
       products = data;
     }
-
-    console.log(`\n📦 Total products found: ${products.length}`);
-    
     if (products.length === 0) {
-      console.log('No products to import.');
       return;
     }
 
     // Show sample product structure
     if (products.length > 0) {
-      console.log('\nSample product:');
       console.log(JSON.stringify(products[0], null, 2));
     }
 
     // Now fetch additional product details if needed
-    console.log('\n🔄 Fetching inventory levels...');
-    
     // Clear existing inventory
-    console.log('\n🗑️  Clearing old inventory...');
     await supabase.from('inventory_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
     // Transform and insert products
-    console.log('💾 Inserting inventory data...\n');
-    
     const inventoryItems = products.map(product => ({
       sku: product.productId || product.sku || 'NO-SKU',
       product_name: product.internalName || product.productName || product.productId || 'Unknown',
@@ -126,7 +107,6 @@ async function syncFinale() {
     }
 
     // Save credentials to Supabase
-    console.log('\n\n💾 Saving credentials to Supabase...');
     await supabase
       .from('settings')
       .upsert({
@@ -138,15 +118,8 @@ async function syncFinale() {
         sync_frequency_minutes: 60,
         sync_enabled: true
       });
-
-    console.log('\n✅ SYNC COMPLETE!');
-    console.log(`📦 ${inserted} inventory items imported`);
-    console.log('\n🎉 Your inventory is now available at http://localhost:3000/inventory');
-
     // Show first few items
-    console.log('\nFirst 5 items imported:');
     inventoryItems.slice(0, 5).forEach(item => {
-      console.log(`  - ${item.sku}: ${item.product_name}`);
     });
 
   } catch (error) {

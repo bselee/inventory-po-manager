@@ -24,22 +24,16 @@ export const GET = createApiHandler(async () => {
 
 // POST /api/sync-status-monitor - Monitor and clean up stuck sync operations
 export const POST = createApiHandler(async () => {
-  console.log('[Sync Monitor] Checking for stuck sync operations...')
-  
   // Mark syncs running for more than 30 minutes as failed
   const markedCount = await markStuckSyncsAsFailed(30)
   
   if (markedCount === 0) {
-    console.log('[Sync Monitor] No stuck syncs found')
     return apiResponse({ 
       success: true, 
       message: 'No stuck syncs found',
       stuckSyncs: 0
     })
   }
-  
-  console.log(`[Sync Monitor] Marked ${markedCount} stuck sync operations as failed`)
-  
   // Send alert if configured
   // TODO: Implement email alert for stuck syncs if needed
   

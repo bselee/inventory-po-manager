@@ -57,7 +57,7 @@ export class KVSettingsService {
       
       return settings
     } catch (error) {
-      console.error('[KV Settings] Error getting settings:', error)
+      logError('[KV Settings] Error getting settings:', error)
       return this.getDefaultSettings()
     }
   }
@@ -84,12 +84,10 @@ export class KVSettingsService {
       
       // Save updated settings
       await redis.set(SETTINGS_KEY, updated)
-      
-      console.log('[KV Settings] Settings updated successfully')
       return updated
       
     } catch (error) {
-      console.error('[KV Settings] Error updating settings:', error)
+      logError('[KV Settings] Error updating settings:', error)
       throw error
     }
   }
@@ -105,12 +103,10 @@ export class KVSettingsService {
       
       const defaults = this.getDefaultSettings()
       await redis.set(SETTINGS_KEY, defaults)
-      
-      console.log('[KV Settings] Settings reset to defaults')
       return defaults
       
     } catch (error) {
-      console.error('[KV Settings] Error resetting settings:', error)
+      logError('[KV Settings] Error resetting settings:', error)
       throw error
     }
   }
@@ -122,7 +118,7 @@ export class KVSettingsService {
     try {
       return await redis.get<KVSettings>(SETTINGS_BACKUP_KEY)
     } catch (error) {
-      console.error('[KV Settings] Error getting backup:', error)
+      logError('[KV Settings] Error getting backup:', error)
       return null
     }
   }
@@ -140,12 +136,10 @@ export class KVSettingsService {
       }
       
       await redis.set(SETTINGS_KEY, backup)
-      console.log('[KV Settings] Restored from backup')
-      
       return backup
       
     } catch (error) {
-      console.error('[KV Settings] Error restoring from backup:', error)
+      logError('[KV Settings] Error restoring from backup:', error)
       throw error
     }
   }
@@ -156,9 +150,8 @@ export class KVSettingsService {
   private async createBackup(settings: KVSettings): Promise<void> {
     try {
       await redis.set(SETTINGS_BACKUP_KEY, settings)
-      console.log('[KV Settings] Backup created')
     } catch (error) {
-      console.error('[KV Settings] Error creating backup:', error)
+      logError('[KV Settings] Error creating backup:', error)
     }
   }
   

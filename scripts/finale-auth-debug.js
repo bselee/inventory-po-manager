@@ -28,7 +28,6 @@ const colors = {
 };
 
 function log(message, color = colors.reset) {
-  console.log(color + message + colors.reset);
 }
 
 async function makeRequest(options, postData = null) {

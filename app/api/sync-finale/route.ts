@@ -1,29 +1,20 @@
 import { createApiHandler, apiResponse } from '@/app/lib/api-handler'
 import { executeSync, SyncStrategy } from '@/app/lib/sync-service'
-import { z } from 'zod'
+import { syncSchema } from '@/app/lib/validation-schemas'
 import { rateLimiters } from '@/app/lib/rate-limiter'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-// Validation schema
-const syncRequestSchema = z.object({
-  strategy: z.enum(['smart', 'full', 'inventory', 'critical', 'active']).optional(),
-  dryRun: z.boolean().optional(),
-  filterYear: z.number().nullable().optional() // Allow null for "all records"
-})
-
 // POST /api/sync-finale - Trigger sync with Finale
 export const POST = createApiHandler(async ({ body }) => {
-  const { strategy = 'smart', dryRun = false, filterYear } = body || {}
-  
-  console.log(`[Sync API] Starting ${strategy} sync${dryRun ? ' (DRY RUN)' : ''}`)
-  
+  const { syncType = 'smart', forceSync = false, year } = body || {}
+
   const result = await executeSync({
-    strategy: strategy as SyncStrategy,
-    dryRun,
-    filterYear
+    strategy: syncType as SyncStrategy,
+    dryRun: false,
+    filterYear: year ? parseInt(year) : undefined
   })
   
   return apiResponse(
@@ -39,7 +30,7 @@ export const POST = createApiHandler(async ({ body }) => {
     }
   )
 }, {
-  validateBody: syncRequestSchema,
+  validateBody: syncSchema,
   requireAuth: false, // Temporarily disable auth for sync
   csrf: false, // Temporarily disable CSRF for testing
   rateLimit: {

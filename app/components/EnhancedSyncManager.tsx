@@ -68,7 +68,7 @@ export default function EnhancedSyncManager() {
         setError('Failed to fetch sync health')
       }
     } catch (err) {
-      console.error('Health check failed:', err)
+      logError('Health check failed:', err)
       setError('Health check failed')
     }
   }, [])
@@ -101,7 +101,7 @@ export default function EnhancedSyncManager() {
         setError(result.message || 'Sync failed')
       }
     } catch (err) {
-      console.error('Sync failed:', err)
+      logError('Sync failed:', err)
       setError('Sync request failed')
     } finally {
       setIsLoading(false)
@@ -129,7 +129,7 @@ export default function EnhancedSyncManager() {
         setError(result.message || 'Initialization failed')
       }
     } catch (err) {
-      console.error('Initialization failed:', err)
+      logError('Initialization failed:', err)
       setError('Initialization request failed')
     } finally {
       setIsLoading(false)

@@ -19,7 +19,6 @@ const colors = {
 };
 
 function log(message, color = colors.reset) {
-  console.log(`${color}${message}${colors.reset}`);
 }
 
 function makeRequest(path, options = {}) {

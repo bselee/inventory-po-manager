@@ -90,16 +90,14 @@ export class KVInventoryService {
           'getInventory:cache-check'
         )
         if (cached) {
-          console.log('[KV Inventory] Serving from cache')
           return cached
         }
       }
       
       // Fetch fresh data
-      console.log('[KV Inventory] Cache miss or force refresh, fetching from Finale...')
       return await this.refreshInventoryCache()
     } catch (error) {
-      console.error('[KV Inventory] Error getting inventory:', error)
+      logError('[KV Inventory] Error getting inventory:', error)
       // Try to return stale cache if available
       const stale = await withRedisRetry(
         () => redis.get<CachedInventoryItem[]>(CACHE_KEYS.INVENTORY_FULL),
@@ -107,7 +105,6 @@ export class KVInventoryService {
       ).catch(() => null)
       
       if (stale) {
-        console.log('[KV Inventory] Returning stale cache due to error')
         return stale
       }
       throw error
@@ -230,7 +227,6 @@ export class KVInventoryService {
       // Check if existing sync is stuck
       const lockAge = await this.checkLockAge(lockKey)
       if (lockAge > 300000) { // 5 minutes
-        console.log('[KV Inventory] Clearing stuck sync lock')
         await redis.del(lockKey)
         // Try once more
         const retryLock = await client.set(lockKey, lockValue, {
@@ -317,8 +313,6 @@ export class KVInventoryService {
         // Execute all operations atomically
         await multi.exec()
       }, 'refreshInventoryCache:save')
-      
-      console.log(`[KV Inventory] Cached ${inventory.length} items`)
       return inventory
       
     } catch (error) {
@@ -391,8 +385,6 @@ export class KVInventoryService {
    * Clear all caches
    */
   async clearCache(): Promise<void> {
-    console.log('[KV Inventory] Clearing all caches...')
-    
     // Get all inventory items to clear individual caches
     const inventory = await redis.get<CachedInventoryItem[]>(CACHE_KEYS.INVENTORY_FULL)
     
@@ -408,8 +400,6 @@ export class KVInventoryService {
       // Clear the inventory hash
       redis.del(CACHE_KEYS.INVENTORY_BY_SKU + 'hash')
     ])
-    
-    console.log('[KV Inventory] Cache cleared')
   }
 }
 

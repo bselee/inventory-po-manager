@@ -37,8 +37,6 @@ class EnhancedSyncTester {
       error: '[ERROR]',
       warning: '[WARNING]'
     }[type] || '[INFO]';
-    
-    console.log(`${timestamp} ${prefix} ${message}`);
   }
 
   async runTest(name, testFn) {
@@ -317,29 +315,17 @@ class EnhancedSyncTester {
 
   printSummary(report) {
     console.log('\n' + '='.repeat(60));
-    console.log('ENHANCED SYNC INTEGRATION TEST RESULTS');
     console.log('='.repeat(60));
-    console.log(`Total Tests: ${report.summary.total}`);
-    console.log(`Passed: ${report.summary.passed}`);
-    console.log(`Failed: ${report.summary.failed}`);
-    console.log(`Success Rate: ${report.summary.successRate}`);
-    console.log(`Duration: ${report.summary.duration}`);
     console.log('='.repeat(60));
     
     if (report.summary.failed > 0) {
-      console.log('\nFAILED TESTS:');
       report.tests.filter(t => t.status === 'failed').forEach(test => {
-        console.log(`❌ ${test.name}: ${test.error}`);
       });
     }
-    
-    console.log(`\nDetailed report saved to: test-reports/enhanced-sync-integration-test.json`);
     console.log('='.repeat(60) + '\n');
   }
 
   async run() {
-    console.log('Starting Enhanced Sync Integration Test Suite...\n');
-    
     // File integrity tests (don't require server)
     await this.runTest('File Integrity Check', () => this.testFileIntegrity());
     await this.runTest('Database Enhancement SQL Check', () => this.testDatabaseEnhancements());

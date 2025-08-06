@@ -198,7 +198,7 @@ export async function GET(request: NextRequest) {
         : 'Critical data integrity issues detected'
     })
   } catch (error) {
-    console.error('Validation error:', error)
+    logError('Validation error:', error)
     return NextResponse.json(
       { error: 'Failed to validate data' },
       { status: 500 }

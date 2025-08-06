@@ -31,7 +31,6 @@ const DEFAULT_OPTIONS: Required<RetryOptions> = {
     return false
   },
   onRetry: (error, attempt) => {
-    console.log(`Retry attempt ${attempt} after error:`, error.message)
   }
 }
 
@@ -93,7 +92,6 @@ export async function withRedisRetry<T>(
       return false
     },
     onRetry: (error, attempt) => {
-      console.log(`[Redis Retry] ${operationName} - Attempt ${attempt} after error:`, error.message)
     }
   })
 }
@@ -117,7 +115,6 @@ export async function withApiRetry<T>(
       return true
     },
     onRetry: (error, attempt) => {
-      console.log(`[API Retry] ${endpoint} - Attempt ${attempt} after error:`, error.message)
     }
   })
 }

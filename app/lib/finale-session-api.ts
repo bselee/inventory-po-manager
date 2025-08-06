@@ -41,13 +41,6 @@ export class FinaleSessionApiService {
   async authenticate(): Promise<boolean> {
     try {
       const authUrl = `${this.baseUrl}/auth`
-      
-      console.log('Attempting session authentication:', {
-        url: authUrl,
-        username: this.config.username,
-        accountPath: this.config.accountPath
-      })
-
       const response = await fetch(authUrl, {
         method: 'POST',
         headers: {
@@ -78,22 +71,16 @@ export class FinaleSessionApiService {
         if (authData.sessionSecret) {
           this.sessionSecret = authData.sessionSecret
         }
-
-        console.log('Session authentication successful:', {
-          hasSessionId: !!this.sessionId,
-          hasSessionSecret: !!this.sessionSecret
-        })
-
         return true
       } else {
-        console.error('Session authentication failed:', {
+        logError('Session authentication failed:', {
           status: response.status,
           statusText: response.statusText
         })
         return false
       }
     } catch (error) {
-      console.error('Session authentication error:', error)
+      logError('Session authentication error:', error)
       return false
     }
   }
@@ -153,13 +140,6 @@ export class FinaleSessionApiService {
       const filterBase64 = Buffer.from(filterJson).toString('base64')
       reportUrl += `&filter=${encodeURIComponent(filterBase64)}`
     }
-
-    console.log('Running report:', {
-      reportId,
-      format,
-      hasFilters: !!filters
-    })
-
     const response = await this.makeAuthenticatedRequest(reportUrl)
     
     if (response.ok) {
@@ -220,7 +200,7 @@ export class FinaleSessionApiService {
           method: 'POST'
         })
       } catch (error) {
-        console.error('Logout error:', error)
+        logError('Logout error:', error)
       }
       
       this.sessionId = null
@@ -240,12 +220,12 @@ export async function getFinaleSessionConfig(): Promise<FinaleSessionConfig | nu
     .single()
 
   if (error || !settings) {
-    console.error('Failed to get Finale session config:', error)
+    logError('Failed to get Finale session config:', error)
     return null
   }
 
   if (!settings.finale_username || !settings.finale_password || !settings.finale_account_path) {
-    console.error('Missing Finale session credentials')
+    logError('Missing Finale session credentials')
     return null
   }
 

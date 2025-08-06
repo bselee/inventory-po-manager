@@ -29,9 +29,6 @@ function logResult(testName, passed, message = '', details = null) {
   const status = passed ? 'PASS' : 'FAIL';
   const color = passed ? '\x1b[32m' : '\x1b[31m';
   const reset = '\x1b[0m';
-  
-  console.log(`${color}[${status}]${reset} ${testName}: ${message}`);
-  
   results.tests[testName] = { passed, message, details, timestamp: new Date().toISOString() };
   
   if (passed) results.summary.passed++;
@@ -40,8 +37,6 @@ function logResult(testName, passed, message = '', details = null) {
 }
 
 async function testEnvironmentVariables() {
-  console.log('\n🔍 Testing Environment Variables...');
-  
   const requiredVars = [
     'NEXT_PUBLIC_SUPABASE_URL',
     'NEXT_PUBLIC_SUPABASE_ANON_KEY',
@@ -74,8 +69,6 @@ async function testEnvironmentVariables() {
 }
 
 async function testFileStructure() {
-  console.log('\n🔍 Testing File Structure...');
-  
   const criticalFiles = [
     'package.json',
     'next.config.js',
@@ -104,8 +97,6 @@ async function testFileStructure() {
 }
 
 async function testDependencies() {
-  console.log('\n🔍 Testing Dependencies...');
-  
   try {
     const packageJson = JSON.parse(fs.readFileSync('package.json', 'utf8'));
     
@@ -141,8 +132,6 @@ async function testDependencies() {
 }
 
 async function testScripts() {
-  console.log('\n🔍 Testing Critical Scripts...');
-  
   const scripts = [
     'scripts/health-check.js',
     'scripts/validate-database.js',
@@ -157,8 +146,6 @@ async function testScripts() {
 }
 
 async function testTypeDefinitions() {
-  console.log('\n🔍 Testing Type Definitions...');
-  
   try {
     // Try to parse the types file
     const typesContent = fs.readFileSync('app/types/index.ts', 'utf8');
@@ -179,8 +166,6 @@ async function testTypeDefinitions() {
 }
 
 async function testBuildConfiguration() {
-  console.log('\n🔍 Testing Build Configuration...');
-  
   try {
     // Check TypeScript config
     const tsconfig = JSON.parse(fs.readFileSync('tsconfig.json', 'utf8'));
@@ -200,8 +185,6 @@ async function testBuildConfiguration() {
 }
 
 async function generateReport() {
-  console.log('\n📊 Generating Health Report...');
-  
   const passRate = (results.summary.passed / results.summary.total * 100).toFixed(1);
   results.overall = results.summary.failed === 0 ? 'healthy' : 'needs_attention';
   
@@ -231,18 +214,13 @@ async function generateReport() {
   // Save report to file
   try {
     fs.writeFileSync('health-report.json', JSON.stringify(report, null, 2), 'utf8');
-    console.log('✅ Health report saved to health-report.json');
   } catch (error) {
-    console.log(`❌ Could not save report: ${error.message}`);
   }
   
   return report;
 }
 
 async function main() {
-  console.log('🚀 Starting Project Health Check...');
-  console.log(`Timestamp: ${results.timestamp}\n`);
-  
   // Run all test suites
   await testEnvironmentVariables();
   await testFileStructure();
@@ -255,25 +233,11 @@ async function main() {
   const report = await generateReport();
   
   console.log('\n' + '='.repeat(50));
-  console.log('📋 HEALTH CHECK SUMMARY');
   console.log('='.repeat(50));
-  console.log(`Overall Status: ${report.overall.toUpperCase()}`);
-  console.log(`Pass Rate: ${report.passRate}`);
-  console.log(`Tests Passed: ${report.summary.passed}/${report.summary.total}`);
-  
   if (report.recommendations.length > 0) {
-    console.log('\n🔧 RECOMMENDATIONS:');
     report.recommendations.forEach((rec, i) => {
-      console.log(`${i + 1}. ${rec}`);
     });
   }
-  
-  console.log('\n✨ Next Steps:');
-  console.log('1. Run "npm run test" to execute unit tests');
-  console.log('2. Run "npm run build" to test build process');
-  console.log('3. Run database hardening script in Supabase');
-  console.log('4. Set up GitHub Actions for CI/CD');
-  
   // Exit with appropriate code
   process.exit(report.summary.failed === 0 ? 0 : 1);
 }

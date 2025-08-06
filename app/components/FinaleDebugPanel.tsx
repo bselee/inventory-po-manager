@@ -31,22 +31,18 @@ export default function FinaleDebugPanel({ settings }: { settings: any }) {
       })
 
       const data = await response.json()
-      console.log('Debug Response:', data)
-      
       setResults(data.results || [])
       setSummary(data.summary)
       
       // Also log to console for debugging
-      console.log('=== FINALE DEBUG RESULTS ===')
       data.results?.forEach((r: DebugResult) => {
-        console.log(`${r.success ? '✓' : '✗'} ${r.test}`)
         if (r.details) console.log('  Details:', r.details)
         if (r.error) console.log('  Error:', r.error)
         if (r.recommendation) console.log('  Fix:', r.recommendation)
       })
       
     } catch (error) {
-      console.error('Debug error:', error)
+      logError('Debug error:', error)
       setResults([{
         test: 'Debug Request',
         success: false,
@@ -76,7 +72,7 @@ export default function FinaleDebugPanel({ settings }: { settings: any }) {
       setCopyStatus('copied')
       setTimeout(() => setCopyStatus('idle'), 2000)
     } catch (error) {
-      console.error('Failed to copy:', error)
+      logError('Failed to copy:', error)
     }
   }
 

@@ -48,7 +48,7 @@ export default function TestSyncPage() {
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Unknown error'
       setError(message)
-      console.error('Sync error:', err)
+      logError('Sync error:', err)
     } finally {
       setLoading(false)
     }
@@ -84,7 +84,7 @@ export default function TestSyncPage() {
         pollCount++
       } catch (error) {
         clearInterval(interval)
-        console.error('Poll error:', error)
+        logError('Poll error:', error)
       }
     }, 5000)
   }

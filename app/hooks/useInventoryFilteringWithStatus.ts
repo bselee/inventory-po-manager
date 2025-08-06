@@ -28,10 +28,10 @@ export function useInventoryFilteringWithStatus(
       
     if (hasActiveFilters && filteredItems.length === allItems.length) {
       // Possible fallback, but not necessarily an error
-      console.warn('Filtering may be in fallback mode')
+      logWarn('Filtering may be in fallback mode')
     }
   } catch (error) {
-    console.error('Filtering error detected:', error)
+    logError('Filtering error detected:', error)
     setIsFilteringError(true)
     filteredItems = allItems
   }

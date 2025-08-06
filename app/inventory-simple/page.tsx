@@ -11,7 +11,6 @@ export default function SimpleInventoryPage() {
     fetch('/api/inventory')
       .then(res => res.json())
       .then(data => {
-        console.log('API Response:', data)
         if (data.error) {
           setError(data.error)
         } else if (data.data?.inventory) {
@@ -21,7 +20,7 @@ export default function SimpleInventoryPage() {
         }
       })
       .catch(err => {
-        console.error('Fetch error:', err)
+        logError('Fetch error:', err)
         setError(err.message)
       })
       .finally(() => setLoading(false))

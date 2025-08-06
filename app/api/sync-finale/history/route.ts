@@ -77,7 +77,7 @@ export async function GET(request: NextRequest) {
       statistics: stats
     })
   } catch (error) {
-    console.error('Error fetching sync history:', error)
+    logError('Error fetching sync history:', error)
     return NextResponse.json(
       { error: 'Failed to fetch sync history' },
       { status: 500 }

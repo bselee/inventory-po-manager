@@ -9,6 +9,7 @@ import { handleApiError, AppError, logError, AuthenticationError, AuthorizationE
 import { authMiddleware, User } from './auth'
 import { RateLimiter, rateLimiters } from './rate-limiter'
 import { checkCSRF, csrfError, CSRFOptions } from './csrf'
+import { handleError, asyncHandler } from './global-error-handler'
 
 export interface ApiHandlerOptions {
   requireAuth?: boolean

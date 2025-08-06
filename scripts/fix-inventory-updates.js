@@ -21,17 +21,10 @@ if (!supabaseUrl || !supabaseServiceKey) {
   process.exit(1);
 }
 
-console.log('\n=== INVENTORY UPDATE FIX ===\n');
-console.log('This appears to be a database trigger issue.');
-console.log('\nThe quickest fix is to run this SQL in your Supabase dashboard:');
+
 console.log('\n' + '='.repeat(60));
-console.log(`
--- Option 1: Add the missing column
-ALTER TABLE inventory_items 
-ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
 
 -- Option 2: If there's a problematic trigger, disable it
 DROP TRIGGER IF EXISTS update_inventory_items_updated_at ON inventory_items;
 `);
 console.log('='.repeat(60));
-console.log('\nAfter running one of these options, your inventory updates should work.');

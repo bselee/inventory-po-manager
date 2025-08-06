@@ -80,6 +80,10 @@
     {
       "path": "/api/cron/sync-inventory-kv",
       "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/backup-database",
+      "schedule": "0 3 * * *"
     }
   ]
 }

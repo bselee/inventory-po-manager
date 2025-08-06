@@ -8,8 +8,6 @@
 const { execSync } = require('child_process');
 const fs = require('fs');
 const path = require('path');
-
-console.log('🧪 Starting Comprehensive Test Suite for Inventory System');
 console.log('='.repeat(60));
 
 const testResults = {
@@ -24,9 +22,6 @@ const testResults = {
 };
 
 function runCommand(command, description, critical = false) {
-  console.log(`\n� ${description}`);
-  console.log(`📋 Command: ${command}`);
-  
   try {
     const startTime = Date.now();
     const output = execSync(command, { 
@@ -47,9 +42,6 @@ function runCommand(command, description, critical = false) {
     
     testResults.results.push(result);
     testResults.summary.passed++;
-    
-    console.log(`✅ ${description} - PASSED (${duration}ms)`);
-    
     return { success: true, output };
     
   } catch (error) {
@@ -65,12 +57,7 @@ function runCommand(command, description, critical = false) {
     
     testResults.results.push(result);
     testResults.summary.failed++;
-    
-    console.log(`❌ ${description} - FAILED`);
-    console.log(`   Error: ${error.message}`);
-    
     if (critical) {
-      console.log('🚨 Critical test failed, stopping execution');
       process.exit(1);
     }
     
@@ -79,12 +66,9 @@ function runCommand(command, description, critical = false) {
 }
 
 async function main() {
-  console.log('Phase 1: Pre-test Setup and Validation');
   console.log('-'.repeat(40));
   
   // 1. JSON parsing fixes already applied manually - skip script
-  console.log('✅ JSON parsing fixes already applied manually');
-  
   // 2. TypeScript compilation check
   runCommand(
     'npm run type-check',
@@ -97,8 +81,6 @@ async function main() {
     'npm run lint',
     'ESLint code quality check'
   );
-  
-  console.log('\nPhase 2: Unit and Integration Tests');
   console.log('-'.repeat(40));
   
   // 4. Unit tests
@@ -112,8 +94,6 @@ async function main() {
     'npm run test:integration',
     'Integration tests execution'
   );
-  
-  console.log('\nPhase 3: Build and Preparation');
   console.log('-'.repeat(40));
   
   // 6. Build the application
@@ -122,8 +102,6 @@ async function main() {
     'Application build process',
     true
   );
-  
-  console.log('\nPhase 4: End-to-End Testing');
   console.log('-'.repeat(40));
   
   // 7. Install Playwright browsers
@@ -155,8 +133,6 @@ async function main() {
     'npm run test:settings',
     'Settings page tests'
   );
-  
-  console.log('\nPhase 5: Security and Coverage');
   console.log('-'.repeat(40));
   
   // 12. Security audit
@@ -177,26 +153,13 @@ async function main() {
   testResults.summary.total = testResults.results.length;
   
   console.log('\n' + '='.repeat(60));
-  console.log('� COMPREHENSIVE TEST RESULTS SUMMARY');
   console.log('='.repeat(60));
-  
-  console.log(`⏱️  Total Duration: ${Math.round(testResults.totalDuration / 1000)}s`);
-  console.log(`📈 Total Tests: ${testResults.summary.total}`);
-  console.log(`✅ Passed: ${testResults.summary.passed}`);
-  console.log(`❌ Failed: ${testResults.summary.failed}`);
-  
   const successRate = Math.round((testResults.summary.passed / testResults.summary.total) * 100);
-  console.log(`📊 Success Rate: ${successRate}%`);
-  
   // Detailed results
-  console.log('\n📋 Detailed Results:');
   testResults.results.forEach((result, index) => {
     const status = result.status === 'PASSED' ? '✅' : '❌';
     const duration = result.duration ? `(${result.duration}ms)` : '';
-    console.log(`${index + 1}. ${status} ${result.description} ${duration}`);
-    
     if (result.status === 'FAILED' && result.error) {
-      console.log(`   Error: ${result.error.substring(0, 100)}...`);
     }
   });
   
@@ -204,14 +167,10 @@ async function main() {
   const reportPath = path.join(__dirname, '../test-results/comprehensive-test-report.json');
   fs.mkdirSync(path.dirname(reportPath), { recursive: true });
   fs.writeFileSync(reportPath, JSON.stringify(testResults, null, 2));
-  console.log(`\n� Detailed report saved to: ${reportPath}`);
-  
   // Exit with appropriate code
   if (testResults.summary.failed > 0) {
-    console.log('\n🚨 Some tests failed. Please review the results and fix issues.');
     process.exit(1);
   } else {
-    console.log('\n🎉 All tests passed! Your inventory system is ready for production.');
     process.exit(0);
   }
 }

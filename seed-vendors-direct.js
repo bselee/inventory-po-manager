@@ -80,8 +80,6 @@ const sampleVendors = [
 ]
 
 async function seedVendors() {
-  console.log('🌱 Seeding vendors directly into database...')
-  
   try {
     // First, check if we can connect to the database
     const { data: testData, error: testError } = await supabase
@@ -93,9 +91,6 @@ async function seedVendors() {
       console.error('❌ Database connection failed:', testError)
       process.exit(1)
     }
-
-    console.log('✅ Database connection successful')
-
     // Check if vendors already exist
     const { data: existingVendors, error: checkError } = await supabase
       .from('vendors')
@@ -107,20 +102,14 @@ async function seedVendors() {
     }
 
     const existingNames = existingVendors.map(v => v.name)
-    console.log(`📊 Found ${existingVendors.length} existing vendors:`, existingNames)
-
     // Filter out vendors that already exist
     const vendorsToCreate = sampleVendors.filter(vendor => 
       !existingNames.includes(vendor.name)
     )
 
     if (vendorsToCreate.length === 0) {
-      console.log('✅ All sample vendors already exist!')
       return
     }
-
-    console.log(`📝 Creating ${vendorsToCreate.length} new vendors...`)
-
     // Insert new vendors
     const { data: newVendors, error: insertError } = await supabase
       .from('vendors')
@@ -131,10 +120,7 @@ async function seedVendors() {
       console.error('❌ Error inserting vendors:', insertError)
       process.exit(1)
     }
-
-    console.log(`✅ Successfully created ${newVendors.length} vendors:`)
     newVendors.forEach((vendor, index) => {
-      console.log(`   ${index + 1}. ${vendor.name} (ID: ${vendor.id})`)
     })
 
     // Final count
@@ -144,11 +130,7 @@ async function seedVendors() {
       .single()
 
     if (!countError) {
-      console.log(`📊 Total vendors in database: ${finalCount.count}`)
     }
-
-    console.log('🎉 Vendor seeding completed successfully!')
-
   } catch (error) {
     console.error('❌ Unexpected error:', error)
     process.exit(1)

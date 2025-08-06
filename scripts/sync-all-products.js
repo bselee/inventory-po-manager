@@ -36,13 +36,11 @@ async function makeRequest(url, options = {}) {
 }
 
 async function syncAllProducts() {
-  console.log('\n🚀 STARTING FULL INVENTORY SYNC\n');
-  console.log('This will sync ALL products from Finale to your database.');
-  console.log('Expected: 2000+ items\n');
-  
+
+
   try {
     // Get CSRF token
-    console.log('1. Getting CSRF token...');
+
     const csrfResponse = await makeRequest('/api/auth/csrf', { method: 'GET' });
     const csrfCookie = csrfResponse.cookies.find(c => c.includes('csrf-token='));
     const csrfToken = csrfCookie ? csrfCookie.match(/csrf-token=([^;]+)/)[1] : null;
@@ -60,15 +58,12 @@ async function syncAllProducts() {
         filterYear: null  // null = get ALL items, not just current year
       })
     });
-    
-    console.log('\nSync Response:', syncResponse.status);
-    
+
     if (syncResponse.data.success) {
-      console.log('✅ Sync started successfully!');
-      console.log('Total products found:', syncResponse.data.totalProducts || 'Unknown');
-      
+
+
       // Check status every 10 seconds
-      console.log('\nMonitoring sync progress...');
+
       let isRunning = true;
       let checkCount = 0;
       
@@ -80,11 +75,10 @@ async function syncAllProducts() {
         
         if (runningSyncs.length > 0) {
           const sync = runningSyncs[0];
-          console.log(`Progress: ${sync.items_updated || 0} items synced...`);
+
         } else {
           isRunning = false;
-          console.log('\n🎉 Sync completed!');
-          
+
           // Check final count
           const { createClient } = require('@supabase/supabase-js');
           require('dotenv').config({ path: '.env.local' });
@@ -96,9 +90,8 @@ async function syncAllProducts() {
           const { count } = await supabase
             .from('inventory_items')
             .select('*', { count: 'exact', head: true });
-          
-          console.log('\nFinal inventory count:', count, 'items');
-          console.log('\nGo to http://localhost:3001/inventory to see all items!');
+
+
         }
         
         checkCount++;
@@ -107,18 +100,15 @@ async function syncAllProducts() {
       console.error('❌ Sync failed:', syncResponse.data.error || syncResponse.data.message);
       
       if (syncResponse.data.error?.includes('not configured')) {
-        console.log('\nPlease configure Finale API credentials first:');
-        console.log('1. Go to http://localhost:3001/settings');
-        console.log('2. Enter your Finale API key, secret, and account path');
-        console.log('3. Test the connection');
-        console.log('4. Then run this script again');
+
+
       }
     }
   } catch (error) {
     console.error('\nError:', error.message);
     if (error.code === 'ECONNREFUSED') {
-      console.log('\nDev server is not running!');
-      console.log('Start it with: npm run dev');
+
+
     }
   }
 }
@@ -130,6 +120,6 @@ http.get('http://localhost:3001/api/health', (res) => {
   }
 }).on('error', () => {
   console.error('❌ Dev server is not running!');
-  console.log('Please start it with: npm run dev');
-  console.log('Then run this script again.');
+
+
 });

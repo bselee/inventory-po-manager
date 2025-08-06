@@ -22,8 +22,6 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey, {
 
 async function runMigration() {
   try {
-    console.log('🚀 Running inventory cache table migration...');
-    
     // Read the SQL file
     const sqlPath = path.join(__dirname, 'create-inventory-cache-table.sql');
     const sql = fs.readFileSync(sqlPath, 'utf8');
@@ -35,15 +33,6 @@ async function runMigration() {
       console.error('❌ Migration failed:', error);
       process.exit(1);
     }
-    
-    console.log('✅ Inventory cache table created successfully!');
-    console.log('📊 Table features:');
-    console.log('  • SKU-based indexing for fast lookups');
-    console.log('  • Vendor filtering support');
-    console.log('  • Flexible JSONB storage for Finale data');
-    console.log('  • Automatic timestamp tracking');
-    console.log('  • Row Level Security enabled');
-    
   } catch (error) {
     console.error('❌ Unexpected error:', error);
     process.exit(1);
@@ -62,8 +51,6 @@ async function runMigrationDirect() {
       .limit(1);
     
     if (tableError && tableError.code === 'PGRST116') {
-      console.log('📋 Creating inventory_cache table...');
-      
       const createTableSQL = `
         CREATE TABLE inventory_cache (
           id TEXT PRIMARY KEY,
@@ -84,13 +71,7 @@ async function runMigrationDirect() {
       `;
       
       // You'll need to run this SQL manually in Supabase dashboard
-      console.log('⚠️  Please run the following SQL in your Supabase SQL editor:');
-      console.log('----------------------------------------');
-      console.log(createTableSQL);
-      console.log('----------------------------------------');
-      
     } else {
-      console.log('✅ inventory_cache table already exists!');
     }
     
   } catch (error) {

@@ -90,7 +90,7 @@ export async function GET(request: NextRequest) {
       details: syncResult
     })
   } catch (error) {
-    console.error('Cron sync error:', error)
+    logError('Cron sync error:', error)
     
     // Log error
     await supabase

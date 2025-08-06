@@ -20,42 +20,28 @@ async function sleep(ms) {
 }
 
 async function testCompleteIntegration() {
-  console.log('🚀 COMPLETE FINALE INTEGRATION TEST')
   console.log('=' + '='.repeat(50) + '\n')
-  console.log('This test will:')
-  console.log('1. Configure all 4 report URLs')
-  console.log('2. Switch to Redis-based settings')
-  console.log('3. Run enhanced sync with all data sources')
-  console.log('4. Verify comprehensive inventory metrics\n')
-  
   // Step 1: Test if we should use Redis settings
-  console.log('1️⃣ Testing Redis Settings Service...')
   let useRedisSettings = false
   try {
     const redisTest = await axios.get(`${BASE_URL}/api/settings-redis`)
     if (redisTest.data.success) {
-      console.log('✅ Redis Settings available, using Redis-based configuration')
       useRedisSettings = true
     }
   } catch (error) {
-    console.log('ℹ️  Redis Settings not initialized, attempting migration from Supabase...')
-    
     // Try to migrate from Supabase
     try {
       const migrateResponse = await axios.post(`${BASE_URL}/api/settings-redis/migrate`)
       if (migrateResponse.data.success) {
-        console.log('✅ Successfully migrated settings from Supabase to Redis!')
         useRedisSettings = true
       }
     } catch (migrateError) {
-      console.log('⚠️  Migration failed, will use Supabase settings')
     }
   }
   
   console.log('\n' + '='.repeat(50) + '\n')
   
   // Step 2: Update settings with all report URLs
-  console.log('2️⃣ Configuring all report URLs...')
   try {
     // Use Redis or Supabase based on availability
     const settingsEndpoint = useRedisSettings ? '/api/settings-redis' : '/api/settings'
@@ -77,44 +63,20 @@ async function testCompleteIntegration() {
     const updateResponse = await axios.put(`${BASE_URL}${settingsEndpoint}`, updateData)
     
     if (updateResponse.data.success || updateResponse.data.data) {
-      console.log('✅ All report URLs configured successfully!')
-      console.log('   - Inventory report: ✓')
-      console.log('   - 14-day consumption: ✓')
-      console.log('   - 30-day consumption: ✓')
-      console.log('   - Stock detail report: ✓')
-      console.log('   - Data source: enhanced')
-      console.log(`   - Storage: ${useRedisSettings ? 'Redis (Supabase eliminated!)' : 'Supabase'}`)
     }
   } catch (error) {
     console.error('❌ Failed to update settings:', error.response?.data || error.message)
-    console.log('\nAttempting to continue with manual sync...')
   }
   
   console.log('\n' + '='.repeat(50) + '\n')
   
   // Step 3: Trigger enhanced sync
-  console.log('3️⃣ Starting enhanced inventory sync...')
-  console.log('   Fetching data from all 4 reports...')
-  
   const syncStartTime = Date.now()
   try {
     const syncResponse = await axios.post(`${BASE_URL}/api/inventory-enhanced`, {})
     
     if (syncResponse.data.success) {
-      console.log('✅ Enhanced sync completed successfully!')
-      console.log('\n📊 Sync Statistics:')
-      console.log(`   Total items: ${syncResponse.data.stats.itemsSynced}`)
-      console.log(`   Items with vendor: ${syncResponse.data.stats.itemsWithVendor}`)
-      console.log(`   Items with sales: ${syncResponse.data.stats.itemsWithSales}`)
-      console.log(`   Items with consumption: ${syncResponse.data.stats.itemsWithConsumption}`)
-      console.log(`   Items with both: ${syncResponse.data.stats.itemsWithBoth}`)
-      console.log(`   Duration: ${syncResponse.data.stats.duration}`)
-      
       if (syncResponse.data.summary) {
-        console.log('\n💰 Financial Summary:')
-        console.log(`   Total value: $${syncResponse.data.summary.total_inventory_value.toFixed(2)}`)
-        console.log(`   Critical items: ${syncResponse.data.summary.critical_items}`)
-        console.log(`   Unique vendors: ${syncResponse.data.summary.vendors_count}`)
       }
     }
   } catch (error) {
@@ -128,34 +90,11 @@ async function testCompleteIntegration() {
   console.log('\n' + '='.repeat(50) + '\n')
   
   // Step 4: Test enhanced data with stock details
-  console.log('4️⃣ Verifying enhanced inventory data...')
-  
   try {
     const inventoryResponse = await axios.get(`${BASE_URL}/api/inventory-enhanced?limit=5&sortBy=total_velocity&sortDirection=desc`)
-    
-    console.log('✅ Enhanced data retrieved successfully!')
-    
     if (inventoryResponse.data.items.length > 0) {
-      console.log('\n🏆 Top 5 High-Velocity Items:')
       inventoryResponse.data.items.forEach((item, i) => {
-        console.log(`\n${i + 1}. ${item.sku}: ${item.product_name}`)
-        console.log(`   Vendor: ${item.vendor || 'Unknown'}`)
-        console.log(`   Stock Position:`)
-        console.log(`     - On Hand: ${item.units_on_hand} units`)
-        console.log(`     - Available: ${item.units_available} units (${item.units_packed} packed)`)
-        console.log(`     - In Transit: ${item.units_in_transit} units`)
-        console.log(`     - WIP: ${item.units_wip} units`)
-        console.log(`     - Total Pipeline: ${item.total_pipeline} units`)
-        console.log(`   Movement:`)
-        console.log(`     - Sales velocity: ${item.sales_velocity.toFixed(2)} units/day`)
-        console.log(`     - Consumption velocity: ${item.consumption_velocity.toFixed(2)} units/day`)
-        console.log(`     - Total velocity: ${item.total_velocity.toFixed(2)} units/day`)
-        console.log(`   Planning:`)
-        console.log(`     - Days until stockout: ${item.days_until_stockout}`)
-        console.log(`     - Reorder point: ${item.true_reorder_point} units`)
-        console.log(`     - Status: ${item.stock_status.toUpperCase()}`)
         if (item.standard_packaging) {
-          console.log(`     - Packaging: ${item.standard_packaging}`)
         }
       })
     }
@@ -163,28 +102,9 @@ async function testCompleteIntegration() {
     // Show summary insights
     if (inventoryResponse.data.summary) {
       const summary = inventoryResponse.data.summary
-      console.log('\n📈 COMPREHENSIVE INSIGHTS:')
       console.log('=' + '='.repeat(30))
-      
-      console.log('\n📦 Inventory Overview:')
-      console.log(`   Total SKUs: ${summary.total_items}`)
-      console.log(`   Total value: $${summary.total_inventory_value.toFixed(2)}`)
-      console.log(`   Critical items: ${summary.critical_items}`)
-      
-      console.log('\n📊 Data Quality:')
       const dq = summary.dataQuality
-      console.log(`   Items with vendor: ${dq.itemsWithVendor}/${dq.totalItems} (${((dq.itemsWithVendor/dq.totalItems)*100).toFixed(1)}%)`)
-      console.log(`   Items with sales: ${dq.itemsWithSales}/${dq.totalItems} (${((dq.itemsWithSales/dq.totalItems)*100).toFixed(1)}%)`)
-      console.log(`   Items with consumption: ${dq.itemsWithConsumption}/${dq.totalItems} (${((dq.itemsWithConsumption/dq.totalItems)*100).toFixed(1)}%)`)
-      
-      console.log('\n🚀 Velocity Analysis:')
       const vi = summary.velocityInsights
-      console.log(`   High velocity (>10/day): ${vi.highVelocityItems} items`)
-      console.log(`   Slow moving (<1/day): ${vi.slowMovingItems} items`)
-      console.log(`   Dead stock (no movement): ${vi.deadStock} items`)
-      console.log(`   Average velocities:`)
-      console.log(`     - Sales: ${summary.avg_sales_velocity.toFixed(2)} units/day`)
-      console.log(`     - Consumption: ${summary.avg_consumption_velocity.toFixed(2)} units/day`)
     }
     
   } catch (error) {
@@ -192,27 +112,10 @@ async function testCompleteIntegration() {
   }
   
   console.log('\n' + '='.repeat(50))
-  console.log('🎉 INTEGRATION COMPLETE!')
   console.log('=' + '='.repeat(50) + '\n')
-  
-  console.log('✨ Your system now provides:')
-  console.log('   ✓ Complete vendor data for all products')
   console.log('   ✓ Real-time stock positions (QoH, Packed, Transit, WIP)')
   console.log('   ✓ True available inventory (QoH - Packed)')
-  console.log('   ✓ Combined sales + consumption velocity')
-  console.log('   ✓ Accurate stockout predictions')
-  console.log('   ✓ Smart reorder points based on total usage')
-  console.log('   ✓ Pipeline visibility for better planning')
-  
-  console.log('\n🔑 Key Benefits:')
   console.log('   • No more Supabase dependency (using Vercel KV)')
-  console.log('   • Faster data access with intelligent caching')
-  console.log('   • Complete inventory lifecycle visibility')
-  console.log('   • Better fulfillment planning with packed/transit data')
-  console.log('   • Accurate demand forecasting combining sales + production')
-  
-  console.log('\n📱 Access your enhanced inventory at:')
-  console.log(`   ${BASE_URL}/inventory`)
   console.log('   (Ensure data source is set to "Enhanced")')
 }
 

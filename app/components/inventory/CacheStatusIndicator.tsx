@@ -37,7 +37,7 @@ export default function CacheStatusIndicator({ dataSource }: { dataSource: strin
         })
       }
     } catch (error) {
-      console.error('Failed to check cache status:', error)
+      logError('Failed to check cache status:', error)
     } finally {
       setLoading(false)
     }

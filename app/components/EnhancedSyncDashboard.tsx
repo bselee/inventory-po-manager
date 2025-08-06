@@ -100,7 +100,7 @@ export default function EnhancedSyncDashboard() {
         })
       }
     } catch (error) {
-      console.error('Failed to check sync health:', error)
+      logError('Failed to check sync health:', error)
     }
   }
 
@@ -132,7 +132,7 @@ export default function EnhancedSyncDashboard() {
         throw new Error('Sync failed')
       }
     } catch (error) {
-      console.error('Sync error:', error)
+      logError('Sync error:', error)
       setSyncResult({
         success: false,
         strategy: selectedStrategy,
@@ -174,7 +174,7 @@ export default function EnhancedSyncDashboard() {
         setSyncResult(data.data.result)
       }
     } catch (error) {
-      console.error('Intelligent sync error:', error)
+      logError('Intelligent sync error:', error)
     } finally {
       setIsLoading(false)
       checkSyncHealth()
@@ -197,7 +197,7 @@ export default function EnhancedSyncDashboard() {
         checkSyncHealth()
       }
     } catch (error) {
-      console.error('Failed to toggle scheduling:', error)
+      logError('Failed to toggle scheduling:', error)
     }
   }
 

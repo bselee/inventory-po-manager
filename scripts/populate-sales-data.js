@@ -9,8 +9,6 @@ const supabase = createClient(
 );
 
 async function populateSalesData() {
-  console.log('🎯 Populating sales data for inventory items...\n');
-
   try {
     // Get all inventory items
     const { data: items, error: fetchError } = await supabase
@@ -22,9 +20,6 @@ async function populateSalesData() {
       console.error('❌ Error fetching items:', fetchError);
       return;
     }
-
-    console.log(`📦 Found ${items.length} items to update\n`);
-
     let updated = 0;
     let errors = 0;
 
@@ -68,15 +63,9 @@ async function populateSalesData() {
       } else {
         updated++;
         if (updated % 10 === 0) {
-          console.log(`✅ Updated ${updated} items...`);
         }
       }
     }
-
-    console.log('\n📊 Sales Data Population Complete!');
-    console.log(`✅ Successfully updated: ${updated} items`);
-    console.log(`❌ Errors: ${errors} items`);
-    
     // Show sample of updated data
     const { data: sample } = await supabase
       .from('inventory_items')
@@ -86,9 +75,7 @@ async function populateSalesData() {
       .limit(5);
 
     if (sample && sample.length > 0) {
-      console.log('\n🌟 Top 5 items by 30-day sales:');
       sample.forEach(item => {
-        console.log(`  ${item.sku}: ${item.sales_last_30_days} sales (90d: ${item.sales_last_90_days})`);
       });
     }
 

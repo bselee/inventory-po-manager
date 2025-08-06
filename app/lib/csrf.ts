@@ -11,11 +11,11 @@ const CSRF_HEADER_NAME = 'x-csrf-token'
 const TOKEN_LENGTH = 32
 const TOKEN_EXPIRY = 24 * 60 * 60 * 1000 // 24 hours
 
-// Secret for token encryption (should be in env vars)
+// Secret for token encryption - must be properly configured
 const getSecret = () => {
-  const secret = process.env.CSRF_SECRET || process.env.JWT_SECRET || process.env.SUPABASE_JWT_SECRET
+  const secret = process.env.CSRF_SECRET || process.env.JWT_SECRET
   if (!secret || secret.length < 32) {
-    throw new Error('CSRF_SECRET must be at least 32 characters')
+    throw new Error('CSRF_SECRET or JWT_SECRET environment variable must be set and at least 32 characters long')
   }
   return secret
 }

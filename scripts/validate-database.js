@@ -8,8 +8,6 @@
 const { supabaseAdmin } = require('../lib/supabase');
 
 async function validateSchema() {
-  console.log('🔍 Validating Database Schema...');
-  
   const expectedTables = [
     'inventory_items',
     'purchase_orders',
@@ -38,8 +36,6 @@ async function validateSchema() {
         error: error?.message,
         recordCount: data || 0,
       };
-      
-      console.log(`Table ${tableName}: ${!error ? '✅ OK' : '❌ ' + error.message}`);
     }
     
     // Check critical constraints
@@ -93,8 +89,6 @@ async function validateSchema() {
         `,
       },
     ];
-    
-    console.log('\n🔍 Checking Constraints...');
     for (const check of constraintChecks) {
       try {
         const { data, error } = await supabaseAdmin.rpc('execute_sql', {
@@ -118,13 +112,11 @@ async function validateSchema() {
         }
         
         const status = results.constraints[check.name].valid ? '✅ OK' : '❌ VIOLATIONS';
-        console.log(`Constraint ${check.name}: ${status}`);
       } catch (err) {
         results.constraints[check.name] = {
           valid: false,
           error: err.message,
         };
-        console.log(`Constraint ${check.name}: ❌ ERROR - ${err.message}`);
       }
     }
     
@@ -135,19 +127,15 @@ async function validateSchema() {
       'idx_sync_logs_type_date',
       'idx_purchase_orders_status_date',
     ];
-    
-    console.log('\n🔍 Checking Indexes...');
     for (const indexName of indexChecks) {
       try {
         // This is a simplified check - in real implementation you'd query pg_indexes
         results.indexes[indexName] = { exists: true };
-        console.log(`Index ${indexName}: ✅ Assumed OK`);
       } catch (err) {
         results.indexes[indexName] = {
           exists: false,
           error: err.message,
         };
-        console.log(`Index ${indexName}: ❌ ERROR - ${err.message}`);
       }
     }
     
@@ -158,8 +146,6 @@ async function validateSchema() {
       'validate_inventory_integrity',
       'audit_trigger_function',
     ];
-    
-    console.log('\n🔍 Checking Functions...');
     for (const funcName of requiredFunctions) {
       try {
         // Simple test - try to call the function if it exists
@@ -171,13 +157,11 @@ async function validateSchema() {
         };
         
         const status = results.functions[funcName].exists ? '✅ OK' : '❌ MISSING';
-        console.log(`Function ${funcName}: ${status}`);
       } catch (err) {
         results.functions[funcName] = {
           exists: false,
           error: err.message,
         };
-        console.log(`Function ${funcName}: ❌ ERROR - ${err.message}`);
       }
     }
     
@@ -190,8 +174,6 @@ async function validateSchema() {
 }
 
 async function performDataIntegrity() {
-  console.log('\n🔍 Performing Data Integrity Checks...');
-  
   const checks = [];
   
   try {
@@ -238,14 +220,12 @@ async function performDataIntegrity() {
         });
         
         const status = simulatedResult === 0 ? '✅ OK' : `❌ ${simulatedResult} issues`;
-        console.log(`${check.name}: ${status}`);
       } catch (err) {
         checks.push({
           name: check.name,
           passed: false,
           error: err.message,
         });
-        console.log(`${check.name}: ❌ ERROR - ${err.message}`);
       }
     }
     
@@ -258,8 +238,6 @@ async function performDataIntegrity() {
 }
 
 async function generateFixScript(validationResults) {
-  console.log('\n🔧 Generating Fix Script...');
-  
   const fixes = [];
   
   // Add fixes based on validation results
@@ -323,17 +301,13 @@ SELECT 'Validation complete' as status;
 `;
     
     require('fs').writeFileSync('database-fixes.sql', fixScript);
-    console.log('✅ Fix script generated: database-fixes.sql');
   } else {
-    console.log('✅ No fixes needed');
   }
   
   return fixes;
 }
 
 async function main() {
-  console.log('🚀 Starting Database Validation...');
-  
   if (!supabaseAdmin) {
     console.error('❌ Service role key required for database validation');
     process.exit(1);
@@ -344,30 +318,20 @@ async function main() {
   const fixes = await generateFixScript(validation.results);
   
   console.log('\n' + '='.repeat(50));
-  console.log('📋 VALIDATION SUMMARY');
   console.log('='.repeat(50));
   
   if (validation.success) {
     const tableCount = Object.keys(validation.results.tables).length;
     const validTables = Object.values(validation.results.tables).filter(t => t.exists).length;
-    console.log(`Tables: ${validTables}/${tableCount} OK`);
-    
     const constraintCount = Object.keys(validation.results.constraints).length;
     const validConstraints = Object.values(validation.results.constraints).filter(c => c.valid).length;
-    console.log(`Constraints: ${validConstraints}/${constraintCount} OK`);
   }
   
   if (integrity.success) {
     const integrityCount = integrity.checks.length;
     const passedChecks = integrity.checks.filter(c => c.passed).length;
-    console.log(`Integrity: ${passedChecks}/${integrityCount} OK`);
   }
-  
-  console.log(`Fixes needed: ${fixes.length}`);
-  
   const allPassed = validation.success && integrity.success && fixes.length === 0;
-  console.log(`\nOverall: ${allPassed ? '✅ PASSED' : '❌ ISSUES FOUND'}`);
-  
   process.exit(allPassed ? 0 : 1);
 }
 

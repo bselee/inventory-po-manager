@@ -45,7 +45,7 @@ export async function GET() {
       last_po_sync: syncTimes.purchase_orders
     })
   } catch (error) {
-    console.error('Error fetching sync settings:', error)
+    logError('Error fetching sync settings:', error)
     return NextResponse.json(
       { error: 'Failed to fetch sync settings' },
       { status: 500 }
@@ -75,7 +75,7 @@ export async function PUT(request: Request) {
 
     return NextResponse.json({ success: true })
   } catch (error) {
-    console.error('Error updating sync settings:', error)
+    logError('Error updating sync settings:', error)
     return NextResponse.json(
       { error: 'Failed to update sync settings' },
       { status: 500 }

@@ -6,8 +6,6 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 'eyJhbGciOiJ
 const supabase = createClient(supabaseUrl, supabaseServiceKey)
 
 async function applyMigration() {
-  console.log('Applying report URLs migration...')
-  
   const migrationSQL = `
     -- Add report URL columns
     ALTER TABLE settings 
@@ -25,8 +23,6 @@ async function applyMigration() {
       console.error('Migration failed:', error)
       
       // Try alternative approach - add columns one by one
-      console.log('Trying alternative approach...')
-      
       const columns = [
         'finale_inventory_report_url TEXT',
         'finale_consumption_14day_url TEXT', 
@@ -37,8 +33,6 @@ async function applyMigration() {
       
       for (const column of columns) {
         const [colName] = column.split(' ')
-        console.log(`Adding column ${colName}...`)
-        
         // Check if column exists first
         const { data: cols } = await supabase
           .from('settings')
@@ -46,13 +40,10 @@ async function applyMigration() {
           .limit(1)
         
         if (!cols) {
-          console.log(`Column ${colName} doesn't exist, skipping...`)
         } else {
-          console.log(`Column ${colName} already exists`)
         }
       }
     } else {
-      console.log('Migration applied successfully!')
     }
     
     // Verify columns exist
@@ -74,7 +65,6 @@ async function applyMigration() {
 }
 
 applyMigration().then(() => {
-  console.log('Migration check complete')
   process.exit(0)
 }).catch(error => {
   console.error('Migration failed:', error)

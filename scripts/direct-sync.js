@@ -1,8 +1,4 @@
 const http = require('http');
-
-console.log('🚀 DIRECT FINALE SYNC TRIGGER\n');
-console.log('This will sync the last 2 years of inventory data from Finale.\n');
-
 const triggerSync = () => {
   const data = JSON.stringify({
     dryRun: false,
@@ -32,12 +28,6 @@ const triggerSync = () => {
         const result = JSON.parse(responseData);
         
         if (res.statusCode === 200 && result.success) {
-          console.log('✅ SYNC STARTED SUCCESSFULLY!\n');
-          console.log('The sync is now running in the background.');
-          console.log('It typically takes 1-3 minutes to complete.\n');
-          console.log('You can check progress at: http://localhost:3001/settings');
-          console.log('Once complete, view your inventory at: http://localhost:3001/inventory\n');
-          
           // Start monitoring
           monitorProgress();
         } else {
@@ -67,8 +57,6 @@ const triggerSync = () => {
 };
 
 const monitorProgress = () => {
-  console.log('📊 Monitoring sync progress...\n');
-  
   let dots = 0;
   const progressInterval = setInterval(() => {
     process.stdout.write('\rSyncing' + '.'.repeat((dots % 3) + 1) + '   ');
@@ -91,19 +79,10 @@ const monitorProgress = () => {
             
             if (status.lastSync?.status === 'success') {
               const items = status.lastSync.items_updated || 0;
-              console.log('\n\n✅ SYNC COMPLETED SUCCESSFULLY!');
-              console.log(`📦 ${items} inventory items imported\n`);
-              
               if (items > 0) {
-                console.log('🎉 Your inventory data is now available!');
-                console.log('👉 View it at: http://localhost:3001/inventory\n');
               } else {
-                console.log('⚠️  No new items were found in the specified date range.');
-                console.log('This might mean your data is already up to date.\n');
               }
             } else if (status.lastSync?.status === 'error') {
-              console.log('\n\n❌ SYNC FAILED');
-              console.log('Error:', status.lastSync.errors?.[0] || 'Unknown error\n');
             }
           }
           
@@ -111,8 +90,6 @@ const monitorProgress = () => {
           if (checkCount > 30) { // 5 minutes timeout
             clearInterval(progressInterval);
             clearInterval(statusInterval);
-            console.log('\n\n⏱️  Sync is taking longer than expected.');
-            console.log('Check the settings page for status.\n');
           }
         } catch (e) {
           // Ignore parse errors during monitoring

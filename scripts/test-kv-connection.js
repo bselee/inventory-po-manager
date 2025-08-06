@@ -8,11 +8,8 @@
 const { kv } = require('@vercel/kv');
 
 async function testKVConnection() {
-  console.log('🔍 Testing Vercel KV Connection...\n');
-
   try {
     // Test basic connectivity
-    console.log('1. Testing basic connectivity...');
     const start = Date.now();
     
     const testKey = `health-check-${Date.now()}`;
@@ -24,25 +21,13 @@ async function testKVConnection() {
 
     // Test write
     await kv.set(testKey, JSON.stringify(testData), { ex: 60 });
-    console.log('   ✅ Write operation successful');
-
     // Test read
     const retrieved = await kv.get(testKey);
     const parsed = JSON.parse(retrieved);
-    console.log('   ✅ Read operation successful');
-    console.log(`   📊 Latency: ${Date.now() - start}ms`);
-
     // Test delete
     await kv.del(testKey);
-    console.log('   ✅ Delete operation successful');
-
     // Test connection info
-    console.log('\n2. Connection Information:');
-    console.log(`   🔗 KV URL: ${process.env.KV_REST_API_URL ? '✅ Configured' : '❌ Missing'}`);
-    console.log(`   🔑 KV Token: ${process.env.KV_REST_API_TOKEN ? '✅ Configured' : '❌ Missing'}`);
-
     // Test performance with multiple operations
-    console.log('\n3. Performance Testing...');
     const perfStart = Date.now();
     const promises = [];
     
@@ -52,18 +37,12 @@ async function testKVConnection() {
     
     await Promise.all(promises);
     const perfTime = Date.now() - perfStart;
-    console.log(`   📈 10 concurrent writes: ${perfTime}ms`);
-
     // Cleanup performance test keys
     const cleanupPromises = [];
     for (let i = 0; i < 10; i++) {
       cleanupPromises.push(kv.del(`perf-test-${i}`));
     }
     await Promise.all(cleanupPromises);
-
-    console.log('\n✅ All KV tests passed!');
-    console.log('\n🎉 Vercel KV is ready for production use.');
-
   } catch (error) {
     console.error('\n❌ KV Connection Test Failed:');
     console.error(`   Error: ${error.message}`);

@@ -120,7 +120,7 @@ export async function GET(request: Request) {
     })
     
   } catch (error) {
-    console.error('[Inventory KV API] Error:', error)
+    logError('[Inventory KV API] Error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to fetch inventory' },
       { status: 500 }

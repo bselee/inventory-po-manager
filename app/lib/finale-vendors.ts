@@ -62,23 +62,17 @@ export class FinaleVendorService {
       
       return vendors
     } catch (error) {
-      console.error('Error fetching vendors:', error)
+      logError('Error fetching vendors:', error)
       throw error
     }
   }
 
   // Sync vendors to Supabase
   async syncVendorsToSupabase(): Promise<any> {
-    console.log('🏢 Syncing vendors from Finale...')
-    
     try {
       const vendors = await this.getVendors()
-      console.log(`Found ${vendors.length} vendors`)
-      
       // Filter active vendors only
       const activeVendors = vendors.filter(v => v.active !== false)
-      console.log(`Active vendors: ${activeVendors.length}`)
-      
       // Prepare for upsert
       const vendorData = activeVendors.map(vendor => ({
         vendor_id: vendor.vendorId,
@@ -107,7 +101,7 @@ export class FinaleVendorService {
           })
         
         if (error) {
-          console.error(`Batch ${i / batchSize + 1} error:`, error)
+          logError(`Batch ${i / batchSize + 1} error:`, error)
         } else {
           updated += batch.length
         }
@@ -137,7 +131,7 @@ export class FinaleVendorService {
       }
       
     } catch (error) {
-      console.error('Vendor sync error:', error)
+      logError('Vendor sync error:', error)
       
       await supabase
         .from('sync_logs')
@@ -162,7 +156,7 @@ export class FinaleVendorService {
       // For now, return empty array as this needs product-supplier mapping
       return []
     } catch (error) {
-      console.error('Error fetching vendor products:', error)
+      logError('Error fetching vendor products:', error)
       return []
     }
   }

@@ -72,7 +72,7 @@ export default function SalesDataUploader() {
         // Show preview of first 5 items
         setPreview(jsonData.slice(0, 5))
       } catch (error) {
-        console.error('Error reading file:', error)
+        logError('Error reading file:', error)
         setResult({
           success: false,
           processed: 0,
@@ -140,7 +140,7 @@ export default function SalesDataUploader() {
           errors: errors.slice(0, 10) // Show first 10 errors
         })
       } catch (error) {
-        console.error('Error processing file:', error)
+        logError('Error processing file:', error)
         setResult({
           success: false,
           processed: 0,

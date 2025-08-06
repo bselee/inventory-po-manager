@@ -182,7 +182,7 @@ export function useOptimizedInventoryFilter(
 
       return filtered
     } catch (error) {
-      console.error('Error in inventory filtering:', error)
+      logError('Error in inventory filtering:', error)
       // Return unfiltered items as fallback
       return allItems
     }
@@ -209,7 +209,7 @@ export function useFilteringPerformance(itemCount: number, filterCount: number) 
         
         // Log performance metrics for monitoring
         if (duration > 100) { // Log if filtering takes > 100ms
-          console.warn(`Slow filtering detected: ${duration.toFixed(2)}ms for ${itemCount} items with ${filterCount} active filters`)
+          logWarn(`Slow filtering detected: ${duration.toFixed(2)}ms for ${itemCount} items with ${filterCount} active filters`)
         }
         
         return {
@@ -256,12 +256,11 @@ export function useInventoryFiltering(
     // End timing and log performance in development
     if (process.env.NODE_ENV === 'development' && allItems.length > 100) {
       const timing = performanceMonitor.endTiming()
-      console.log(`Filtering ${allItems.length} items with ${activeFilterCount} filters: ${timing.duration.toFixed(2)}ms`)
     }
 
     return filteredItems
   } catch (error) {
-    console.error('Error in inventory filtering wrapper:', error)
+    logError('Error in inventory filtering wrapper:', error)
     // Return all items as fallback
     return allItems
   }

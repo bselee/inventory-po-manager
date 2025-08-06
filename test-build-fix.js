@@ -6,8 +6,6 @@
  */
 
 console.log('🔨 Testing Next.js Build (Module Resolution Fix)');
-console.log('================================================\n');
-
 const fs = require('fs');
 const path = require('path');
 const { spawn } = require('child_process');
@@ -24,9 +22,6 @@ FINALE_ACCOUNT_PATH=test
 NEXTAUTH_URL=https://test.com
 NEXTAUTH_SECRET=test-secret-for-build
 `);
-
-console.log('📋 Created temporary build environment');
-
 // Start build process
 const buildProcess = spawn('npm', ['run', 'build'], {
   cwd: __dirname,
@@ -51,7 +46,6 @@ buildProcess.stdout.on('data', (data) => {
         !line.includes('Redis connection') && 
         !line.includes('Application Error') &&
         line.trim()) {
-      console.log(line);
     }
   });
 });
@@ -79,30 +73,17 @@ buildProcess.on('close', (code) => {
   } catch (e) {
     // Ignore cleanup errors
   }
-  
-  console.log('\n📊 Build Test Results');
-  console.log('====================');
-  
   if (code === 0) {
-    console.log('✅ Build completed successfully!');
-    console.log('✅ Module resolution issues fixed');
-    console.log('✅ Redis Cloud migration ready for deployment');
-    
     // Check for key success indicators
     if (buildOutput.includes('Creating an optimized production build')) {
-      console.log('🎯 Next.js build process initiated successfully');
     }
     
     if (buildOutput.includes('Compiled successfully')) {
-      console.log('🎯 TypeScript compilation successful');
     }
     
   } else {
-    console.log(`❌ Build failed with exit code: ${code}`);
-    
     // Check for specific errors
     if (buildError.includes("Module not found: Can't resolve")) {
-      console.log('🔍 Module resolution errors detected:');
       const moduleErrors = buildError.match(/Module not found: Can't resolve '([^']+)'/g);
       if (moduleErrors) {
         moduleErrors.forEach(error => console.log(`   • ${error}`));
@@ -110,15 +91,8 @@ buildProcess.on('close', (code) => {
     }
     
     if (buildError.includes('webpack errors')) {
-      console.log('🔍 Webpack compilation errors detected');
     }
   }
-  
-  console.log('\n💡 Next Steps:');
-  console.log('1. Configure Redis Cloud connection string: REDIS_URL=redis://default:password@host:port');
-  console.log('2. Deploy to production environment');
-  console.log('3. Test Redis cache functionality with real connection');
-  
   process.exit(code);
 });
 

@@ -9,8 +9,6 @@ const authString = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
 async function makeRequest(endpoint, params = '') {
   return new Promise((resolve, reject) => {
     const url = `https://app.finaleinventory.com/${accountPath}/api/${endpoint}${params}`;
-    console.log(`Requesting: ${url}`);
-    
     https.get(url, {
       headers: {
         'Authorization': `Basic ${authString}`,
@@ -36,7 +34,6 @@ async function makeRequest(endpoint, params = '') {
 }
 
 async function exploreInventory() {
-  console.log('🔍 DEEP DIVE: FINALE INVENTORY DATA STRUCTURE\n');
   console.log('=' .repeat(60));
   
   // Try different parameter combinations
@@ -52,30 +49,22 @@ async function exploreInventory() {
   ];
   
   for (const test of tests) {
-    console.log(`\n📦 ${test.desc}`);
-    console.log(`Endpoint: ${test.endpoint}${test.params}`);
     console.log('-'.repeat(50));
     
     try {
       const result = await makeRequest(test.endpoint, test.params);
       
       if (result.status === 200) {
-        console.log('✅ Success!');
-        
         // Analyze structure
         if (typeof result.data === 'object') {
           if (Array.isArray(result.data)) {
-            console.log(`Format: Array of ${result.data.length} items`);
             if (result.data.length > 0) {
               console.log('First item keys:', Object.keys(result.data[0]));
               console.log('Sample:', JSON.stringify(result.data[0], null, 2).substring(0, 800));
             }
           } else if (result.data.productId && Array.isArray(result.data.productId)) {
             // Parallel array format
-            console.log('Format: Parallel arrays');
             console.log(`Fields (${Object.keys(result.data).length}):`, Object.keys(result.data).join(', '));
-            console.log(`Records: ${result.data.productId.length}`);
-            
             // Convert first record to object for easier viewing
             if (result.data.productId.length > 0) {
               const firstRecord = {};
@@ -84,28 +73,23 @@ async function exploreInventory() {
                   firstRecord[key] = result.data[key][0];
                 }
               });
-              console.log('\nFirst record as object:');
               console.log(JSON.stringify(firstRecord, null, 2).substring(0, 800));
             }
           } else {
-            console.log('Format: Object');
             console.log('Keys:', Object.keys(result.data));
             console.log('Data:', JSON.stringify(result.data, null, 2).substring(0, 800));
           }
         }
       } else {
-        console.log(`❌ Failed (${result.status})`);
         if (result.data) {
           console.log('Response:', result.data.substring(0, 200));
         }
       }
     } catch (error) {
-      console.log('❌ Error:', error.message);
     }
   }
   
   // Now let's specifically look for inventory-related fields
-  console.log('\n\n📊 INVENTORY-SPECIFIC DATA ANALYSIS');
   console.log('=' .repeat(60));
   
   try {
@@ -113,8 +97,6 @@ async function exploreInventory() {
     const productsResult = await makeRequest('product', '?limit=3&expand=1');
     
     if (productsResult.status === 200 && productsResult.data) {
-      console.log('\n🎯 Key Inventory Management Fields Found:\n');
-      
       const inventoryFields = {
         'Stock Levels': [
           'quantityOnHand', 'quantityAvailable', 'quantityAllocated', 
@@ -151,7 +133,6 @@ async function exploreInventory() {
         );
         
         if (found.length > 0) {
-          console.log(`${category}:`);
           found.forEach(field => {
             const actualField = availableFields.find(af => 
               af.toLowerCase().includes(field.toLowerCase())
@@ -160,17 +141,13 @@ async function exploreInventory() {
               const value = Array.isArray(productsResult.data[actualField]) 
                 ? productsResult.data[actualField][0] 
                 : productsResult.data[actualField];
-              console.log(`  ✓ ${actualField}: ${JSON.stringify(value)}`);
             }
           });
-          console.log('');
         }
       });
       
       // List all fields we're currently not using
-      console.log('\n📋 All Available Fields:');
       availableFields.forEach(field => {
-        console.log(`- ${field}`);
       });
     }
   } catch (error) {

@@ -2,28 +2,12 @@ import { NextResponse } from 'next/server';
 import { supabase } from '@/app/lib/supabase';
 import { getSettings, getFinaleConfig } from '@/app/lib/data-access';
 import { FinaleReportApiService } from '@/app/lib/finale-report-api';
-import { z } from 'zod';
+import { purchaseOrderSchema, paginationSchema } from '@/app/lib/validation-schemas';
+import { createApiHandler, apiResponse } from '@/app/lib/api-handler';
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
-
-// Validation schema for purchase orders
-const purchaseOrderSchema = z.object({
-  id: z.string(),
-  orderNumber: z.string(),
-  vendor: z.string(),
-  vendor_email: z.string().default(''),
-  status: z.enum(['draft', 'sent', 'approved', 'received', 'cancelled']).default('draft'),
-  total_amount: z.number().nonnegative(),
-  created_at: z.string(),
-  updated_at: z.string(),
-  expected_date: z.string().nullable(),
-  items: z.array(z.any()).default([]),
-  shipping_cost: z.number().nonnegative().default(0),
-  tax_amount: z.number().nonnegative().default(0),
-  notes: z.string().default('')
-});
 
 // GET /api/purchase-orders - Fetch purchase orders
 export async function GET() {
@@ -39,8 +23,7 @@ export async function GET() {
           apiSecret: finaleConfig.apiSecret,
           accountPath: finaleConfig.accountPath
         });
-        
-        console.log('[Purchase Orders API] Fetching from Finale report');
+
         const reportData = await reportApi.fetchReport(settings.finale_purchase_orders_url);
         
         // Transform and validate report data
@@ -70,13 +53,13 @@ export async function GET() {
             const validatedOrder = purchaseOrderSchema.parse(mappedOrder);
             validPurchaseOrders.push(validatedOrder);
           } catch (error) {
-            console.warn(`[Purchase Orders API] Invalid order data at index ${index}:`, error);
+            logWarn(`[Purchase Orders API] Invalid order data at index ${index}:`, error);
             invalidOrders.push({ index, error: error instanceof Error ? error.message : 'Unknown error' });
           }
         });
         
         if (invalidOrders.length > 0) {
-          console.log(`[Purchase Orders API] ${invalidOrders.length} orders failed validation`);
+
         }
         
         return NextResponse.json({ 
@@ -86,7 +69,7 @@ export async function GET() {
           invalidCount: invalidOrders.length
         });
       } catch (error) {
-        console.error('[Purchase Orders API] Error fetching from Finale:', error);
+        logError('[Purchase Orders API] Error fetching from Finale:', error);
         // Fall through to database
       }
     }
@@ -98,7 +81,7 @@ export async function GET() {
       .order('created_at', { ascending: false });
     
     if (error) {
-      console.error('[Purchase Orders API] Database error:', error);
+      logError('[Purchase Orders API] Database error:', error);
       
       // If database fails too, return sample data for development
       const samplePOs = [
@@ -178,7 +161,7 @@ export async function POST(request: Request) {
       .single();
 
     if (error) {
-      console.error('[Purchase Orders API] Error creating PO:', error);
+      logError('[Purchase Orders API] Error creating PO:', error);
       return NextResponse.json(
         { error: 'Failed to create purchase order' },
         { status: 500 }

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { finaleCacheService } from '@/app/lib/finale-cache-service';
+import { finaleCacheService } from '@/lib/finale-cache-service';
 
 export async function GET(request: NextRequest) {
   try {
@@ -9,9 +9,6 @@ export async function GET(request: NextRequest) {
     const vendor = searchParams.get('vendor');
     const search = searchParams.get('search');
     const lowStockOnly = searchParams.get('lowStock') === 'true';
-
-    console.log(`[Cache API] Request - forceRefresh: ${forceRefresh}, ttl: ${ttlMinutes}`);
-
     // Handle different request types
     if (lowStockOnly) {
       const lowStockItems = await finaleCacheService.getLowStockItems();
@@ -77,7 +74,7 @@ export async function GET(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('[Cache API] Error:', error);
+    logError('[Cache API] Error:', error);
     
     return NextResponse.json({
       success: false,
@@ -134,7 +131,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('[Cache API] POST Error:', error);
+    logError('[Cache API] POST Error:', error);
     
     return NextResponse.json({
       success: false,

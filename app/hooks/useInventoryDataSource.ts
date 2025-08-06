@@ -25,7 +25,7 @@ export function useInventoryDataSource(): UseInventoryDataSourceResult {
         const source = data.data?.inventory_data_source || 'supabase'
         setDataSource(source as DataSource)
       } catch (err) {
-        console.error('Error fetching data source:', err)
+        logError('Error fetching data source:', err)
         setError(err instanceof Error ? err.message : 'Unknown error')
         // Default to supabase on error
         setDataSource('supabase')

@@ -12,7 +12,7 @@ export default function TestInventoryPage() {
   }
   
   const runTests = async () => {
-    console.log('Running tests...')
+
     setTesting(true)
     setResults([])
     

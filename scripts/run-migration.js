@@ -28,8 +28,6 @@ async function runMigration(migrationFile) {
     }
 
     const migrationSQL = fs.readFileSync(migrationPath, 'utf8');
-    console.log(`Running migration: ${path.basename(migrationPath)}`);
-    console.log('---');
 
     // Split by semicolons but be careful with functions/triggers
     const statements = [];
@@ -74,17 +72,13 @@ async function runMigration(migrationFile) {
       if (error) {
         // If the RPC doesn't exist, we'll need to use a different approach
         if (error.message.includes('exec_sql')) {
-          console.log('Note: Direct SQL execution not available via RPC.');
-          console.log('You may need to run this migration directly in Supabase SQL editor.');
-          console.log('\nMigration SQL:');
-          console.log(migrationSQL);
+
+
           return;
         }
         throw error;
       }
     }
-
-    console.log('\n✅ Migration completed successfully!');
 
   } catch (error) {
     console.error('\n❌ Migration failed:', error.message);
@@ -95,8 +89,8 @@ async function runMigration(migrationFile) {
 // Get migration file from command line arguments
 const args = process.argv.slice(2);
 if (args.length === 0) {
-  console.log('Usage: node scripts/run-migration.js <migration-file>');
-  console.log('Example: node scripts/run-migration.js scripts/migrations/008_settings_single_row_constraint.sql');
+
+
   process.exit(1);
 }
 

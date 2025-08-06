@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { FinaleApiService, getFinaleConfig } from '@/app/lib/finale-api'
-import { supabase } from '@/app/lib/supabase'
-import { kvInventoryService } from '@/app/lib/kv-inventory-service'
-import { getSettings } from '@/app/lib/data-access'
+import { FinaleApiService, getFinaleConfig } from '@/lib/finale-api'
+import { supabase } from '@/lib/supabase'
+import { kvInventoryService } from '@/lib/kv-inventory-service'
+import { getSettings } from '@/lib/data-access'
+import { createApiHandler, apiResponse } from '@/lib/api-handler'
+import { vendorSchema, paginationSchema } from '@/lib/validation-schemas'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -82,7 +84,7 @@ export async function GET(request: NextRequest) {
       .order('name', { ascending: true })
 
     if (error) {
-      console.error('Error fetching vendors:', error)
+      logError('Error fetching vendors:', error)
       return NextResponse.json(
         { error: 'Failed to fetch vendors' },
         { status: 500 }
@@ -95,7 +97,7 @@ export async function GET(request: NextRequest) {
       totalCount: data?.length || 0
     })
   } catch (error) {
-    console.error('Error in GET /api/vendors:', error)
+    logError('Error in GET /api/vendors:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }
@@ -120,7 +122,7 @@ export async function POST(request: NextRequest) {
         // Extract the vendor ID from the response
         finaleVendorId = finaleResponse.vendorId || finaleResponse.id
       } catch (finaleError) {
-        console.error('Failed to create vendor in Finale:', finaleError)
+        logError('Failed to create vendor in Finale:', finaleError)
         // Continue to create locally even if Finale fails
       }
     }
@@ -148,7 +150,7 @@ export async function POST(request: NextRequest) {
       syncStatus: finaleVendorId ? 'synced' : 'local-only'
     })
   } catch (error) {
-    console.error('Error creating vendor:', error)
+    logError('Error creating vendor:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to create vendor' },
       { status: 500 }

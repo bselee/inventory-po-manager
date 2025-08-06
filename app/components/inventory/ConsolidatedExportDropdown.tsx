@@ -235,7 +235,7 @@ export default function ConsolidatedExportDropdown({
           break
       }
     } catch (error) {
-      console.error(`Error exporting ${format}:`, error)
+      logError(`Error exporting ${format}:`, error)
       alert(`Failed to export ${format}. Please try again.`)
     } finally {
       setIsExporting(null)

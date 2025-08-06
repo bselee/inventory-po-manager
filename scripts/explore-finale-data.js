@@ -35,7 +35,6 @@ async function makeRequest(endpoint, limit = 5) {
 }
 
 async function exploreFinaleData() {
-  console.log('🔍 EXPLORING FINALE INVENTORY DATA\n');
   console.log('=' .repeat(60));
   
   // Test different endpoints to see what's available
@@ -53,26 +52,19 @@ async function exploreFinaleData() {
   ];
   
   for (const endpoint of endpoints) {
-    console.log(`\n📦 Testing endpoint: /${endpoint}`);
     console.log('-'.repeat(50));
     
     try {
       const result = await makeRequest(endpoint, 2);
       
       if (result.status === 200) {
-        console.log('✅ Endpoint available!');
-        
         // Analyze the data structure
         if (result.data) {
           // Check if it's parallel array format
           if (result.data.productId && Array.isArray(result.data.productId)) {
-            console.log('Format: Parallel arrays');
             console.log('Available fields:', Object.keys(result.data).slice(0, 20).join(', '));
-            console.log('Record count:', result.data.productId.length);
-            
             // Show sample data
             if (result.data.productId.length > 0) {
-              console.log('\nSample record:');
               const sample = {};
               Object.keys(result.data).forEach(key => {
                 if (Array.isArray(result.data[key])) {
@@ -82,33 +74,26 @@ async function exploreFinaleData() {
               console.log(JSON.stringify(sample, null, 2).substring(0, 500));
             }
           } else if (Array.isArray(result.data)) {
-            console.log('Format: Standard array');
-            console.log('Record count:', result.data.length);
             if (result.data.length > 0) {
               console.log('Sample:', JSON.stringify(result.data[0], null, 2).substring(0, 500));
             }
           } else {
-            console.log('Format: Object');
             console.log('Keys:', Object.keys(result.data).join(', '));
           }
         }
       } else {
-        console.log(`❌ Not available (${result.status})`);
       }
     } catch (error) {
-      console.log('❌ Error:', error.message);
     }
   }
   
   // Now let's look at detailed product data
-  console.log('\n\n📊 DETAILED PRODUCT/INVENTORY ANALYSIS');
   console.log('=' .repeat(60));
   
   try {
     const productResult = await makeRequest('product', 10);
     
     if (productResult.status === 200 && productResult.data) {
-      console.log('\n🔍 All available product fields:');
       const fields = Object.keys(productResult.data);
       
       // Categorize fields by purpose
@@ -128,11 +113,9 @@ async function exploreFinaleData() {
       Object.entries(categories).forEach(([category, fieldList]) => {
         const availableFields = fieldList.filter(f => fields.includes(f));
         if (availableFields.length > 0) {
-          console.log(`\n${category}:`);
           availableFields.forEach(field => {
             // Show sample value
             const sampleValue = productResult.data[field] && productResult.data[field][0];
-            console.log(`  - ${field}: ${JSON.stringify(sampleValue)}`);
           });
         }
       });
@@ -150,7 +133,6 @@ async function exploreFinaleData() {
   }
   
   // Test purchase order structure
-  console.log('\n\n📋 PURCHASE ORDER STRUCTURE');
   console.log('=' .repeat(60));
   
   try {

@@ -124,7 +124,7 @@ export class RateLimiter {
         limit: this.config.max
       }
     } catch (error) {
-      console.error('Rate limit check error:', error)
+      logError('Rate limit check error:', error)
       // On error, allow the request
       return {
         allowed: true,

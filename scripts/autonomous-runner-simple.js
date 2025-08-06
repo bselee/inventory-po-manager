@@ -8,10 +8,6 @@
 const { exec } = require('child_process');
 const fs = require('fs').promises;
 const path = require('path');
-
-console.log('🤖 Starting Autonomous Testing System');
-console.log('=====================================\n');
-
 let runCount = 0;
 let successCount = 0;
 let fixCount = 0;
@@ -32,7 +28,6 @@ const testScenarios = [
 
 async function simulateTestRun() {
   runCount++;
-  console.log(`\n🎭 Test Run #${runCount} Starting...`);
   console.log('─'.repeat(50));
   
   let failures = [];
@@ -50,11 +45,6 @@ async function simulateTestRun() {
         scenario.status = 'pass';
         delete scenario.error;
         fixCount++;
-        console.log(`\n🔧 AUTO-FIX APPLIED:`);
-        console.log(`   Test: ${scenario.name}`);
-        console.log(`   File: ${scenario.file}${scenario.line ? ':' + scenario.line : ''}`);
-        console.log(`   Fix: ${getFixDescription(originalError)}`);
-        console.log(`   Result: ✅ PASSING\n`);
       }
     } else if (scenario.status === 'pass' && Math.random() > 0.95) {
       // Small chance of regression
@@ -74,35 +64,15 @@ async function simulateTestRun() {
   console.log('\n'); // New line after progress indicators
   
   // Summary
-  console.log('\n📊 Summary:');
-  console.log(`   Total: ${testScenarios.length} tests`);
-  console.log(`   Passed: ${passes.length} ✅`);
-  console.log(`   Failed: ${failures.length} ❌`);
-  console.log(`   Success Rate: ${Math.round((passes.length / testScenarios.length) * 100)}%`);
-  
   if (passes.length === testScenarios.length) {
     successCount++;
-    console.log('\n🎉 All tests passing!');
   } else {
-    console.log('\n🔧 Applying automatic repairs...');
-    
     // Show detailed failure analysis
-    console.log('\n📋 Failure Analysis:');
     for (const failure of failures) {
-      console.log(`\n   🔍 ${failure.name}`);
-      console.log(`      Error: ${failure.error}`);
-      console.log(`      File: ${failure.file}${failure.line ? ':' + failure.line : ''}`);
-      console.log(`      Strategy: ${getRepairStrategy(failure.error)}`);
     }
   }
   
   // Stats
-  console.log('\n📈 Autonomous Testing Stats:');
-  console.log(`   Total Runs: ${runCount}`);
-  console.log(`   Successful Runs: ${successCount}`);
-  console.log(`   Tests Auto-Fixed: ${fixCount}`);
-  console.log(`   Time Saved: ~${(fixCount * 30 / 60).toFixed(1)} hours`);
-  
   // Update dashboard data
   await updateDashboard({
     runCount,
@@ -171,38 +141,19 @@ async function run() {
     await simulateTestRun();
     
     // Show countdown timer
-  console.log('\n⏱️  Next run in: ');
   for (let i = 30; i > 0; i--) {
     process.stdout.write(`\r⏱️  Next run in: ${i}s  `);
     await new Promise(resolve => setTimeout(resolve, 1000));
   }
-  console.log('\n');
     await new Promise(resolve => setTimeout(resolve, 30000));
   }
 }
 
 // Handle shutdown
 process.on('SIGINT', () => {
-  console.log('\n\n🛑 Shutting down autonomous system...');
-  console.log(`\n📊 Final Stats:`);
-  console.log(`   Total test runs: ${runCount}`);
-  console.log(`   Tests auto-fixed: ${fixCount}`);
-  console.log(`   Time saved: ~${(fixCount * 30 / 60).toFixed(1)} hours`);
-  console.log(`   Money saved: ~$${(fixCount * 150).toLocaleString()}`);
   process.exit(0);
 });
 
 // Startup message with ASCII art
-console.log('\n╔═══════════════════════════════════════════════════════╗');
-console.log('║          🤖 AUTONOMOUS TESTING SYSTEM v2.0 🤖          ║');
-console.log('╠═══════════════════════════════════════════════════════╣');
-console.log('║  ✨ Self-healing tests with intelligent repair        ║');
-console.log('║  🔧 Automatic fix application                         ║');
-console.log('║  📊 Real-time progress tracking                       ║');
-console.log('║  💾 Dashboard: test-reports/autonomous/               ║');
-console.log('╚═══════════════════════════════════════════════════════╝');
-console.log('\n🚀 System initialized. Starting continuous testing...\n');
-console.log('Press Ctrl+C to stop\n');
-
 // Start the magic
 run().catch(console.error);

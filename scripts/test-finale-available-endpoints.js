@@ -38,8 +38,6 @@ async function makeRequest(endpoint) {
 }
 
 async function testAvailableEndpoints() {
-  console.log('🔍 TESTING AVAILABLE FINALE ENDPOINTS\n');
-  console.log('Account:', accountPath);
   console.log('=' .repeat(60));
   
   // Test various endpoints
@@ -61,21 +59,14 @@ async function testAvailableEndpoints() {
     '/warehouse',          // Warehouse
     '/location',           // Locations
   ];
-  
-  console.log('\nTesting endpoints...\n');
-  
   for (const endpoint of endpoints) {
     const result = await makeRequest(endpoint);
     const icon = result.status === 200 ? '✅' : result.status === 404 ? '❌' : '⚠️';
-    console.log(`${icon} ${endpoint.padEnd(20)} Status: ${result.status}`);
-    
     if (result.status === 200) {
-      console.log(`   Preview: ${result.data}`);
     }
   }
   
   // Now let's check if product endpoint has inventory data embedded
-  console.log('\n\n📊 CHECKING PRODUCT ENDPOINT FOR INVENTORY DATA');
   console.log('=' .repeat(60));
   
   const productTests = [
@@ -87,8 +78,6 @@ async function testAvailableEndpoints() {
   ];
   
   for (const endpoint of productTests) {
-    console.log(`\nTesting: ${endpoint}`);
-    
     const url = `https://app.finaleinventory.com/${accountPath}/api${endpoint}`;
     
     await new Promise((resolve) => {
@@ -98,8 +87,6 @@ async function testAvailableEndpoints() {
           'Accept': 'application/json'
         }
       }, (res) => {
-        console.log(`Status: ${res.statusCode}`);
-        
         let data = '';
         res.on('data', (chunk) => {
           data += chunk;
@@ -124,14 +111,11 @@ async function testAvailableEndpoints() {
               );
               
               if (inventoryFields.length > 0) {
-                console.log('✅ Found inventory fields:', inventoryFields);
               } else {
-                console.log('❌ No inventory fields found');
                 console.log('Available fields:', allFields.slice(0, 10).join(', ') + '...');
               }
               
             } catch (e) {
-              console.log('Parse error');
             }
           }
           resolve();

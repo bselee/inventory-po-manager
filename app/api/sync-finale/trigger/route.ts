@@ -50,19 +50,15 @@ export async function POST(request: NextRequest) {
     const finaleApi = new FinaleApiService(config)
     
     // Test connection first
-    console.log('[Manual Sync] Testing Finale connection...')
     const isConnected = await finaleApi.testConnection()
     
     if (!isConnected) {
-      console.error('[Manual Sync] Connection test failed')
+      logError('[Manual Sync] Connection test failed')
       return NextResponse.json({ 
         success: false, 
         error: 'Failed to connect to Finale API. Please check your credentials.' 
       }, { status: 500 })
     }
-    
-    console.log('[Manual Sync] Connection test passed')
-    
     // Create initial sync log entry
     const { data: syncLog } = await supabase
       .from('sync_logs')
@@ -84,7 +80,6 @@ export async function POST(request: NextRequest) {
       .single()
     
     // Perform sync
-    console.log(`[Manual Sync] Starting ${dryRun ? 'dry run' : 'full'} sync...`)
     const result = await finaleApi.syncToSupabase(dryRun, filterYear)
     
     // Update settings last sync time if successful and not dry run
@@ -101,7 +96,7 @@ export async function POST(request: NextRequest) {
       mode: dryRun ? 'dry_run' : 'full_sync'
     })
   } catch (error) {
-    console.error('[Manual Sync] Error:', error)
+    logError('[Manual Sync] Error:', error)
     
     // Log the error
     await supabase

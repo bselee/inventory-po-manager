@@ -26,8 +26,6 @@ const supabase = createClient(
 async function log(message) {
   const timestamp = new Date().toISOString();
   const logMessage = `[${timestamp}] ${message}\n`;
-  console.log(message);
-  
   try {
     await fs.appendFile(config.logFile, logMessage);
   } catch (error) {
@@ -214,12 +212,6 @@ async function runRollback() {
     for (const [table, count] of Object.entries(stats)) {
       await log(`   ${table}: ${count} records restored`);
     }
-    
-    console.log('\n✅ Rollback Complete!');
-    console.log('🔄 All data has been restored to Supabase');
-    console.log('🧹 KV data has been cleared');
-    console.log(`📄 Full rollback log: ${config.logFile}`);
-    
   } catch (error) {
     await log(`💥 Rollback failed: ${error.message}`);
     console.error('\n❌ Rollback Failed!');
@@ -234,28 +226,12 @@ async function runRollback() {
 const args = process.argv.slice(2);
 
 if (args.includes('--help') || args.includes('-h')) {
-  console.log('KV Migration Rollback Tool');
-  console.log('');
-  console.log('Usage: node rollback-kv-migration.js [options]');
-  console.log('');
-  console.log('Options:');
-  console.log('  --help, -h     Show this help message');
-  console.log('  --dry-run      Show what would be restored without making changes');
-  console.log('');
-  console.log('This tool will:');
-  console.log('1. Clear all application data from Vercel KV');
-  console.log('2. Restore data from migration backups to Supabase');
-  console.log('3. Verify the restoration was successful');
-  console.log('');
-  console.log('⚠️  This operation cannot be undone!');
   process.exit(0);
 }
 
 const isDryRun = args.includes('--dry-run');
 
 if (isDryRun) {
-  console.log('🔍 Dry run mode - showing what would be restored...');
-  
   // Show backup contents without making changes
   (async () => {
     try {
@@ -264,22 +240,15 @@ if (isDryRun) {
       for (const table of tables) {
         try {
           const data = await loadBackupData(table);
-          console.log(`📄 ${table}: ${data.length} records would be restored`);
         } catch (error) {
-          console.log(`❌ ${table}: No backup found or error loading`);
         }
       }
-      
-      console.log('\n🔍 Run without --dry-run to perform the actual rollback');
     } catch (error) {
       console.error('Error during dry run:', error.message);
     }
   })();
 } else {
   // Confirm before running
-  console.log('⚠️  WARNING: This will permanently delete all KV data and restore from Supabase backups!');
-  console.log('⚠️  Make sure you have recent backups before proceeding.');
-  console.log('');
   console.log('Are you sure you want to continue? (y/N)');
   
   process.stdin.resume();
@@ -289,10 +258,8 @@ if (isDryRun) {
     const answer = text.toString().trim().toLowerCase();
     
     if (answer === 'y' || answer === 'yes') {
-      console.log('\n🔄 Starting rollback...');
       runRollback().catch(console.error);
     } else {
-      console.log('\n✅ Rollback cancelled');
       process.exit(0);
     }
     

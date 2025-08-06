@@ -33,7 +33,7 @@ export function useSyncMonitor(refreshInterval: number = 5000) {
       setRecentSyncs(recent)
       setSyncStats(stats)
     } catch (error) {
-      console.error('Error loading sync status:', error)
+      logError('Error loading sync status:', error)
     } finally {
       setLoading(false)
     }
@@ -181,7 +181,7 @@ export function useSyncProgress(syncId: string | null) {
             : null
         })
       } catch (error) {
-        console.error('Error updating sync progress:', error)
+        logError('Error updating sync progress:', error)
       }
     }
 
@@ -226,7 +226,7 @@ export function useSyncHistory(days: number = 30) {
         setHistory(filteredLogs)
         setStats(syncStats)
       } catch (error) {
-        console.error('Error loading sync history:', error)
+        logError('Error loading sync history:', error)
       } finally {
         setLoading(false)
       }

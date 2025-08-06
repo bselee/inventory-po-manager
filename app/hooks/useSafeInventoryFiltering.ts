@@ -24,7 +24,7 @@ export function useSafeInventoryFiltering(
       const result = useInventoryFiltering(allItems, searchTerm, filterConfig, sortConfig)
       setFilteredItems(result)
     } catch (error) {
-      console.error('Filtering error:', error)
+      logError('Filtering error:', error)
       setFilterError(error as Error)
       
       // Fallback: return all items unsorted/unfiltered

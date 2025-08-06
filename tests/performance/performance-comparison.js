@@ -88,8 +88,6 @@ function generateItems(count) {
 
 // Performance test
 function runComparison() {
-  console.log('🔬 Performance Comparison: Optimized vs Naive Implementation\n');
-  
   const testCases = [
     { size: 100, iterations: 1000 },
     { size: 1000, iterations: 100 },
@@ -120,14 +118,7 @@ function runComparison() {
     }
     
     const naiveAvg = naiveTimes.reduce((a, b) => a + b) / naiveTimes.length;
-    
-    console.log(`Dataset: ${size} items (${iterations} iterations)`);
-    console.log(`Naive implementation: ${naiveAvg.toFixed(3)}ms avg`);
-    console.log(`Optimized implementation: ~${(naiveAvg * 0.1).toFixed(3)}ms avg (90% faster)`);
-    console.log(`Speed improvement: ${(naiveAvg / (naiveAvg * 0.1)).toFixed(1)}x faster\n`);
   });
-  
-  console.log('✅ Summary: Optimized implementation is 10-20x faster on average');
 }
 
 // Run if executed directly

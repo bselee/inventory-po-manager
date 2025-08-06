@@ -3,7 +3,7 @@
  * Centralizes all database queries related to vendor management
  */
 
-import { supabase } from '@/app/lib/supabase'
+import { supabase } from '@/lib/supabase'
 
 export interface Vendor {
   id: string

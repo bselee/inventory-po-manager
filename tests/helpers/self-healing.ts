@@ -51,7 +51,6 @@ export class SelfHealingPage {
         await locator.click({ timeout: options?.timeout || 5000 });
         return; // Success!
       } catch (error) {
-        console.log(`Strategy failed: ${strategy.type} = ${strategy.value}`);
         // Continue to next strategy
       }
     }
@@ -249,8 +248,6 @@ export class SelfHealingPage {
         return await action();
       } catch (error) {
         if (i === retries - 1) throw error;
-        
-        console.log(`Retry ${i + 1}/${retries} after ${delay}ms`);
         await this.page.waitForTimeout(delay);
         delay *= multiplier;
       }
@@ -343,9 +340,6 @@ export class SelfHealingPage {
       path: `test-results/screenshots/${filename}`,
       fullPage: true
     });
-    
-    console.log(`Screenshot saved: ${filename}`);
-    console.log(`Error: ${error.message}`);
   }
 }
 

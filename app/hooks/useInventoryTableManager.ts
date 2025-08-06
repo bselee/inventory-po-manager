@@ -165,7 +165,7 @@ export default function useInventoryTableManager(items: InventoryItem[]) {
           }
         }
       } catch (error) {
-        console.warn('Failed to load column preferences:', error)
+        logWarn('Failed to load column preferences:', error)
       }
     }
     return DEFAULT_COLUMNS
@@ -180,7 +180,7 @@ export default function useInventoryTableManager(items: InventoryItem[]) {
       try {
         localStorage.setItem('inventory-column-preferences', JSON.stringify(columns))
       } catch (error) {
-        console.warn('Failed to save column preferences:', error)
+        logWarn('Failed to save column preferences:', error)
       }
     }
   }, [columns])

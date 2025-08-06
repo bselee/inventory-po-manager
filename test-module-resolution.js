@@ -9,12 +9,7 @@ const { spawn } = require('child_process');
 const path = require('path');
 
 async function testBuild() {
-  console.log('🔨 Testing Module Resolution Fix');
-  console.log('================================');
-  
   try {
-    console.log('📋 Starting Next.js type check...');
-    
     const typeCheck = spawn('npx', ['tsc', '--noEmit'], {
       cwd: process.cwd(),
       stdio: ['inherit', 'pipe', 'pipe'],
@@ -37,14 +32,8 @@ async function testBuild() {
     });
 
     if (exitCode === 0) {
-      console.log('✅ TypeScript type check passed!');
-      console.log('✅ Module resolution fix successful!');
-      console.log('🚀 Ready for Vercel deployment');
       return true;
     } else {
-      console.log('❌ TypeScript errors found:');
-      console.log(stderr);
-      console.log(stdout);
       return false;
     }
 

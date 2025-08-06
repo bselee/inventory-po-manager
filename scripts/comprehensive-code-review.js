@@ -1,15 +1,11 @@
 // Comprehensive Code Review Script
 const fs = require('fs');
 const path = require('path');
-
-console.log('🔍 COMPREHENSIVE CODE REVIEW\n');
-
 const issues = [];
 const warnings = [];
 const good = [];
 
 // 1. Check change-detection.ts
-console.log('1️⃣ Reviewing change-detection.ts...');
 const changeDetectionPath = path.join(__dirname, '../app/lib/change-detection.ts');
 if (fs.existsSync(changeDetectionPath)) {
   const content = fs.readFileSync(changeDetectionPath, 'utf8');
@@ -31,7 +27,6 @@ if (fs.existsSync(changeDetectionPath)) {
 }
 
 // 2. Check smart sync route
-console.log('\n2️⃣ Reviewing sync-finale-smart route...');
 const smartSyncPath = path.join(__dirname, '../app/api/sync-finale-smart/route.ts');
 if (fs.existsSync(smartSyncPath)) {
   const content = fs.readFileSync(smartSyncPath, 'utf8');
@@ -56,7 +51,6 @@ if (fs.existsSync(smartSyncPath)) {
 }
 
 // 3. Check CriticalItemsMonitor
-console.log('\n3️⃣ Reviewing CriticalItemsMonitor...');
 const criticalMonitorPath = path.join(__dirname, '../app/components/CriticalItemsMonitor.tsx');
 if (fs.existsSync(criticalMonitorPath)) {
   const content = fs.readFileSync(criticalMonitorPath, 'utf8');
@@ -80,7 +74,6 @@ if (fs.existsSync(criticalMonitorPath)) {
 }
 
 // 4. Check data-access.ts
-console.log('\n4️⃣ Reviewing data-access.ts...');
 const dataAccessPath = path.join(__dirname, '../app/lib/data-access.ts');
 if (fs.existsSync(dataAccessPath)) {
   const content = fs.readFileSync(dataAccessPath, 'utf8');
@@ -102,7 +95,6 @@ if (fs.existsSync(dataAccessPath)) {
 }
 
 // 5. Check inventory page
-console.log('\n5️⃣ Reviewing inventory page...');
 const inventoryPagePath = path.join(__dirname, '../app/inventory/page.tsx');
 if (fs.existsSync(inventoryPagePath)) {
   const content = fs.readFileSync(inventoryPagePath, 'utf8');
@@ -124,7 +116,6 @@ if (fs.existsSync(inventoryPagePath)) {
 }
 
 // 6. Check for security issues
-console.log('\n6️⃣ Security review...');
 const securityIssues = [];
 
 // Check for exposed keys in committed files
@@ -145,7 +136,6 @@ filesToCheck.forEach(file => {
 });
 
 // 7. Performance checks
-console.log('\n7️⃣ Performance review...');
 const performanceChecks = [];
 
 // Check for missing indexes in SQL
@@ -162,48 +152,27 @@ if (fs.existsSync(sqlPath)) {
 
 // Summary
 console.log('\n' + '='.repeat(70));
-console.log('📊 CODE REVIEW SUMMARY');
 console.log('='.repeat(70));
-
-console.log(`\n✅ Good Practices (${good.length}):`);
 good.forEach(item => console.log(`   • ${item}`));
 
 if (warnings.length > 0) {
-  console.log(`\n⚠️  Warnings (${warnings.length}):`);
   warnings.forEach(item => console.log(`   • ${item}`));
 }
 
 if (issues.length > 0) {
-  console.log(`\n❌ Issues (${issues.length}):`);
   issues.forEach(item => console.log(`   • ${item}`));
 }
 
 if (securityIssues.length > 0) {
-  console.log(`\n🔒 Security Concerns (${securityIssues.length}):`);
   securityIssues.forEach(item => console.log(`   • ${item}`));
 }
-
-console.log(`\n⚡ Performance (${performanceChecks.length} checks):`);
 performanceChecks.forEach(item => console.log(`   • ${item}`));
 
 // Final verdict
 console.log('\n' + '='.repeat(70));
 const totalIssues = issues.length + securityIssues.length;
 if (totalIssues === 0) {
-  console.log('✅ CODE IS PRODUCTION READY!');
-  console.log(`   ${warnings.length} minor warnings to consider`);
 } else {
-  console.log('⚠️  NEEDS ATTENTION:');
-  console.log(`   ${totalIssues} issues should be addressed`);
-  console.log(`   ${warnings.length} warnings to review`);
 }
 
-// Recommendations
-console.log('\n📝 RECOMMENDATIONS:');
-console.log('1. Add try-catch blocks to all async functions');
-console.log('2. Consider reducing batch sizes for large data processing');
-console.log('3. Add rate limiting to prevent API abuse');
-console.log('4. Implement request caching for frequently accessed data');
-console.log('5. Add monitoring/logging for production debugging');
-console.log('6. Consider pagination for CriticalItemsMonitor');
-console.log('7. Add unit tests for critical functions');
+// Recommendations

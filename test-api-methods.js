@@ -5,7 +5,6 @@ const BASE_URL = 'http://localhost:3001/api/inventory';
 const TEST_ITEM_ID = 'f0696c85-690e-4537-9935-0f0e2822f9fc';
 
 async function testEndpoint(method, endpoint, body) {
-  console.log(`\nTesting ${method} ${endpoint}`);
   try {
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       method,
@@ -17,10 +16,6 @@ async function testEndpoint(method, endpoint, body) {
 
     const status = response.status;
     const data = await response.json().catch(() => null);
-    
-    console.log(`Status: ${status}`);
-    console.log(`Response:`, data);
-    
     return { success: status >= 200 && status < 300, status, data };
   } catch (error) {
     console.error(`Error: ${error.message}`);
@@ -29,13 +24,9 @@ async function testEndpoint(method, endpoint, body) {
 }
 
 async function runTests() {
-  console.log('Starting API method tests...');
-  console.log('Make sure the development server is running on http://localhost:3000');
-  
   const results = [];
   
   // Test stock endpoint
-  console.log('\n=== Testing Stock Endpoint ===');
   results.push({
     name: 'Stock PUT',
     result: await testEndpoint('PUT', `/${TEST_ITEM_ID}/stock`, { stock: 100 })
@@ -46,7 +37,6 @@ async function runTests() {
   });
   
   // Test cost endpoint
-  console.log('\n=== Testing Cost Endpoint ===');
   results.push({
     name: 'Cost PUT',
     result: await testEndpoint('PUT', `/${TEST_ITEM_ID}/cost`, { cost: 25.99 })
@@ -57,7 +47,6 @@ async function runTests() {
   });
   
   // Test visibility endpoint
-  console.log('\n=== Testing Visibility Endpoint ===');
   results.push({
     name: 'Visibility PUT',
     result: await testEndpoint('PUT', `/${TEST_ITEM_ID}/visibility`, { hidden: false })
@@ -68,19 +57,15 @@ async function runTests() {
   });
   
   // Summary
-  console.log('\n=== Test Summary ===');
   results.forEach(({ name, result }) => {
     const status = result.success ? '✅ PASS' : '❌ FAIL';
-    console.log(`${status} ${name} - Status: ${result.status || 'N/A'}`);
   });
   
   const passedCount = results.filter(r => r.result.success).length;
-  console.log(`\nTotal: ${passedCount}/${results.length} tests passed`);
 }
 
 // Check if we have node-fetch for Node.js environment
 if (typeof fetch === 'undefined') {
-  console.log('Installing node-fetch...');
   try {
     global.fetch = require('node-fetch');
   } catch (e) {

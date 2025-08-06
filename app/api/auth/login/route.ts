@@ -1,16 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { z } from 'zod'
 import { createApiHandler, apiResponse, apiError } from '@/app/lib/api-handler'
 import { validateCredentials, createSession, logAuthEvent } from '@/app/lib/auth'
 import { rateLimiters } from '@/app/lib/rate-limiter'
+import { loginSchema } from '@/app/lib/validation-schemas'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
-
-const loginSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(1, 'Password is required'),
-})
 
 export const POST = createApiHandler(async ({ body, request }) => {
   const { email, password } = body

@@ -51,8 +51,6 @@ export async function POST(request: Request) {
       // const purchaseOrders = await finaleApi.getPurchaseOrders()
       
       // For now, just log that this needs implementation
-      console.log('Purchase order sync not yet implemented')
-      
       poResult.error = 'Purchase order sync not yet implemented'
       poResult.success = false
     } catch (error) {
@@ -85,7 +83,7 @@ export async function POST(request: Request) {
     })
 
   } catch (error) {
-    console.error('Purchase order sync error:', error)
+    logError('Purchase order sync error:', error)
     
     await supabase
       .from('sync_logs')

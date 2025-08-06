@@ -74,21 +74,17 @@ async function runTest(testFile) {
 async function applyFix(testFile, error) {
   const fixes = {
     'timeout': async () => {
-      console.log(`   → Applying timeout fix for ${testFile}`);
       // In real implementation, would modify test file
       return true;
     },
     'selector': async () => {
-      console.log(`   → Applying selector healing for ${testFile}`);
       // In real implementation, would add fallback selectors
       return true;
     },
     'network': async () => {
-      console.log(`   → Adding network wait conditions for ${testFile}`);
       return true;
     },
     'default': async () => {
-      console.log(`   → Applying generic retry strategy for ${testFile}`);
       return true;
     }
   };
@@ -117,7 +113,6 @@ function detectErrorType(error) {
 // Run all tests
 async function runAllTests() {
   runCount++;
-  console.log(`\n🎭 Test Run #${runCount} Starting...`);
   console.log('─'.repeat(60));
   
   const results = [];
@@ -147,23 +142,11 @@ async function runAllTests() {
       history.lastError = result.error || result.errors;
     }
   }
-  
-  console.log('\n');
-  
   // Summary
   totalPassed += passed;
   totalFailed += failed;
-  
-  console.log('📊 Run Summary:');
-  console.log(`   Tests: ${CONFIG.specificTests.length}`);
-  console.log(`   Passed: ${passed} ✅`);
-  console.log(`   Failed: ${failed} ❌`);
-  console.log(`   Success Rate: ${Math.round((passed / CONFIG.specificTests.length) * 100)}%`);
-  
   // Apply fixes for failures
   if (failed > 0) {
-    console.log('\n🔧 Applying Self-Healing Fixes:');
-    
     for (const result of results) {
       if (!result.success) {
         const history = testHistory.get(result.testFile);
@@ -175,13 +158,6 @@ async function runAllTests() {
   }
   
   // Overall stats
-  console.log('\n📈 Autonomous Testing Stats:');
-  console.log(`   Total Runs: ${runCount}`);
-  console.log(`   Total Passed: ${totalPassed}`);
-  console.log(`   Total Failed: ${totalFailed}`);
-  console.log(`   Fixes Applied: ${fixesApplied}`);
-  console.log(`   Time Saved: ~${(fixesApplied * 15).toFixed(0)} minutes`);
-  
   // Save report
   await saveReport({
     runCount,
@@ -227,18 +203,6 @@ async function saveReport(data) {
 // Main loop
 async function main() {
   await ensureReportDir();
-  
-  console.log('\n╔═══════════════════════════════════════════════════════╗');
-  console.log('║     🤖 AUTONOMOUS PLAYWRIGHT TEST RUNNER 🤖          ║');
-  console.log('╠═══════════════════════════════════════════════════════╣');
-  console.log('║  ✨ Real Playwright tests with self-healing          ║');
-  console.log('║  🔧 Automatic fix application                         ║');
-  console.log('║  📊 Continuous monitoring                             ║');
-  console.log('║  💾 Reports: test-reports/autonomous/                 ║');
-  console.log('╚═══════════════════════════════════════════════════════╝');
-  console.log('\n🚀 Starting autonomous testing loop...\n');
-  console.log('Press Ctrl+C to stop\n');
-  
   // Initial run
   await runAllTests();
   
@@ -250,14 +214,6 @@ async function main() {
   // Handle shutdown
   process.on('SIGINT', () => {
     clearInterval(interval);
-    console.log('\n\n🛑 Shutting down autonomous runner...');
-    console.log('\n📊 Final Statistics:');
-    console.log(`   Total runs: ${runCount}`);
-    console.log(`   Tests passed: ${totalPassed}`);
-    console.log(`   Tests failed: ${totalFailed}`);
-    console.log(`   Fixes applied: ${fixesApplied}`);
-    console.log(`   Time saved: ~${(fixesApplied * 15).toFixed(0)} minutes`);
-    console.log(`   Money saved: ~$${(fixesApplied * 50).toLocaleString()}`);
     process.exit(0);
   });
 }

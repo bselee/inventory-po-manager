@@ -26,9 +26,6 @@ export async function POST(request: NextRequest) {
       forceSync = false,
       dryRun = false
     } = body
-
-    console.log(`[API] Enhanced sync request:`, { action, strategy })
-
     switch (action) {
       case 'sync':
         const options: EnhancedSyncOptions = {
@@ -79,7 +76,7 @@ export async function POST(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('[API] Enhanced sync error:', error)
+    logError('[API] Enhanced sync error:', error)
     
     return NextResponse.json(
       {
@@ -166,7 +163,7 @@ export async function GET(request: NextRequest) {
     }
 
   } catch (error) {
-    console.error('[API] Enhanced sync status error:', error)
+    logError('[API] Enhanced sync status error:', error)
     
     return NextResponse.json(
       {

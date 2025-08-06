@@ -8,8 +8,6 @@ const authString = Buffer.from(`${apiKey}:${apiSecret}`).toString('base64');
 
 async function makeRequest(url) {
   return new Promise((resolve, reject) => {
-    console.log(`\nTrying: ${url}`);
-    
     https.get(url, {
       headers: {
         'Authorization': `Basic ${authString}`,
@@ -23,8 +21,6 @@ async function makeRequest(url) {
       });
       
       res.on('end', () => {
-        console.log(`Status: ${res.statusCode}`);
-        
         if (res.statusCode === 200) {
           try {
             const parsed = JSON.parse(data);
@@ -35,16 +31,12 @@ async function makeRequest(url) {
             const hasInventory = JSON.stringify(data).toLowerCase().includes('inventory');
             
             if (hasQuantity || hasStock || hasInventory) {
-              console.log('✅ FOUND INVENTORY DATA!');
-              
               // Print the structure
               if (Array.isArray(parsed)) {
-                console.log('Format: Array');
                 if (parsed.length > 0) {
                   console.log('First item:', JSON.stringify(parsed[0], null, 2).substring(0, 500));
                 }
               } else if (typeof parsed === 'object') {
-                console.log('Format: Object');
                 console.log('Keys:', Object.keys(parsed).slice(0, 20));
                 
                 // Check for quantity fields
@@ -55,19 +47,15 @@ async function makeRequest(url) {
                 );
                 
                 if (quantityFields.length > 0) {
-                  console.log('Quantity fields found:', quantityFields);
                   quantityFields.forEach(field => {
-                    console.log(`${field}:`, parsed[field]);
                   });
                 }
               }
             } else {
-              console.log('❌ No inventory quantities found');
             }
             
             resolve(parsed);
           } catch (e) {
-            console.log('Parse error:', e.message);
             console.log('Response preview:', data.substring(0, 200));
             resolve(null);
           }
@@ -81,7 +69,6 @@ async function makeRequest(url) {
 }
 
 async function findInventoryEndpoint() {
-  console.log('🔍 SEARCHING FOR FINALE INVENTORY QUANTITIES\n');
   console.log('=' .repeat(60));
   
   const baseUrl = `https://app.finaleinventory.com/${accountPath}/api`;
@@ -115,21 +102,16 @@ async function findInventoryEndpoint() {
     try {
       await makeRequest(baseUrl + endpoint);
     } catch (error) {
-      console.log('Error:', error.message);
     }
   }
   
   // Also try the facility inventory with proper structure
-  console.log('\n\n📊 ANALYZING FACILITY INVENTORY STRUCTURE:');
   try {
     const facilityInv = await makeRequest(baseUrl + '/facility/inventory');
     if (facilityInv && typeof facilityInv === 'object') {
       // Check if it's organized by facility ID
       const facilityIds = Object.keys(facilityInv);
       if (facilityIds.length > 0 && facilityIds[0].match(/^\d+$/)) {
-        console.log('\nFacility inventory is organized by facility ID!');
-        console.log('Facility IDs found:', facilityIds);
-        
         // Check first facility
         const firstFacility = facilityInv[facilityIds[0]];
         console.log('\nFirst facility data:', JSON.stringify(firstFacility, null, 2).substring(0, 800));
@@ -140,8 +122,7 @@ async function findInventoryEndpoint() {
           console.log('\nProduct keys in facility:', productKeys.slice(0, 10));
           
           if (productKeys.length > 0) {
-            console.log('\nFirst product in facility:', 
-              JSON.stringify(firstFacility[productKeys[0]], null, 2));
+            );
           }
         }
       }

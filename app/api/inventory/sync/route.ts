@@ -27,12 +27,10 @@ export async function POST(request: Request) {
     
     // Clear cache if requested
     if (clearCache) {
-      console.log('[Inventory Sync] Clearing cache before sync...')
       await kvInventoryService.clearCache()
     }
     
     // Start sync
-    console.log('[Inventory Sync] Starting manual inventory sync...')
     const startTime = Date.now()
     
     try {
@@ -59,7 +57,7 @@ export async function POST(request: Request) {
       })
       
     } catch (syncError) {
-      console.error('[Inventory Sync] Sync failed:', syncError)
+      logError('[Inventory Sync] Sync failed:', syncError)
       
       return NextResponse.json(
         { 
@@ -72,7 +70,7 @@ export async function POST(request: Request) {
     }
     
   } catch (error) {
-    console.error('[Inventory Sync] Error:', error)
+    logError('[Inventory Sync] Error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to start sync' },
       { status: 500 }
@@ -96,7 +94,7 @@ export async function GET() {
     })
     
   } catch (error) {
-    console.error('[Inventory Sync Status] Error:', error)
+    logError('[Inventory Sync Status] Error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to get sync status' },
       { status: 500 }

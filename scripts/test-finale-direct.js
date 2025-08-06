@@ -1,9 +1,6 @@
 #!/usr/bin/env node
 
 const http = require('http');
-
-console.log('Testing Finale API connection...\n');
-
 const options = {
   hostname: 'localhost',
   port: 3001,
@@ -23,7 +20,6 @@ const req = http.request(options, (res) => {
       const result = JSON.parse(data);
       console.log('Result:', JSON.stringify(result, null, 2));
     } catch (e) {
-      console.log('Raw response:', data);
     }
   });
 });

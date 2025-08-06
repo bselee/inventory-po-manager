@@ -144,7 +144,7 @@ export async function GET(request: Request) {
     })
     
   } catch (error) {
-    console.error('[Enhanced Inventory API] Error:', error)
+    logError('[Enhanced Inventory API] Error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to fetch enhanced inventory' },
       { status: 500 }
@@ -159,11 +159,8 @@ export async function POST(request: Request) {
     const { clearCache = false } = body
     
     if (clearCache) {
-      console.log('[Enhanced Inventory] Clearing cache before sync...')
       await finaleMultiReportService.clearCache()
     }
-    
-    console.log('[Enhanced Inventory] Starting manual sync...')
     const startTime = Date.now()
     
     try {
@@ -189,7 +186,7 @@ export async function POST(request: Request) {
       })
       
     } catch (syncError) {
-      console.error('[Enhanced Inventory] Sync failed:', syncError)
+      logError('[Enhanced Inventory] Sync failed:', syncError)
       
       return NextResponse.json(
         { 
@@ -202,7 +199,7 @@ export async function POST(request: Request) {
     }
     
   } catch (error) {
-    console.error('[Enhanced Inventory Sync] Error:', error)
+    logError('[Enhanced Inventory Sync] Error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to start sync' },
       { status: 500 }

@@ -1,16 +1,15 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/app/lib/supabase'
-import { api } from '@/app/lib/client-fetch'
+import { supabase } from '@/lib/supabase'
+import { api } from '@/lib/client-fetch'
 import { Save, TestTube, Check, X, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import FinaleSyncManager from '@/app/components/FinaleSyncManager'
 import SalesDataUploader from '@/app/components/SalesDataUploader'
 import FinaleDebugPanel from '@/app/components/FinaleDebugPanel'
 import RateLimiterStatus from '@/app/components/RateLimiterStatus'
 import SyncProgressIndicator from '@/app/components/SyncProgressIndicator'
-import RedisCacheStatus from '@/app/components/RedisCacheStatus'
-import { validateFinaleCredentials, getValidationErrorMessage } from '@/app/lib/validation/finale-credentials'
+import { validateFinaleCredentials, getValidationErrorMessage } from '@/lib/validation/finale-credentials'
 
 interface Settings {
   id?: string
@@ -1242,13 +1241,6 @@ export default function SettingsPage() {
                 </div>
               )}
             </div>
-
-            {/* Redis Cache Status Component */}
-            {settings.inventory_data_source === 'redis-cache' && (
-              <div className="mt-6">
-                <RedisCacheStatus />
-              </div>
-            )}
             
             {/* Alternative Authentication Section */}
             <div className="border-t pt-4 mt-4">

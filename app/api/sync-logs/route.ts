@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ logs: logs || [] })
   } catch (error) {
-    console.error('Error fetching sync logs:', error)
+    logError('Error fetching sync logs:', error)
     return NextResponse.json(
       { error: 'Failed to fetch sync logs' },
       { status: 500 }

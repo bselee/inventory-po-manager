@@ -26,7 +26,7 @@ export default function QuickStockAdjust({
     try {
       await onUpdate(adjusted)
     } catch (error) {
-      console.error('Failed to update stock:', error)
+      logError('Failed to update stock:', error)
     } finally {
       setIsSaving(false)
     }
@@ -43,7 +43,7 @@ export default function QuickStockAdjust({
       await onUpdate(newStock)
       setIsEditing(false)
     } catch (error) {
-      console.error('Failed to update stock:', error)
+      logError('Failed to update stock:', error)
     } finally {
       setIsSaving(false)
     }

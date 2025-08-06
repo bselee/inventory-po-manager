@@ -7,8 +7,6 @@ const supabase = createClient(
 );
 
 async function syncWithEnvCredentials() {
-  console.log('🚀 Starting Finale Sync with .env credentials...\n');
-
   // Use credentials from environment
   const apiKey = process.env.FINALE_API_KEY;
   const apiSecret = process.env.FINALE_API_SECRET;
@@ -19,15 +17,10 @@ async function syncWithEnvCredentials() {
     const match = accountPath.match(/finaleinventory\.com\/([^\/]+)/);
     if (match) {
       accountPath = match[1];
-      console.log(`📋 Fixed account path: ${accountPath}`);
     }
   }
-
-  console.log('✅ Using credentials from .env.local:');
   console.log('  API Key:', apiKey ? '***' + apiKey.slice(-4) : 'Missing');
   console.log('  API Secret:', apiSecret ? '***' + apiSecret.slice(-4) : 'Missing');
-  console.log('  Account Path:', accountPath);
-
   if (!apiKey || !apiSecret) {
     console.error('\n❌ API credentials are missing in .env.local!');
     return;
@@ -50,21 +43,13 @@ async function syncWithEnvCredentials() {
     // Call the Finale API
     const authHeader = `Basic ${Buffer.from(`${apiKey}:${apiSecret}`).toString('base64')}`;
     const baseUrl = `https://app.finaleinventory.com/${accountPath}/api`;
-    
-    console.log('\n🔄 Fetching products from Finale...');
     const url = `${baseUrl}/product?limit=500`;
-    
-    console.log('URL:', url);
-    
     const response = await fetch(url, {
       headers: { 
         'Authorization': authHeader,
         'Accept': 'application/json'
       }
     });
-
-    console.log('Response status:', response.status);
-
     if (!response.ok) {
       const text = await response.text();
       console.error('Response body:', text.substring(0, 500));
@@ -72,7 +57,6 @@ async function syncWithEnvCredentials() {
     }
 
     const data = await response.json();
-    console.log('Response type:', typeof data);
     console.log('Response keys:', Object.keys(data).slice(0, 10));
     
     // Handle various Finale response formats
@@ -86,15 +70,10 @@ async function syncWithEnvCredentials() {
     } else if (data.data && Array.isArray(data.data)) {
       products = data.data;
     }
-
-    console.log(`\n✅ Fetched ${products.length} products from Finale`);
-
     if (products.length === 0) {
-      console.log('⚠️  No products found.');
       console.log('Response structure:', JSON.stringify(data, null, 2).substring(0, 500));
       
       // Also save credentials to Supabase for future use
-      console.log('\n💾 Saving credentials to Supabase for app use...');
       await supabase
         .from('settings')
         .upsert({
@@ -111,12 +90,9 @@ async function syncWithEnvCredentials() {
     }
 
     // Clear existing inventory
-    console.log('\n🗑️  Clearing old inventory...');
     await supabase.from('inventory_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
     // Transform and insert products
-    console.log('💾 Inserting inventory data...\n');
-    
     const inventoryItems = products.map(product => ({
       sku: product.productId || product.sku || product.id || 'NO-SKU',
       product_name: product.productName || product.name || product.description || 'Unknown',
@@ -162,7 +138,6 @@ async function syncWithEnvCredentials() {
     }
 
     // Save credentials to Supabase for future use
-    console.log('\n\n💾 Saving credentials to Supabase for app use...');
     await supabase
       .from('settings')
       .upsert({
@@ -174,12 +149,6 @@ async function syncWithEnvCredentials() {
         sync_frequency_minutes: 60,
         sync_enabled: true
       });
-
-    console.log('\n✅ SYNC COMPLETE!');
-    console.log(`📦 ${inserted} inventory items imported`);
-    console.log('\n🎉 Your inventory is now available at http://localhost:3000/inventory');
-    console.log('✅ Credentials saved to Supabase - future syncs will work from the app!');
-
   } catch (error) {
     console.error('\n❌ Sync failed:', error.message);
     

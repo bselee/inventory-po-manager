@@ -67,7 +67,7 @@ export class FinaleReportApiService {
         return this.parseCSV(text)
       }
     } catch (error) {
-      console.error('[Report API] Error fetching report:', error)
+      logError('[Report API] Error fetching report:', error)
       throw error
     }
   }
@@ -114,24 +114,14 @@ export class FinaleReportApiService {
         // Pass through all original fields for flexibility
         return { ...row, ...product }
       })
-      
-      console.log(`[Report API] Processed ${products.length} products from report`)
-      
       // Log sample to see supplier data
       if (products.length > 0) {
         const withSuppliers = products.filter(p => p.supplier).length
-        console.log(`[Report API] ${withSuppliers} of ${products.length} products have supplier data`)
-        console.log('[Report API] Sample product:', {
-          sku: products[0].sku,
-          name: products[0].productName,
-          supplier: products[0].supplier,
-          stock: products[0].totalStock
-        })
       }
       
       return products
     } catch (error) {
-      console.error('[Report API] Error fetching inventory report:', error)
+      logError('[Report API] Error fetching inventory report:', error)
       throw error
     }
   }

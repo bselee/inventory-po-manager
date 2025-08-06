@@ -57,8 +57,6 @@ export function useInventoryRealtime(options: RealTimeInventoryOptions = {}) {
    * Handle real-time inventory updates
    */
   const handleInventoryChange = useCallback((payload: any) => {
-    console.log('[useInventoryRealtime] Inventory change:', payload.eventType, payload.new?.sku)
-
     setState(prev => {
       let newItems = [...prev.items]
 
@@ -104,8 +102,6 @@ export function useInventoryRealtime(options: RealTimeInventoryOptions = {}) {
    * Handle critical alerts
    */
   const handleCriticalAlert = useCallback((alert: CriticalAlert) => {
-    console.log('[useInventoryRealtime] Critical alert:', alert.alertType, alert.item.sku)
-
     setState(prev => ({
       ...prev,
       criticalAlerts: [alert, ...prev.criticalAlerts.slice(0, 9)] // Keep last 10 alerts
@@ -121,8 +117,6 @@ export function useInventoryRealtime(options: RealTimeInventoryOptions = {}) {
    * Handle connection status changes
    */
   const handleConnectionChange = useCallback((status: string) => {
-    console.log('[useInventoryRealtime] Connection status:', status)
-
     const connectionStatus = mapSupabaseStatus(status)
     
     setState(prev => ({
@@ -161,7 +155,7 @@ export function useInventoryRealtime(options: RealTimeInventoryOptions = {}) {
       const { data: items, error } = await query.order('product_name').limit(1000)
 
       if (error) {
-        console.error('[useInventoryRealtime] Failed to load initial data:', error)
+        logError('[useInventoryRealtime] Failed to load initial data:', error)
         setState(prev => ({ ...prev, connectionStatus: 'error' }))
         return
       }
@@ -173,7 +167,7 @@ export function useInventoryRealtime(options: RealTimeInventoryOptions = {}) {
       }))
 
     } catch (error) {
-      console.error('[useInventoryRealtime] Error loading initial data:', error)
+      logError('[useInventoryRealtime] Error loading initial data:', error)
       setState(prev => ({ ...prev, connectionStatus: 'error' }))
     }
   }, [options.filters])
@@ -183,12 +177,8 @@ export function useInventoryRealtime(options: RealTimeInventoryOptions = {}) {
    */
   const setupRealtimeSubscription = useCallback(() => {
     if (channelRef.current) {
-      console.log('[useInventoryRealtime] Cleaning up existing channel')
       supabase.removeChannel(channelRef.current)
     }
-
-    console.log('[useInventoryRealtime] Setting up real-time subscription')
-
     // Create new channel for inventory changes
     channelRef.current = supabase
       .channel('inventory_realtime')
@@ -210,8 +200,6 @@ export function useInventoryRealtime(options: RealTimeInventoryOptions = {}) {
     if (!options.enableCriticalMonitoring) return
 
     try {
-      console.log('[useInventoryRealtime] Setting up critical monitoring')
-
       // Get or create monitor instance
       monitorRef.current = getCriticalItemMonitor(DEFAULT_MONITOR_CONFIG)
 
@@ -222,7 +210,7 @@ export function useInventoryRealtime(options: RealTimeInventoryOptions = {}) {
       await monitorRef.current.startMonitoring()
 
     } catch (error) {
-      console.error('[useInventoryRealtime] Failed to setup critical monitoring:', error)
+      logError('[useInventoryRealtime] Failed to setup critical monitoring:', error)
     }
   }, [options.enableCriticalMonitoring, handleCriticalAlert])
 
@@ -266,7 +254,7 @@ export function useInventoryRealtime(options: RealTimeInventoryOptions = {}) {
         .update({ acknowledged: true })
         .eq('id', alertId)
     } catch (error) {
-      console.error('[useInventoryRealtime] Failed to acknowledge alert:', error)
+      logError('[useInventoryRealtime] Failed to acknowledge alert:', error)
     }
   }, [])
 
@@ -339,7 +327,7 @@ export function useCriticalAlerts(onAlert?: (alert: CriticalAlert) => void) {
         await monitor.startMonitoring()
         setIsMonitoring(true)
       } catch (error) {
-        console.error('[useCriticalAlerts] Setup failed:', error)
+        logError('[useCriticalAlerts] Setup failed:', error)
       }
     }
 

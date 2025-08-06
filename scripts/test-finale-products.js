@@ -8,10 +8,6 @@
 const https = require('https');
 
 const baseUrl = 'https://inventory-po-manager.vercel.app';
-
-console.log('🔍 Testing Finale product data structure...');
-console.log(`📍 Using URL: ${baseUrl}`);
-
 // Create a test request to check Finale data structure
 const data = JSON.stringify({
   test: true
@@ -43,22 +39,11 @@ const req = https.request(options, (res) => {
       const result = JSON.parse(responseData);
       
       if (res.statusCode === 200 && result.success) {
-        console.log('✅ Finale connection successful!');
-        
         if (result.sampleProduct) {
-          console.log('\n📋 Sample product structure:');
           console.log(JSON.stringify(result.sampleProduct, null, 2));
           
           // Check for supplier data
-          console.log('\n🔍 Supplier data analysis:');
-          console.log(`Has supplierList: ${!!result.sampleProduct.supplierList}`);
-          console.log(`Has supplier: ${!!result.sampleProduct.supplier}`);
-          console.log(`Has vendorName: ${!!result.sampleProduct.vendorName}`);
-          console.log(`Has vendor: ${!!result.sampleProduct.vendor}`);
-          console.log(`Has primarySupplierName: ${!!result.sampleProduct.primarySupplierName}`);
-          
           if (result.sampleProduct.supplierList) {
-            console.log(`SupplierList length: ${result.sampleProduct.supplierList.length}`);
             if (result.sampleProduct.supplierList.length > 0) {
               console.log('First supplier:', JSON.stringify(result.sampleProduct.supplierList[0], null, 2));
             }
@@ -66,7 +51,6 @@ const req = https.request(options, (res) => {
         }
         
         if (result.vendorEndpoint) {
-          console.log(`\n✅ Working vendor endpoint: ${result.vendorEndpoint}`);
         }
         
       } else {
@@ -91,7 +75,5 @@ req.on('timeout', () => {
   console.error('❌ Request timed out');
   req.destroy();
 });
-
-console.log('⏳ Sending test request...');
 req.write(data);
 req.end();

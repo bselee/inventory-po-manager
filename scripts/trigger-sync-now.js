@@ -1,8 +1,6 @@
 const https = require('https');
 
 async function triggerSync() {
-  console.log('🚀 Triggering Finale Sync...\n');
-
   const options = {
     hostname: 'localhost',
     port: 3001,
@@ -32,8 +30,6 @@ async function triggerSync() {
           const result = JSON.parse(responseData);
           
           if (res.statusCode === 200 && result.success) {
-            console.log('✅ Sync started successfully!');
-            console.log(`📊 Status: ${result.status}`);
             if (result.message) console.log(`📝 ${result.message}`);
             
             // Start monitoring the sync
@@ -62,8 +58,6 @@ async function triggerSync() {
 }
 
 async function monitorSync() {
-  console.log('\n📊 Monitoring sync progress...\n');
-  
   let pollCount = 0;
   const maxPolls = 60; // 5 minutes
   
@@ -78,15 +72,8 @@ async function monitorSync() {
         if (status.lastSync?.status === 'success') {
           const itemsProcessed = status.lastSync.items_processed || 0;
           const itemsUpdated = status.lastSync.items_updated || 0;
-          
-          console.log('\n✅ Sync completed successfully!');
-          console.log(`📦 Items processed: ${itemsProcessed}`);
-          console.log(`🔄 Items updated: ${itemsUpdated}`);
-          
           if (itemsUpdated > 0) {
-            console.log('\n🎉 Inventory data has been imported! Check the inventory page.');
           } else {
-            console.log('\n⚠️  No new items found for the selected time period.');
           }
         } else if (status.lastSync?.status === 'error') {
           console.error(`\n❌ Sync failed: ${status.lastSync.errors?.[0] || 'Unknown error'}`);
@@ -109,7 +96,6 @@ async function monitorSync() {
 
 // Alternative using HTTP if HTTPS fails
 async function triggerSyncHTTP() {
-  console.log('Trying HTTP...');
   const http = require('http');
   
   const options = {
@@ -138,7 +124,6 @@ async function triggerSyncHTTP() {
       res.on('end', () => {
         try {
           const result = JSON.parse(responseData);
-          console.log('Response:', result);
           resolve(result);
         } catch (error) {
           console.error('Parse error:', responseData);
@@ -158,7 +143,6 @@ async function main() {
   try {
     await triggerSync();
   } catch (error) {
-    console.log('\nTrying alternative method...');
     try {
       await triggerSyncHTTP();
     } catch (error2) {

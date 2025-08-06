@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Toaster, toast } from 'react-hot-toast'
-import { Vendor } from '@/app/lib/data-access/vendors'
+import { Vendor } from '@/lib/data-access/vendors'
 import EnhancedVendorCard from '@/app/components/vendors/EnhancedVendorCard'
 import VendorListView from '@/app/components/vendors/VendorListView'
 import ErrorBoundary, { PageErrorFallback } from '@/app/components/common/ErrorBoundary'
@@ -12,7 +12,7 @@ import PaginationControls from '@/app/components/inventory/PaginationControls'
 import PageHeader from '@/app/components/common/PageHeader'
 import UniversalQuickFilters from '@/app/components/common/UniversalQuickFilters'
 import { useUniversalPageData } from '@/app/hooks/useUniversalPageData'
-import { vendorQuickFilters, VendorWithStats } from '@/app/lib/quickFilters'
+import { vendorQuickFilters, VendorWithStats } from '@/lib/quickFilters'
 
 interface VendorStats {
   vendor: Vendor
@@ -119,7 +119,7 @@ function VendorsPageContent() {
         const data = await response.json()
 
         if (data.error) {
-          console.error(`Error loading stats for vendor ${vendor.id}:`, data.error)
+          logError(`Error loading stats for vendor ${vendor.id}:`, data.error)
           continue
         }
 
@@ -128,7 +128,7 @@ function VendorsPageContent() {
           [vendor.id]: data.data
         }))
       } catch (error) {
-        console.error(`Error loading stats for vendor ${vendor.id}:`, error)
+        logError(`Error loading stats for vendor ${vendor.id}:`, error)
       } finally {
         setLoadingStats(prev => ({ ...prev, [vendor.id]: false }))
       }

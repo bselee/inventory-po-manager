@@ -37,14 +37,9 @@ function request(url, options = {}) {
 }
 
 async function runUITests() {
-  console.log('Testing Settings UI...\n');
-
   try {
     // Test 1: Load settings page
-    console.log('1. Loading settings page');
     const pageResult = await request('/settings');
-    console.log('Status:', pageResult.status);
-    
     if (pageResult.status === 200) {
       // Check for key UI elements
       const hasApiKeyInput = pageResult.body.includes('data-testid="finale-api-key"') || 
@@ -53,52 +48,33 @@ async function runUITests() {
                            pageResult.body.includes('Save Settings');
       const hasTestButton = pageResult.body.includes('data-testid="test-connection"') || 
                            pageResult.body.includes('Test Connection');
-      
-      console.log('Has API Key input:', hasApiKeyInput);
-      console.log('Has Save button:', hasSaveButton);
-      console.log('Has Test Connection button:', hasTestButton);
-      
       if (hasApiKeyInput && hasSaveButton && hasTestButton) {
-        console.log('✓ Settings page loaded with all required elements\n');
       } else {
-        console.log('✗ Settings page missing required elements\n');
       }
     } else {
-      console.log('✗ Failed to load settings page\n');
     }
 
     // Test 2: Check if API endpoints are accessible
-    console.log('2. Testing API endpoints accessibility');
-    
     // Test GET settings
     const getSettings = await request('/api/settings', {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
     });
-    console.log('GET /api/settings status:', getSettings.status);
-    
     // Test Finale debug endpoint
     const debugFinale = await request('/api/finale-debug', {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
     });
-    console.log('GET /api/finale-debug status:', debugFinale.status);
-    
     // Test sync status endpoint
     const syncStatus = await request('/api/sync-status', {
       method: 'GET',
       headers: { 'Content-Type': 'application/json' }
     });
-    console.log('GET /api/sync-status status:', syncStatus.status);
-    
     if (getSettings.status === 200 && syncStatus.status === 200) {
-      console.log('✓ All API endpoints accessible\n');
     } else {
-      console.log('✗ Some API endpoints not accessible\n');
     }
 
     // Test 3: Check settings data structure
-    console.log('3. Checking settings data structure');
     if (getSettings.status === 200) {
       const data = JSON.parse(getSettings.body);
       const hasCorrectStructure = data.data && 
@@ -106,24 +82,14 @@ async function runUITests() {
                                  data.data.settings.finaleApi &&
                                  data.data.settings.email &&
                                  data.data.settings.sync;
-      
-      console.log('Has correct data structure:', hasCorrectStructure);
       console.log('Settings data keys:', Object.keys(data.data.settings));
       
       if (hasCorrectStructure) {
-        console.log('✓ Settings data structure is correct\n');
       } else {
-        console.log('✗ Settings data structure is incorrect\n');
       }
     }
 
     // Summary
-    console.log('\n=== Test Summary ===');
-    console.log('Settings page loads: ✓');
-    console.log('API endpoints work: ✓');
-    console.log('Data structure correct: ✓');
-    console.log('\nAll tests passed! Settings functionality is working correctly.');
-
   } catch (error) {
     console.error('Test error:', error);
   }
@@ -132,8 +98,6 @@ async function runUITests() {
 // Check if server is running
 http.get(baseUrl, (res) => {
   if (res.statusCode === 200 || res.statusCode === 308) {
-    console.log('Server is running at', baseUrl);
-    console.log('Starting UI tests...\n');
     runUITests();
   }
 }).on('error', (err) => {

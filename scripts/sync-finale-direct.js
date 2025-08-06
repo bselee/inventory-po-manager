@@ -7,9 +7,6 @@ const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL,
   process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 );
-
-console.log('🚀 DIRECT FINALE SYNC - BYPASSING API\n');
-
 async function getFinaleConfig() {
   // First try to get from database
   const { data: settings, error } = await supabase
@@ -18,7 +15,6 @@ async function getFinaleConfig() {
     .single();
 
   if (error || !settings) {
-    console.log('No settings in database, using environment variables...');
     return {
       apiKey: process.env.FINALE_API_KEY,
       apiSecret: process.env.FINALE_API_SECRET,
@@ -42,10 +38,6 @@ async function syncInventory() {
       console.error('Please set FINALE_API_KEY and FINALE_API_SECRET in .env.local');
       return;
     }
-
-    console.log(`📋 Using account: ${config.accountPath}`);
-    console.log('🔄 Fetching inventory from Finale...\n');
-
     const authHeader = `Basic ${Buffer.from(`${config.apiKey}:${config.apiSecret}`).toString('base64')}`;
     const baseUrl = `https://app.finaleinventory.com/${config.accountPath}/api`;
     
@@ -75,15 +67,11 @@ async function syncInventory() {
     }
 
     const products = data.productList;
-    console.log(`✅ Fetched ${products.length} products from Finale\n`);
-
     if (products.length === 0) {
-      console.log('No products found. Check your filter or account.');
       return;
     }
 
     // Clear existing inventory
-    console.log('🗑️  Clearing old inventory data...');
     const { error: deleteError } = await supabase
       .from('inventory_items')
       .delete()
@@ -94,8 +82,6 @@ async function syncInventory() {
     }
 
     // Transform and insert products
-    console.log('💾 Inserting new inventory data...\n');
-    
     const inventoryItems = products.map(product => ({
       sku: product.productId || product.sku,
       product_name: product.productName || product.name || product.productId,
@@ -126,16 +112,8 @@ async function syncInventory() {
         process.stdout.write(`\rInserted ${inserted}/${inventoryItems.length} items...`);
       }
     }
-
-    console.log('\n\n✅ SYNC COMPLETE!');
-    console.log(`📦 ${inserted} inventory items imported`);
-    console.log('\n🎉 Your inventory data is now in Supabase!');
-    console.log('👉 Visit http://localhost:3000/inventory to see your data\n');
-
     // Show sample of imported data
-    console.log('Sample of imported items:');
     inventoryItems.slice(0, 5).forEach(item => {
-      console.log(`  - ${item.sku}: ${item.product_name} (Stock: ${item.current_stock})`);
     });
 
   } catch (error) {

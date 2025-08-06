@@ -21,7 +21,6 @@ export async function getInventoryItems(
   const { page = 1, limit = 100, sortBy = 'sku', sortDirection = 'asc' } = options
   
   // Log for debugging
-  console.log(`[Data Access] Fetching inventory with limit: ${limit}, page: ${page}`)
   const offset = (page - 1) * limit
 
   // Start query
@@ -72,7 +71,7 @@ export async function getInventoryItems(
   const { data: items, error, count } = await query
 
   if (error) {
-    console.error('Error fetching inventory:', error)
+    logError('Error fetching inventory:', error)
     throw error
   }
 
@@ -102,7 +101,7 @@ export async function getInventorySummary() {
     .select('stock, cost, reorder_point')
 
   if (error) {
-    console.error('Error fetching inventory summary:', error)
+    logError('Error fetching inventory summary:', error)
     return {
       total_items: 0,
       out_of_stock_count: 0,
@@ -148,7 +147,7 @@ export async function createInventoryItem(data: any) {
     .single()
 
   if (error) {
-    console.error('Error creating inventory item:', error)
+    logError('Error creating inventory item:', error)
     throw error
   }
 
@@ -184,7 +183,7 @@ export async function updateInventoryItem(id: string, data: any) {
     .single()
 
   if (error) {
-    console.error('Error updating inventory item:', error)
+    logError('Error updating inventory item:', error)
     throw error
   }
 
@@ -198,7 +197,7 @@ export async function deleteInventoryItem(id: string) {
     .eq('id', id)
 
   if (error) {
-    console.error('Error deleting inventory item:', error)
+    logError('Error deleting inventory item:', error)
     throw error
   }
 
@@ -227,7 +226,7 @@ export async function getSettings(): Promise<any> {
     .single()
 
   if (error && error.code !== 'PGRST116') { // Not found is ok
-    console.error('Error fetching settings:', error)
+    logError('Error fetching settings:', error)
     throw error
   }
 
@@ -242,7 +241,7 @@ export async function upsertSettings(settings: any): Promise<any> {
     .single()
 
   if (error) {
-    console.error('Error updating settings:', error)
+    logError('Error updating settings:', error)
     throw error
   }
 

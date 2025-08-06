@@ -48,7 +48,7 @@ export function CacheManager({ onDataRefresh, showMetrics = true, compact = fals
         setMetrics(result.health.metrics);
       }
     } catch (error) {
-      console.error('Failed to load cache metrics:', error);
+      logError('Failed to load cache metrics:', error);
     }
   };
 
@@ -69,7 +69,7 @@ export function CacheManager({ onDataRefresh, showMetrics = true, compact = fals
       }
     } catch (error) {
       setLastAction('Cache refresh error');
-      console.error('Cache refresh error:', error);
+      logError('Cache refresh error:', error);
     } finally {
       setIsRefreshing(false);
     }
@@ -93,7 +93,7 @@ export function CacheManager({ onDataRefresh, showMetrics = true, compact = fals
       }
     } catch (error) {
       setLastAction('Clear cache error');
-      console.error('Clear cache error:', error);
+      logError('Clear cache error:', error);
     }
   };
 
@@ -117,7 +117,7 @@ export function CacheManager({ onDataRefresh, showMetrics = true, compact = fals
       }
     } catch (error) {
       setLastAction('Cache warm up error');
-      console.error('Cache warm up error:', error);
+      logError('Cache warm up error:', error);
     } finally {
       setIsRefreshing(false);
     }

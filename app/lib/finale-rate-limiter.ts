@@ -82,7 +82,6 @@ export class FinaleRateLimiter {
         const waitTime = 1000 - windowElapsed
         if (waitTime > 0) {
           if (this.enableLogging) {
-            console.log(`[Rate Limiter] Rate limit reached, waiting ${waitTime}ms`)
           }
           await this.delay(waitTime)
           continue
@@ -94,7 +93,6 @@ export class FinaleRateLimiter {
       if (timeSinceLastRequest < this.minDelayMs && this.lastRequestTime > 0) {
         const waitTime = this.minDelayMs - timeSinceLastRequest
         if (this.enableLogging) {
-          console.log(`[Rate Limiter] Waiting ${waitTime}ms before next request`)
         }
         await this.delay(waitTime)
       }
@@ -108,7 +106,6 @@ export class FinaleRateLimiter {
         this.requestCount++
         
         if (this.enableLogging) {
-          console.log(`[Rate Limiter] Executing request (${this.requestCount}/${this.requestsPerSecond} this second)`)
         }
         
         const result = await request.execute()
@@ -121,7 +118,6 @@ export class FinaleRateLimiter {
           const backoffDelay = this.retryDelayMs * Math.pow(2, request.retries - 1)
           
           if (this.enableLogging) {
-            console.log(`[Rate Limiter] Rate limit error, retry ${request.retries}/${this.maxRetries} after ${backoffDelay}ms`)
           }
           
           // Put request back in queue with exponential backoff
@@ -133,7 +129,7 @@ export class FinaleRateLimiter {
         } else {
           // Non-retriable error or max retries reached
           if (this.enableLogging) {
-            console.error(`[Rate Limiter] Request failed after ${request.retries} retries:`, error)
+            logError(`[Rate Limiter] Request failed after ${request.retries} retries:`, error)
           }
           request.reject(error)
         }

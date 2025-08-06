@@ -46,7 +46,7 @@ export default function PurchaseOrdersPage() {
         throw new Error(data.error || 'Failed to load purchase orders')
       }
     } catch (error) {
-      console.error('Error loading purchase orders:', error)
+      logError('Error loading purchase orders:', error)
       const errorMessage = error instanceof Error ? error.message : 'Failed to load purchase orders'
       toast.error(errorMessage)
       setError(errorMessage)

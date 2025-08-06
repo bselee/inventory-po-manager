@@ -7,16 +7,11 @@
 
 const fs = require('fs');
 const path = require('path');
-
-console.log('🧪 Redis Migration Code Validation Test');
-console.log('=====================================\n');
-
 const testResults = [];
 
 function addTestResult(test, passed, message) {
   testResults.push({ test, passed, message });
   const status = passed ? '✅' : '❌';
-  console.log(`${status} ${test}: ${message}`);
 }
 
 // Test 1: Check if RedisCacheStatus component exists
@@ -133,29 +128,11 @@ try {
 }
 
 // Summary
-console.log('\n📊 Test Summary');
-console.log('===============');
 const passed = testResults.filter(r => r.passed).length;
 const total = testResults.length;
-console.log(`Tests Passed: ${passed}/${total}`);
-
 if (passed === total) {
-  console.log('\n🎉 All code validation tests passed!');
-  console.log('✅ Redis migration code is properly implemented');
-  console.log('✅ Authentication fixes are in place');
-  console.log('✅ Mobile responsiveness components created');
-  console.log('✅ User feedback system implemented');
-  console.log('\n💡 Next step: Configure Redis Cloud connection strings in environment variables');
 } else {
-  console.log('\n⚠️  Some tests failed - check implementation above');
   const failed = testResults.filter(r => !r.passed);
   failed.forEach(test => {
-    console.log(`   • ${test.test}: ${test.message}`);
   });
-}
-
-console.log('\n🔗 Redis Cloud Setup Required:');
-console.log('1. Create account at https://redis.com/try-free/');
-console.log('2. Set REDIS_URL environment variable');
-console.log('3. Deploy with Redis Cloud connection string');
-console.log('4. Test Redis connection in production environment');
+}

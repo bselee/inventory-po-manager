@@ -145,7 +145,7 @@ export function handleApiError(error: unknown): {
   details?: any
 } {
   // Log error
-  console.error('API Error:', error)
+  logError('API Error:', error)
 
   // Handle known error types
   if (error instanceof AppError) {
@@ -335,7 +335,7 @@ export function logError(
     } : error
   }
   
-  console.error('Application Error:', JSON.stringify(errorInfo, null, 2))
+  logError('Application Error:', JSON.stringify(errorInfo, null, 2))
   
   // In production, send to error tracking service
   // e.g., Sentry, LogRocket, etc.

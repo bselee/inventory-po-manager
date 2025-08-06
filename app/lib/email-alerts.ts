@@ -26,18 +26,15 @@ export class EmailAlertService {
         sgMail.setApiKey(settings.sendgrid_api_key)
         this.alertEmail = settings.alert_email
         this.isConfigured = true
-        console.log('Email alert service initialized')
       } else {
-        console.log('Email alerts not configured - missing SendGrid API key or alert email')
       }
     } catch (error) {
-      console.error('Failed to initialize email alerts:', error)
+      logError('Failed to initialize email alerts:', error)
     }
   }
   
   async sendSyncAlert(alert: SyncAlert) {
     if (!this.isConfigured || !this.alertEmail) {
-      console.log('Email alerts not configured, skipping alert:', alert.type)
       return
     }
     
@@ -210,8 +207,6 @@ export class EmailAlertService {
         }
         
         await sgMail.send(msg)
-        console.log(`Alert email sent: ${alert.type}`)
-        
         // Log the alert
         await supabase
           .from('sync_logs')
@@ -227,7 +222,7 @@ export class EmailAlertService {
           })
       }
     } catch (error) {
-      console.error('Failed to send alert email:', error)
+      logError('Failed to send alert email:', error)
       
       // Log the failed alert
       await supabase
@@ -271,7 +266,7 @@ export class EmailAlertService {
         }
       }
     } catch (error) {
-      console.error('Error checking for stuck syncs:', error)
+      logError('Error checking for stuck syncs:', error)
     }
   }
 }

@@ -16,6 +16,7 @@ import { startGlobalMonitoring, getCriticalItemMonitor } from './real-time-monit
 import { startIntelligentScheduling, executeIntelligentSync } from './sync-scheduler'
 import { supabase } from './supabase'
 import { InventoryItem } from '@/app/types'
+import { logInfo, logError } from './logger'
 
 export interface EnhancedSyncOptions {
   strategy?: 'smart' | 'full' | 'inventory' | 'critical' | 'active'
@@ -60,23 +61,14 @@ export class EnhancedSyncService {
    */
   async initialize(): Promise<void> {
     if (this.isInitialized) return
-
-    console.log('[EnhancedSync] Initializing enhanced sync service...')
-
     try {
       // Start real-time monitoring
       await startGlobalMonitoring()
-      console.log('[EnhancedSync] Real-time monitoring started')
-
       // Start intelligent scheduling
       await startIntelligentScheduling()
-      console.log('[EnhancedSync] Intelligent scheduling started')
-
       this.isInitialized = true
-      console.log('[EnhancedSync] Enhanced sync service initialized')
-
     } catch (error) {
-      console.error('[EnhancedSync] Initialization failed:', error)
+      logError('[EnhancedSync] Initialization failed:', error)
       throw error
     }
   }
@@ -100,10 +92,6 @@ export class EnhancedSyncService {
       batchSize = 100,
       dryRun = false
     } = options
-
-    console.log(`[EnhancedSync] Starting enhanced ${strategy} sync`)
-    console.log(`[EnhancedSync] Change detection: ${enableChangeDetection ? 'enabled' : 'disabled'}`)
-
     let result: EnhancedSyncResult = {
       success: false,
       strategy,
@@ -125,7 +113,7 @@ export class EnhancedSyncService {
         result = await this.executeWithChangeDetection(options)
       } else {
         // Fall back to standard sync
-        console.log('[EnhancedSync] Using standard sync (change detection disabled or forced)')
+        logInfo('Using standard sync (change detection disabled or forced)', undefined, 'EnhancedSync')
         const standardResult = await baseExecuteSync(options)
         
         result = {
@@ -148,12 +136,8 @@ export class EnhancedSyncService {
       // Log enhanced sync statistics
       await this.logEnhancedSyncStats(result)
 
-      console.log(`[EnhancedSync] Enhanced sync completed:`, {
-        success: result.success,
-        strategy: result.strategy,
-        itemsProcessed: result.itemsProcessed,
-        itemsUpdated: result.itemsUpdated,
-        changeRate: result.changeDetectionStats.changeRate.toFixed(1) + '%',
+      logInfo('Enhanced sync completed', {
+        cacheHitRate: result.changeDetectionStats.cacheHitRate.toFixed(1) + '%',
         efficiencyGain: result.changeDetectionStats.efficiencyGain.toFixed(1) + '%',
         duration: Math.round(result.duration / 1000) + 's'
       })
@@ -165,7 +149,7 @@ export class EnhancedSyncService {
       result.duration = Date.now() - startTime
       result.errors = [error instanceof Error ? error.message : 'Unknown error']
 
-      console.error('[EnhancedSync] Enhanced sync failed:', error)
+      logError('[EnhancedSync] Enhanced sync failed:', error)
       return result
     }
   }
@@ -174,8 +158,6 @@ export class EnhancedSyncService {
    * Execute sync with smart change detection
    */
   private async executeWithChangeDetection(options: EnhancedSyncOptions): Promise<EnhancedSyncResult> {
-    console.log('[EnhancedSync] Executing sync with change detection...')
-
     // Get current database items for comparison
     const { data: currentDbItems, error: dbError } = await supabase
       .from('inventory_items')
@@ -222,13 +204,6 @@ export class EnhancedSyncService {
 
     // Use change detection to filter items
     const changeAnalysis = filterChangedItems(finaleItems, existingItemsMap, options.forceSync)
-
-    console.log('[EnhancedSync] Change analysis:', {
-      totalItems: finaleItems.length,
-      changedItems: changeAnalysis.toSync.length,
-      unchangedItems: changeAnalysis.unchanged
-    })
-
     // Calculate efficiency metrics
     const changeRate = (changeAnalysis.toSync.length / finaleItems.length) * 100
     const efficiencyGain = (changeAnalysis.unchanged / finaleItems.length) * 100
@@ -256,7 +231,7 @@ export class EnhancedSyncService {
           // Update change tracking
           await this.updateChangeTracking(finaleItem, generateItemHash(finaleItem))
         } catch (error) {
-          console.error(`[EnhancedSync] Failed to process ${sku}:`, error)
+          logError(`[EnhancedSync] Failed to process ${sku}:`, error)
         }
       }
     }
@@ -284,7 +259,6 @@ export class EnhancedSyncService {
   private async getFinaleData(strategy: string): Promise<any[]> {
     // This would integrate with your existing Finale API service
     // For now, return empty array as placeholder
-    console.log(`[EnhancedSync] Getting Finale data for strategy: ${strategy}`)
     return []
   }
 
@@ -344,7 +318,7 @@ export class EnhancedSyncService {
       .eq('sku', finaleItem.productSku || finaleItem.sku)
 
     if (error) {
-      console.error('[EnhancedSync] Failed to update change tracking:', error)
+      logError('[EnhancedSync] Failed to update change tracking:', error)
     }
   }
 
@@ -389,7 +363,7 @@ export class EnhancedSyncService {
 
       return count || 0
     } catch (error) {
-      console.error('[EnhancedSync] Failed to get alerts count:', error)
+      logError('[EnhancedSync] Failed to get alerts count:', error)
       return 0
     }
   }
@@ -420,10 +394,10 @@ export class EnhancedSyncService {
         })
 
       if (error) {
-        console.error('[EnhancedSync] Failed to log stats:', error)
+        logError('[EnhancedSync] Failed to log stats:', error)
       }
     } catch (error) {
-      console.error('[EnhancedSync] Logging error:', error)
+      logError('[EnhancedSync] Logging error:', error)
     }
   }
 }
@@ -461,8 +435,6 @@ export async function executeIntelligentEnhancedSync(): Promise<{
   enhancedResult: EnhancedSyncResult
   analysis: any
 }> {
-  console.log('[EnhancedSync] Executing intelligent enhanced sync...')
-
   try {
     // Get intelligent analysis and execution
     const intelligentResult = await executeIntelligentSync()
@@ -482,7 +454,7 @@ export async function executeIntelligentEnhancedSync(): Promise<{
       analysis: intelligentResult.analysis
     }
   } catch (error) {
-    console.error('[EnhancedSync] Intelligent enhanced sync failed:', error)
+    logError('[EnhancedSync] Intelligent enhanced sync failed:', error)
     throw error
   }
 }
@@ -560,7 +532,7 @@ export async function checkEnhancedSyncHealth(): Promise<{
       criticalAlerts: criticalAlerts || 0
     }
   } catch (error) {
-    console.error('[EnhancedSync] Health check failed:', error)
+    logError('[EnhancedSync] Health check failed:', error)
     return {
       status: 'unhealthy',
       components: {

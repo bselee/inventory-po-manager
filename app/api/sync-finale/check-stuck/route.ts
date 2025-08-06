@@ -106,7 +106,7 @@ export async function GET(request: NextRequest) {
         : 'No stuck syncs detected.'
     })
   } catch (error) {
-    console.error('Error checking stuck syncs:', error)
+    logError('Error checking stuck syncs:', error)
     return NextResponse.json(
       { error: 'Failed to check stuck syncs' },
       { status: 500 }
@@ -190,7 +190,7 @@ export async function POST(request: NextRequest) {
       duration: Math.round(duration / 1000) + ' seconds'
     })
   } catch (error) {
-    console.error('Error terminating sync:', error)
+    logError('Error terminating sync:', error)
     return NextResponse.json(
       { error: 'Failed to terminate sync' },
       { status: 500 }

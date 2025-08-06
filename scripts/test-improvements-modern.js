@@ -28,7 +28,6 @@ async function test(name, fn) {
   } catch (error) {
     failCount++;
     console.log(red('FAILED'));
-    console.log(`  ${red(error.message)}`);
   }
 }
 
@@ -163,10 +162,6 @@ test('API endpoints return enhanced errors', async () => {
 
 // Summary
 console.log(yellow('\n=== Test Summary ===\n'));
-console.log(`Total Tests: ${passCount + failCount}`);
-console.log(`${green('Passed')}: ${passCount}`);
-console.log(`${red('Failed')}: ${failCount}`);
-
 if (failCount === 0) {
   console.log(green('\n✅ All tests passed! The improvements are working correctly.\n'));
 } else {
@@ -175,21 +170,4 @@ if (failCount === 0) {
 
 // Additional verification info
 console.log(blue('\n=== Additional Verification Steps ===\n'));
-console.log('1. Rate Limiting Visual Test:');
-console.log('   Open scripts/test-rate-limiting.html in your browser');
-console.log('   Click "Test Rate Limiting" and verify ~2 req/sec');
-console.log('');
-console.log('2. Frontend Validation Test:');
-console.log('   Go to http://localhost:3000/settings');
-console.log('   Enter "https://test.com" in Account Path field');
-console.log('   Should see immediate red error message');
-console.log('');
-console.log('3. Debug Panel Test:');
-console.log('   In Settings, click "Run Detailed Debug"');
-console.log('   After completion, Copy/Download buttons should appear');
-console.log('');
-console.log('4. Inventory Warnings Test:');
-console.log('   Go to http://localhost:3000/inventory');
-console.log('   Look for colored warning boxes at the top');
-
 process.exit(failCount > 0 ? 1 : 0);

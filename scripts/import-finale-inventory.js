@@ -7,8 +7,6 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function importFinaleInventory() {
-  console.log('🚀 IMPORTING FINALE INVENTORY TO SUPABASE\n');
-
   const apiKey = process.env.FINALE_API_KEY;
   const apiSecret = process.env.FINALE_API_SECRET;
   let accountPath = process.env.FINALE_ACCOUNT_PATH;
@@ -24,8 +22,6 @@ async function importFinaleInventory() {
   try {
     const authHeader = `Basic ${Buffer.from(`${apiKey}:${apiSecret}`).toString('base64')}`;
     const baseUrl = `https://app.finaleinventory.com/${accountPath}/api`;
-    
-    console.log('🔄 Fetching products from Finale...');
     const url = `${baseUrl}/product?limit=2000`;
     
     const response = await fetch(url, {
@@ -56,16 +52,10 @@ async function importFinaleInventory() {
         products.push(product);
       }
     }
-
-    console.log(`✅ Found ${products.length} products\n`);
-
     // Clear existing inventory
-    console.log('🗑️  Clearing old inventory...');
     await supabase.from('inventory_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
     // Transform to match Supabase table structure
-    console.log('💾 Importing to Supabase...\n');
-    
     const inventoryItems = products.map(product => ({
       sku: product.productId || 'NO-SKU',
       product_name: product.internalName || product.productName || product.productId || 'Unknown',
@@ -98,19 +88,13 @@ async function importFinaleInventory() {
     }
 
     console.log('\n\n' + '='.repeat(60));
-    console.log('🎉 IMPORT COMPLETE!');
     console.log('='.repeat(60));
-    console.log(`\n📦 Successfully imported ${inserted} products from Finale`);
-    console.log('\n👉 Visit http://localhost:3000/inventory to see your data!\n');
-
     // Show sample
-    console.log('Sample of imported products:');
     console.log('-'.repeat(80));
     console.log('SKU'.padEnd(15) + ' | ' + 'Product Name'.padEnd(40) + ' | ' + 'Stock'.padEnd(8) + ' | Cost');
     console.log('-'.repeat(80));
     inventoryItems.slice(0, 20).forEach(item => {
-      console.log(
-        item.sku.substring(0, 14).padEnd(15) + ' | ' + 
+      .padEnd(15) + ' | ' + 
         item.product_name.substring(0, 39).padEnd(40) + ' | ' + 
         String(item.stock).padEnd(8) + ' | $' + 
         item.cost.toFixed(2)

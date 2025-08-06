@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
-import { kvInventoryService } from '@/app/lib/kv-inventory-service'
-import { redis } from '@/app/lib/redis-client'
+import { kvInventoryService } from '@/lib/kv-inventory-service'
+import { redis } from '@/lib/redis-client'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -25,7 +25,6 @@ export async function POST(request: Request) {
     
     switch (action) {
       case 'clearCache': {
-        console.log('[Cache Management] Clearing all caches...')
         await kvInventoryService.clearCache()
         
         return NextResponse.json({
@@ -36,7 +35,6 @@ export async function POST(request: Request) {
       }
       
       case 'warmUpCache': {
-        console.log('[Cache Management] Warming up cache...')
         const startTime = Date.now()
         
         try {
@@ -58,7 +56,7 @@ export async function POST(request: Request) {
             summary
           })
         } catch (error) {
-          console.error('[Cache Management] Warm up failed:', error)
+          logError('[Cache Management] Warm up failed:', error)
           
           // Check if it's a configuration error
           if (error instanceof Error && error.message.includes('not configured')) {
@@ -90,8 +88,6 @@ export async function POST(request: Request) {
       }
       
       case 'healthCheck': {
-        console.log('[Cache Management] Performing health check...')
-        
         try {
           // Test Redis connection
           const client = await redis.get('test:ping')
@@ -138,7 +134,7 @@ export async function POST(request: Request) {
     }
     
   } catch (error) {
-    console.error('[Cache Management] Error:', error)
+    logError('[Cache Management] Error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Cache operation failed' },
       { status: 500 }
@@ -154,9 +150,8 @@ export async function GET(request: Request) {
     
     if (forceRefresh) {
       // Trigger a refresh but return immediately
-      console.log('[Cache Stats] Force refresh requested, triggering background sync...')
       kvInventoryService.getInventory(true).catch(error => {
-        console.error('[Cache Stats] Background sync error:', error)
+        logError('[Cache Stats] Background sync error:', error)
       })
     }
     
@@ -200,7 +195,7 @@ export async function GET(request: Request) {
     return NextResponse.json(stats)
     
   } catch (error) {
-    console.error('[Cache Stats] Error:', error)
+    logError('[Cache Stats] Error:', error)
     return NextResponse.json(
       { error: error instanceof Error ? error.message : 'Failed to get cache statistics' },
       { status: 500 }

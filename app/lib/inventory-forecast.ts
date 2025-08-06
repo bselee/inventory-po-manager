@@ -65,7 +65,7 @@ export class InventoryForecastService {
       return forecasts.sort((a, b) => a.daysUntilStockout - b.daysUntilStockout)
       
     } catch (error) {
-      console.error('Forecast error:', error)
+      logError('Forecast error:', error)
       return []
     }
   }
@@ -115,7 +115,7 @@ export class InventoryForecastService {
           .eq('sku', sku)
       }
     } catch (error) {
-      console.error('Error updating sales velocity:', error)
+      logError('Error updating sales velocity:', error)
     }
   }
 }

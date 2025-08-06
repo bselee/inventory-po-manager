@@ -41,14 +41,12 @@ async function fetchFinaleData(endpoint) {
 }
 
 async function fullSync() {
-  console.log('🚀 FULL FINALE TO SUPABASE SYNC\n');
   console.log('=' .repeat(60));
   
   const startTime = Date.now();
   
   try {
     // 1. Create sync log
-    console.log('\n1. Creating sync log...');
     const { data: syncLog } = await supabase
       .from('sync_logs')
       .insert({
@@ -61,11 +59,7 @@ async function fullSync() {
       })
       .select()
       .single();
-    
-    console.log('✅ Created sync log:', syncLog?.id);
-    
     // 2. Fetch ALL products from Finale (paginated)
-    console.log('\n2. Fetching all products from Finale...');
     const allProducts = [];
     let offset = 0;
     const limit = 100;
@@ -88,19 +82,13 @@ async function fullSync() {
           }
           allProducts.push(product);
         }
-        
-        console.log(` got ${batchSize}`);
         hasMore = batchSize === limit;
         offset += limit;
       } else {
         hasMore = false;
       }
     }
-    
-    console.log(`✅ Found ${allProducts.length} total products`);
-    
     // 3. Fetch ALL inventory data
-    console.log('\n3. Fetching all inventory data...');
     let inventoryData = { productId: [], quantityOnHand: [], quantityReserved: [], quantityOnOrder: [] };
     let invOffset = 0;
     const invLimit = 1000;
@@ -118,19 +106,13 @@ async function fullSync() {
         inventoryData.quantityOnHand.push(...(batch.quantityOnHand || []));
         inventoryData.quantityReserved.push(...(batch.quantityReserved || []));
         inventoryData.quantityOnOrder.push(...(batch.quantityOnOrder || []));
-        
-        console.log(` got ${batchSize}`);
         hasMore = batchSize === invLimit;
         invOffset += invLimit;
       } else {
         hasMore = false;
       }
     }
-    
-    console.log(`✅ Found ${inventoryData.productId.length} inventory records`);
-    
     // 4. Aggregate inventory by product
-    console.log('\n4. Aggregating inventory by product...');
     const inventoryMap = new Map();
     
     for (let i = 0; i < inventoryData.productId.length; i++) {
@@ -148,11 +130,7 @@ async function fullSync() {
       inv.quantityReserved += parseFloat(inventoryData.quantityReserved?.[i] || 0);
       inv.quantityOnOrder += parseFloat(inventoryData.quantityOnOrder?.[i] || 0);
     }
-    
-    console.log(`✅ Aggregated inventory for ${inventoryMap.size} products`);
-    
     // 5. Prepare and batch upsert to Supabase
-    console.log('\n5. Syncing to Supabase...');
     const batchSize = 50;
     let totalProcessed = 0;
     let totalUpdated = 0;
@@ -190,10 +168,8 @@ async function fullSync() {
         .select();
       
       if (upsertError) {
-        console.log(` ❌ Error: ${upsertError.message}`);
         errors.push({ batch: i / batchSize + 1, error: upsertError.message });
       } else {
-        console.log(` ✅ Updated ${upserted?.length || 0} items`);
         totalUpdated += upserted?.length || 0;
       }
       
@@ -229,23 +205,12 @@ async function fullSync() {
     
     // 7. Summary
     const duration = Math.round((Date.now() - startTime) / 1000);
-    console.log('\n\n📊 SYNC COMPLETE');
     console.log('=' .repeat(60));
-    console.log(`Duration: ${duration} seconds`);
-    console.log(`Products found: ${allProducts.length}`);
-    console.log(`Items processed: ${totalProcessed}`);
-    console.log(`Items updated: ${totalUpdated}`);
-    console.log(`Errors: ${errors.length}`);
-    
     // 8. Final inventory count
     const { count } = await supabase
       .from('inventory_items')
       .select('*', { count: 'exact', head: true });
-    
-    console.log(`\n✅ Total items in database: ${count}`);
-    
     // 9. Show sample items with stock
-    console.log('\n📦 Sample items with stock:');
     const { data: stockedItems } = await supabase
       .from('inventory_items')
       .select('sku, product_name, stock')
@@ -255,10 +220,8 @@ async function fullSync() {
     
     if (stockedItems && stockedItems.length > 0) {
       stockedItems.forEach((item, i) => {
-        console.log(`${i + 1}. ${item.sku} - ${item.product_name}: ${item.stock} units`);
       });
     } else {
-      console.log('No items with stock found');
     }
     
   } catch (error) {

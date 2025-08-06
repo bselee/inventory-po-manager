@@ -6,7 +6,6 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function checkSchema() {
-  console.log('🔍 CHECKING SETTINGS TABLE SCHEMA\n');
   console.log('=' .repeat(60));
   
   // Get a record to see columns
@@ -21,17 +20,11 @@ async function checkSchema() {
   }
   
   if (data && data.length > 0) {
-    console.log('Settings table columns:');
     const columns = Object.keys(data[0]);
     columns.forEach(col => console.log(`  - ${col}`));
-    
-    console.log('\nSample data:');
     console.log(JSON.stringify(data[0], null, 2));
   } else {
-    console.log('No data in settings table');
-    
     // Try to insert to see required columns
-    console.log('\nTrying to create settings record...');
     const { data: inserted, error: insertError } = await supabase
       .from('settings')
       .insert({
@@ -42,9 +35,7 @@ async function checkSchema() {
       .select();
     
     if (insertError) {
-      console.log('Insert error:', insertError.message);
     } else {
-      console.log('Created settings:', inserted);
     }
   }
 }

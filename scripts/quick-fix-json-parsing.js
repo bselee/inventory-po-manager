@@ -9,9 +9,6 @@ const fs = require('fs');
 const path = require('path');
 
 const finaleApiPath = path.join(__dirname, '../app/lib/finale-api.ts');
-
-console.log('🔧 Applying quick fix for JSON parsing error...');
-
 try {
   let content = fs.readFileSync(finaleApiPath, 'utf8');
   
@@ -55,9 +52,7 @@ try {
   const constructorPattern = /(this\.authHeader = [^}]+})/;
   if (constructorPattern.test(content)) {
     content = content.replace(constructorPattern, `$1${safeParseMethod}`);
-    console.log('✅ Added safeParseJson method');
   } else {
-    console.log('⚠️  Could not locate constructor to add safeParseJson method');
   }
 
   // Fix the problematic JSON parsing calls one by one
@@ -84,7 +79,6 @@ try {
     const before = content;
     content = content.replace(fix.pattern, fix.replacement);
     if (content !== before) {
-      console.log(`✅ ${fix.description}`);
       fixesApplied++;
     }
   });
@@ -96,7 +90,6 @@ try {
   discontinued?: boolean
   active?: boolean
 $2`);
-    console.log('✅ Added missing FinaleProduct properties');
   }
 
   // Fix date handling to prevent undefined errors
@@ -104,29 +97,16 @@ $2`);
     /new Date\(finaleProduct\.lastModifiedDate\)\.getFullYear\(\)/g,
     'finaleProduct.lastModifiedDate ? new Date(finaleProduct.lastModifiedDate).getFullYear() : new Date().getFullYear()'
   );
-  console.log('✅ Fixed date handling');
-
   // Write the fixed file
   fs.writeFileSync(finaleApiPath, content);
-  console.log(`✅ Applied ${fixesApplied} JSON parsing fixes to finale-api.ts`);
-
   // Test TypeScript compilation
   const { execSync } = require('child_process');
   try {
     execSync('npm run type-check', { stdio: 'pipe' });
-    console.log('✅ TypeScript compilation successful');
   } catch (error) {
-    console.log('⚠️  TypeScript compilation still has issues:');
     const output = error.stdout?.toString() || error.message;
     console.log(output.substring(0, 500) + '...');
   }
-
-  console.log('🎉 Quick fix completed! The JSON parsing error should be resolved.');
-  console.log('📝 Next steps:');
-  console.log('   1. Test the inventory sync functionality');
-  console.log('   2. Run the comprehensive Playwright tests');
-  console.log('   3. Monitor for any remaining sync issues');
-
 } catch (error) {
   console.error('❌ Error applying fix:', error.message);
   process.exit(1);

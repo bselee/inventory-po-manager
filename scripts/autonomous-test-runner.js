@@ -43,8 +43,6 @@ async function ensureReportDir() {
 // Run Playwright tests
 async function runTests() {
   return new Promise((resolve) => {
-    console.log(`\n🎭 Running Playwright tests (Run #${testHistory.totalRuns + 1})...`);
-    
     exec(CONFIG.testCommand + ' --reporter=json', async (error, stdout, stderr) => {
       const result = {
         success: !error,
@@ -61,7 +59,6 @@ async function runTests() {
           result.testResults = JSON.parse(jsonMatch[0]);
         }
       } catch (e) {
-        console.log('Could not parse test results JSON');
       }
 
       // Save raw output for debugging
@@ -149,10 +146,6 @@ function categorizeError(error) {
 
 // Apply repair strategies
 async function repairTest(failure) {
-  console.log(`\n🔧 Attempting to repair: ${failure.test}`);
-  console.log(`   Error type: ${failure.type}`);
-  console.log(`   Error: ${failure.error}`);
-
   let repaired = false;
 
   switch (failure.type) {
@@ -172,14 +165,11 @@ async function repairTest(failure) {
       repaired = await repairNetwork(failure);
       break;
     default:
-      console.log('   ⚠️  Unknown error type, skipping repair');
   }
 
   if (repaired) {
     testHistory.repairedTests++;
-    console.log('   ✅ Repair successful!');
   } else {
-    console.log('   ❌ Repair failed');
   }
 
   return repaired;
@@ -192,7 +182,6 @@ let testRepairService = null;
 // Repair selector-based failures
 async function repairSelector(failure) {
   if (!testRepairService) {
-    console.log('   → Repair service not available');
     return false;
   }
 
@@ -208,7 +197,6 @@ async function repairSelector(failure) {
     
     return result.success;
   } catch (error) {
-    console.log('   → Repair failed:', error.message);
     return false;
   }
 }
@@ -216,7 +204,6 @@ async function repairSelector(failure) {
 // Repair timing-based failures
 async function repairTiming(failure) {
   if (!testRepairService) {
-    console.log('   → Repair service not available');
     return false;
   }
 
@@ -232,7 +219,6 @@ async function repairTiming(failure) {
     
     return result.success;
   } catch (error) {
-    console.log('   → Repair failed:', error.message);
     return false;
   }
 }
@@ -240,7 +226,6 @@ async function repairTiming(failure) {
 // Repair assertion failures
 async function repairAssertion(failure) {
   if (!testRepairService) {
-    console.log('   → Repair service not available');
     return false;
   }
 
@@ -256,7 +241,6 @@ async function repairAssertion(failure) {
     
     return result.success;
   } catch (error) {
-    console.log('   → Repair failed:', error.message);
     return false;
   }
 }
@@ -264,7 +248,6 @@ async function repairAssertion(failure) {
 // Repair navigation failures
 async function repairNavigation(failure) {
   if (!testRepairService) {
-    console.log('   → Repair service not available');
     return false;
   }
 
@@ -280,7 +263,6 @@ async function repairNavigation(failure) {
     
     return result.success;
   } catch (error) {
-    console.log('   → Repair failed:', error.message);
     return false;
   }
 }
@@ -288,7 +270,6 @@ async function repairNavigation(failure) {
 // Repair network failures
 async function repairNetwork(failure) {
   if (!testRepairService) {
-    console.log('   → Repair service not available');
     return false;
   }
 
@@ -304,7 +285,6 @@ async function repairNetwork(failure) {
     
     return result.success;
   } catch (error) {
-    console.log('   → Repair failed:', error.message);
     return false;
   }
 }
@@ -332,19 +312,10 @@ async function generateReport() {
     path.join(CONFIG.reportDir, 'summary.json'),
     JSON.stringify(report, null, 2)
   );
-
-  console.log('\n📊 Test Summary:');
-  console.log(`   Total runs: ${report.summary.totalRuns}`);
-  console.log(`   Success rate: ${report.summary.successRate}`);
-  console.log(`   Tests repaired: ${report.summary.repairedTests}`);
-  console.log(`   Runtime: ${report.summary.runtime}`);
 }
 
 // Main autonomous loop
 async function autonomousLoop() {
-  console.log('🤖 Starting Autonomous Playwright Test Runner');
-  console.log('   Press Ctrl+C to stop\n');
-
   await ensureReportDir();
 
   let consecutiveFailures = 0;
@@ -356,18 +327,14 @@ async function autonomousLoop() {
     const result = await runTests();
     
     if (result.success) {
-      console.log('✅ All tests passed!');
       testHistory.successfulRuns++;
       consecutiveFailures = 0;
     } else {
-      console.log('❌ Some tests failed');
       testHistory.failedRuns++;
       consecutiveFailures++;
       
       // Analyze failures
       const failures = analyzeFailures(result);
-      console.log(`\n📋 Found ${failures.length} test failures`);
-      
       // Track failure history
       for (const failure of failures) {
         const key = `${failure.test}:${failure.type}`;
@@ -381,7 +348,6 @@ async function autonomousLoop() {
       
       // Check if we should stop due to too many failures
       if (consecutiveFailures >= CONFIG.maxConsecutiveFailures) {
-        console.log('\n⛔ Too many consecutive failures. Stopping.');
         break;
       }
     }
@@ -390,16 +356,13 @@ async function autonomousLoop() {
     await generateReport();
     
     // Sleep before next run
-    console.log(`\n💤 Sleeping for ${CONFIG.sleepBetweenRuns / 1000 / 60} minutes...\n`);
     await new Promise(resolve => setTimeout(resolve, CONFIG.sleepBetweenRuns));
   }
 }
 
 // Handle graceful shutdown
 process.on('SIGINT', async () => {
-  console.log('\n\n🛑 Shutting down...');
   await generateReport();
-  console.log('📊 Final report saved to:', CONFIG.reportDir);
   process.exit(0);
 });
 

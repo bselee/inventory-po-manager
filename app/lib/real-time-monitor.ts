@@ -56,12 +56,10 @@ export class CriticalItemMonitor {
    */
   async startMonitoring(): Promise<void> {
     if (this.isRunning) {
-      console.log('[Monitor] Already running')
+
       return
     }
 
-    console.log('[Monitor] Starting real-time inventory monitoring...')
-    
     // Initial check
     await this.checkCriticalItems()
     
@@ -77,7 +75,7 @@ export class CriticalItemMonitor {
     }
     
     this.isRunning = true
-    console.log('[Monitor] Real-time monitoring active')
+
   }
 
   /**
@@ -95,7 +93,7 @@ export class CriticalItemMonitor {
     }
     
     this.isRunning = false
-    console.log('[Monitor] Monitoring stopped')
+
   }
 
   /**
@@ -103,8 +101,7 @@ export class CriticalItemMonitor {
    */
   async checkCriticalItems(): Promise<CriticalItem[]> {
     try {
-      console.log('[Monitor] Checking critical items...')
-      
+
       // Fetch items with low stock
       const { data: items, error } = await supabase
         .from('inventory_items')
@@ -148,15 +145,14 @@ export class CriticalItemMonitor {
         // Send alert if needed
         if (urgencyLevel === 'critical' && this.shouldSendAlert(item.sku)) {
           // await this.sendCriticalAlert(criticalItem)
-          console.log('[Monitor] Critical alert for:', item.sku)
+
         }
       }
-      
-      console.log(`[Monitor] Found ${criticalItems.length} critical items`)
+
       return criticalItems
       
     } catch (error) {
-      console.error('[Monitor] Error checking critical items:', error)
+      logError('[Monitor] Error checking critical items:', error)
       return []
     }
   }
@@ -227,18 +223,7 @@ Action Required: Immediate reorder needed
       `.trim()
       
       // TODO: Implement email alerts
-      console.log('[Monitor] Critical alert:', {
-        type: 'critical_stock',
-        title: `CRITICAL: ${item.sku} - ${item.stock} units remaining`,
-        message,
-        metadata: {
-          sku: item.sku,
-          stock: item.stock,
-          daysUntilStockout: item.daysUntilStockout,
-          urgencyLevel: item.urgencyLevel
-        }
-      })
-      
+
       // Update alert tracking
       this.alertCount++
       this.lastAlertTime = new Date()
@@ -252,11 +237,9 @@ Action Required: Immediate reorder needed
           this.alertsSentInLastHour.set(item.sku, count - 1)
         }
       }, 60 * 60 * 1000)
-      
-      console.log(`[Monitor] Critical alert sent for ${item.sku}`)
-      
+
     } catch (error) {
-      console.error('[Monitor] Failed to send alert:', error)
+      logError('[Monitor] Failed to send alert:', error)
     }
   }
 
@@ -275,8 +258,7 @@ Action Required: Immediate reorder needed
             table: 'inventory_items'
           },
           async (payload) => {
-            console.log('[Monitor] Real-time update received:', payload.eventType)
-            
+
             // Check if this update affects critical items
             if (payload.eventType === 'UPDATE' || payload.eventType === 'INSERT') {
               const item = payload.new as InventoryItem
@@ -289,11 +271,9 @@ Action Required: Immediate reorder needed
           }
         )
         .subscribe()
-      
-      console.log('[Monitor] Real-time subscription active')
-      
+
     } catch (error) {
-      console.error('[Monitor] Failed to set up real-time subscription:', error)
+      logError('[Monitor] Failed to set up real-time subscription:', error)
     }
   }
 
@@ -357,11 +337,10 @@ Action Required: Immediate reorder needed
   onAlert(callback: (alert: any) => void): () => void {
     // This is a simplified implementation
     // In a real implementation, you'd want a proper event emitter
-    console.log('[Monitor] Alert subscription setup')
-    
+
     // Return unsubscribe function
     return () => {
-      console.log('[Monitor] Alert subscription removed')
+
     }
   }
 }

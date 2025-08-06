@@ -65,12 +65,8 @@ export class IntelligentSyncScheduler {
    */
   async startScheduling(): Promise<void> {
     if (this.isRunning) {
-      console.log('[Scheduler] Already running')
       return
     }
-
-    console.log('[Scheduler] Starting intelligent sync scheduling...')
-
     // Set up different sync strategies with intelligent timing
     this.scheduleStrategy('critical', this.config.syncStrategies.critical)
     this.scheduleStrategy('inventory', this.config.syncStrategies.inventory) 
@@ -78,7 +74,6 @@ export class IntelligentSyncScheduler {
     this.scheduleStrategy('full', this.config.syncStrategies.full)
 
     this.isRunning = true
-    console.log('[Scheduler] Intelligent scheduling active')
   }
 
   /**
@@ -87,20 +82,16 @@ export class IntelligentSyncScheduler {
   stopScheduling(): void {
     this.intervals.forEach((interval, strategy) => {
       clearInterval(interval)
-      console.log(`[Scheduler] Stopped ${strategy} sync schedule`)
     })
     
     this.intervals.clear()
     this.isRunning = false
-    console.log('[Scheduler] Scheduling stopped')
   }
 
   /**
    * Analyze current situation and recommend optimal sync strategy
    */
   async analyzeAndRecommend(): Promise<SyncAnalysis> {
-    console.log('[Scheduler] Analyzing sync requirements...')
-
     const [
       criticalSummary,
       lastSyncData,
@@ -174,10 +165,6 @@ export class IntelligentSyncScheduler {
     analysis: SyncAnalysis
   }> {
     const analysis = await this.analyzeAndRecommend()
-    
-    console.log(`[Scheduler] Executing ${analysis.recommendedStrategy} sync (${analysis.urgency} urgency)`)
-    console.log(`[Scheduler] Reasoning: ${analysis.reasoning.join(', ')}`)
-
     const startTime = Date.now()
 
     try {
@@ -199,7 +186,7 @@ export class IntelligentSyncScheduler {
       }
     } catch (error) {
       const duration = Date.now() - startTime
-      console.error('[Scheduler] Intelligent sync failed:', error)
+      logError('[Scheduler] Intelligent sync failed:', error)
 
       return {
         success: false,
@@ -269,7 +256,6 @@ export class IntelligentSyncScheduler {
       try {
         // Check if we should skip based on business hours
         if (!config.duringBusinessHours && this.isBusinessHours()) {
-          console.log(`[Scheduler] Skipping ${strategy} sync during business hours`)
           return
         }
 
@@ -277,16 +263,13 @@ export class IntelligentSyncScheduler {
         if (strategy === 'critical') {
           const analysis = await this.analyzeAndRecommend()
           if (analysis.urgency === 'low') {
-            console.log('[Scheduler] No critical sync needed')
             return
           }
         }
-
-        console.log(`[Scheduler] Executing scheduled ${strategy} sync`)
         await executeSync({ strategy: strategy as any })
         
       } catch (error) {
-        console.error(`[Scheduler] Scheduled ${strategy} sync failed:`, error)
+        logError(`[Scheduler] Scheduled ${strategy} sync failed:`, error)
       }
     }
 
@@ -313,8 +296,6 @@ export class IntelligentSyncScheduler {
       const interval = setInterval(executeWithAnalysis, intervalMs)
       this.intervals.set(strategy, interval)
     }, delayMs)
-
-    console.log(`[Scheduler] Scheduled ${strategy} sync every ${intervalMs / 60000} minutes`)
   }
 
   /**
@@ -365,7 +346,7 @@ export class IntelligentSyncScheduler {
         lastSyncSuccess: lastSync.status === 'success'
       }
     } catch (error) {
-      console.error('[Scheduler] Failed to get last sync data:', error)
+      logError('[Scheduler] Failed to get last sync data:', error)
       return {
         lastSyncTime: null,
         hoursSinceLastSync: Infinity,
@@ -413,7 +394,7 @@ export class IntelligentSyncScheduler {
         averageItemsChanged
       }
     } catch (error) {
-      console.error('[Scheduler] Failed to analyze recent changes:', error)
+      logError('[Scheduler] Failed to analyze recent changes:', error)
       return {
         estimatedChangeRate: 50,
         recentSyncCount: 0,
@@ -474,10 +455,10 @@ export class IntelligentSyncScheduler {
         })
 
       if (error) {
-        console.error('[Scheduler] Failed to log analysis:', error)
+        logError('[Scheduler] Failed to log analysis:', error)
       }
     } catch (error) {
-      console.error('[Scheduler] Analysis logging error:', error)
+      logError('[Scheduler] Analysis logging error:', error)
     }
   }
 

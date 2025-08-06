@@ -6,20 +6,13 @@ const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function checkSettings() {
-  console.log('🔍 CHECKING SETTINGS TABLE');
-  console.log('===========================');
-  
   const { data, error } = await supabase
     .from('settings')
     .select('*');
   
   if (error) {
-    console.log('❌ Settings error:', error.message);
     return;
   }
-  
-  console.log('✅ Settings found:', data?.length || 0, 'records');
-  
   if (data && data.length > 0) {
     console.log('First setting structure:', JSON.stringify(data[0], null, 2));
     
@@ -29,21 +22,18 @@ async function checkSettings() {
       const isSecret = key.toLowerCase().includes('password') || 
                       key.toLowerCase().includes('key') ||
                       key.toLowerCase().includes('secret');
-      console.log(`- ${key}: ${isSecret ? '[HIDDEN]' : value}`);
     });
     
     const finaleSettings = data.filter(s => {
       const key = s.key || s.name || '';
       return key.toLowerCase().includes('finale');
     });
-    console.log(`\nFinale-related settings: ${finaleSettings.length}`);
     finaleSettings.forEach(s => {
       const key = s.key || s.name || 'unknown';
       const value = s.value || s.setting_value || 'no value';
       const isSecret = key.toLowerCase().includes('password') || 
                       key.toLowerCase().includes('key') ||
                       key.toLowerCase().includes('secret');
-      console.log(`  ${key}: ${isSecret ? '[HIDDEN]' : value}`);
     });
   }
 }

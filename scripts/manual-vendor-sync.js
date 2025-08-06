@@ -15,10 +15,6 @@ const baseUrl = process.env.VERCEL_URL
   : process.env.DEPLOYMENT_URL 
   ? process.env.DEPLOYMENT_URL
   : 'https://inventory-po-manager.vercel.app';
-
-console.log('🔄 Starting manual vendor sync...');
-console.log(`📍 Using URL: ${baseUrl}`);
-
 const data = JSON.stringify({
   manual: true
 });
@@ -49,11 +45,7 @@ const req = https.request(options, (res) => {
       const result = JSON.parse(responseData);
       
       if (res.statusCode === 200 && result.success) {
-        console.log('✅ Vendor sync completed successfully!');
-        console.log(`📊 Total vendors: ${result.totalVendors || 0}`);
-        console.log(`✅ Processed: ${result.processed || 0}`);
         if (result.message) {
-          console.log(`📝 ${result.message}`);
         }
       } else {
         console.error('❌ Vendor sync failed!');

@@ -57,8 +57,6 @@ export function useInventoryRealtime() {
               table: 'inventory_items',
             },
             (payload: RealtimePostgresChangesPayload<InventoryItem>) => {
-              console.log('Real-time update:', payload);
-              
               switch (payload.eventType) {
                 case 'INSERT':
                   setInventoryItems(prev => [...prev, payload.new]);
@@ -81,7 +79,6 @@ export function useInventoryRealtime() {
             }
           )
           .subscribe((status) => {
-            console.log('Subscription status:', status);
             setIsConnected(status === 'SUBSCRIBED');
             
             if (status === 'CHANNEL_ERROR') {
@@ -158,7 +155,6 @@ export function useInventoryRealtimeFiltered(filters: { vendor?: string; locatio
         },
         (payload) => {
           // Handle filtered updates
-          console.log('Filtered update:', payload);
           // ... update logic
         }
       )

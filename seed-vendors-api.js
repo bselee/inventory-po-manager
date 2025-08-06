@@ -14,12 +14,8 @@ async function getEnvVariables() {
     const envConfigured = data.checks && data.checks.environment && data.checks.environment.configured
     
     if (dbConnected && envConfigured) {
-      console.log('✅ Environment variables and database are configured')
       return true
     } else {
-      console.log('❌ Environment or database not properly configured')
-      console.log('Database connected:', dbConnected)
-      console.log('Environment configured:', envConfigured)
       return false
     }
   } catch (error) {
@@ -109,12 +105,9 @@ const sampleVendors = [
 ]
 
 async function seedVendorsAPI() {
-  console.log('🌱 Seeding vendors using local API...')
-  
   // Check if server is running and configured
   const envOk = await getEnvVariables()
   if (!envOk) {
-    console.log('❌ Please ensure the development server is running and configured')
     process.exit(1)
   }
 
@@ -122,30 +115,19 @@ async function seedVendorsAPI() {
   let failCount = 0
 
   for (const vendor of sampleVendors) {
-    console.log(`Creating vendor: ${vendor.name}`)
-    
     const result = await createVendorDirectly(vendor)
     
     if (result.success) {
-      console.log(`✅ Successfully created ${vendor.name}`)
       successCount++
     } else {
-      console.log(`❌ Failed to create ${vendor.name}: ${result.error}`)
       failCount++
     }
     
     // Small delay between requests
     await new Promise(resolve => setTimeout(resolve, 500))
   }
-
-  console.log('\n📊 Summary:')
-  console.log(`✅ Successfully created: ${successCount} vendors`)
-  console.log(`❌ Failed to create: ${failCount} vendors`)
-  
   if (successCount > 0) {
-    console.log('🎉 Vendor seeding completed! You can now visit http://localhost:3000/vendors to see the results.')
   } else {
-    console.log('⚠️  No vendors were created. Please check the error messages above.')
   }
 }
 

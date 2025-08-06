@@ -22,13 +22,11 @@ export class CachedFinaleApiService extends FinaleApiService {
     if (this.cacheEnabled) {
       const cached = await cache.get<any[]>(cacheKey)
       if (cached) {
-        console.log('[Finale Cache] Hit: Inventory data')
         return cached
       }
     }
 
     // Fetch from API
-    console.log('[Finale Cache] Miss: Fetching inventory from API')
     const data = await super.getInventoryData(filterYear)
 
     // Cache the result
@@ -46,13 +44,11 @@ export class CachedFinaleApiService extends FinaleApiService {
     if (this.cacheEnabled) {
       const cached = await cache.get<any[]>(cacheKey)
       if (cached) {
-        console.log('[Finale Cache] Hit: Vendors data')
         return cached
       }
     }
 
     // Fetch from API
-    console.log('[Finale Cache] Miss: Fetching vendors from API')
     const data = await super.getVendors()
 
     // Cache the result
@@ -100,7 +96,6 @@ export class CachedFinaleApiService extends FinaleApiService {
       const pattern = `finale:inventory:${this.config.accountPath}:*`
       const deleted = await cache.deletePattern(pattern)
       if (deleted > 0) {
-        console.log(`[Finale Cache] Invalidated ${deleted} inventory cache entries`)
       }
     } catch (error) {
       logError(error, {
@@ -116,7 +111,6 @@ export class CachedFinaleApiService extends FinaleApiService {
     try {
       const key = cacheKeys.finaleVendors(this.config.accountPath)
       await cache.delete(key)
-      console.log('[Finale Cache] Invalidated vendor cache')
     } catch (error) {
       logError(error, {
         operation: 'CACHE_INVALIDATE',

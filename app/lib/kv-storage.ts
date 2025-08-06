@@ -24,11 +24,10 @@ function getRedisClient(): Redis {
     });
 
     redis.on('error', (error) => {
-      console.error('Redis connection error:', error);
+      logError('Redis connection error:', error);
     });
 
     redis.on('connect', () => {
-      console.log('Connected to Redis Cloud');
     });
   }
   
@@ -115,7 +114,7 @@ export class KVStorageService {
       const parsed = JSON.parse(result);
       return parsed.data as T;
     } catch (error) {
-      console.error(`KV get error for key ${key}:`, error);
+      logError(`KV get error for key ${key}:`, error);
       return null;
     }
   }

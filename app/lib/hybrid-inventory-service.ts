@@ -20,7 +20,6 @@ export class HybridInventoryService {
     try {
       // Strategy 1: Use Reporting API if URL is configured
       if (reportUrl) {
-        console.log('[Hybrid Service] Using Finale Reporting API')
         const data = await this.fetchFromReportingAPI(reportUrl)
         
         // Cache the results in Supabase for faster subsequent loads
@@ -29,11 +28,10 @@ export class HybridInventoryService {
       }
 
       // Strategy 2: Fallback to cached Supabase data
-      console.log('[Hybrid Service] Using cached Supabase data')
       return await this.fetchFromCache()
 
     } catch (error) {
-      console.error('[Hybrid Service] Reporting API failed, trying cache:', error)
+      logError('[Hybrid Service] Reporting API failed, trying cache:', error)
       
       // Strategy 3: Fallback to cache if API fails
       const cachedData = await this.fetchFromCache()
@@ -85,9 +83,8 @@ export class HybridInventoryService {
       }))
       
       await supabase.from('inventory_cache').insert(cacheData)
-      console.log(`[Hybrid Service] Cached ${data.length} items`)
     } catch (error) {
-      console.warn('[Hybrid Service] Failed to cache data:', error)
+      logWarn('[Hybrid Service] Failed to cache data:', error)
       // Don't throw - caching failure shouldn't break the main flow
     }
   }
@@ -107,7 +104,7 @@ export class HybridInventoryService {
     if (data.length > 0) {
       const cacheAge = Date.now() - new Date(data[0].cached_at).getTime()
       if (cacheAge > this.cacheTimeout) {
-        console.warn('[Hybrid Service] Cache is stale, data may be outdated')
+        logWarn('[Hybrid Service] Cache is stale, data may be outdated')
       }
     }
     

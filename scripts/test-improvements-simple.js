@@ -49,16 +49,13 @@ function makeRequest(options) {
 
 // Test function
 async function test(name, fn) {
-  console.log(`\n${colors.blue}Testing:${colors.reset} ${name}`);
   try {
     await fn();
     results.passed++;
     results.tests.push({ name, status: 'PASSED' });
-    console.log(`${colors.green}✓ PASSED${colors.reset}`);
   } catch (error) {
     results.failed++;
     results.tests.push({ name, status: 'FAILED', error: error.message });
-    console.log(`${colors.red}✗ FAILED:${colors.reset} ${error.message}`);
   }
 }
 
@@ -67,9 +64,6 @@ function assert(condition, message) {
     throw new Error(message || 'Assertion failed');
   }
 }
-
-console.log(`${colors.yellow}\n=== Testing Finale API Improvements ===\n${colors.reset}`);
-
 // Test 1: Check if rate limiter file exists
 test('Rate Limiter - File exists', async () => {
   const filePath = path.join(__dirname, '../app/lib/finale-rate-limiter.ts');
@@ -195,24 +189,15 @@ test('Sync Service - Logger integrated', async () => {
 });
 
 // Print summary
-console.log(`${colors.yellow}\n=== Test Summary ===${colors.reset}\n`);
-console.log(`${colors.green}Passed: ${results.passed}${colors.reset}`);
-console.log(`${colors.red}Failed: ${results.failed}${colors.reset}`);
-
-console.log('\nDetailed Results:');
 results.tests.forEach(test => {
   const status = test.status === 'PASSED' 
     ? `${colors.green}✓${colors.reset}` 
     : `${colors.red}✗${colors.reset}`;
-  console.log(`${status} ${test.name}`);
   if (test.error) {
-    console.log(`  ${colors.red}${test.error}${colors.reset}`);
   }
 });
 
 // Additional file checks
-console.log(`${colors.yellow}\n=== File Verification ===${colors.reset}\n`);
-
 const filesToCheck = [
   'app/lib/finale-rate-limiter.ts',
   'app/lib/finale-error-messages.ts',
@@ -227,13 +212,5 @@ filesToCheck.forEach(file => {
   const status = exists 
     ? `${colors.green}✓ Found${colors.reset}` 
     : `${colors.red}✗ Missing${colors.reset}`;
-  console.log(`${status}: ${file}`);
 });
-
-console.log(`\n${colors.blue}To test rate limiting visually:${colors.reset}`);
-console.log('Open scripts/test-rate-limiting.html in your browser');
-
-console.log(`\n${colors.blue}To run manual tests:${colors.reset}`);
-console.log('Follow the checklist in IMPROVEMENT_VERIFICATION_CHECKLIST.md');
-
 process.exit(results.failed > 0 ? 1 : 0);

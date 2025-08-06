@@ -19,20 +19,12 @@ function prompt(question) {
 }
 
 async function addCredentials() {
-  console.log('🔐 Add Finale API Credentials to Supabase\n');
-  console.log('You can find these in Finale:');
-  console.log('Settings → Integrations → Finale API\n');
-
   // Get current settings
   const { data: current } = await supabase
     .from('settings')
     .select('*')
     .single();
-
-  console.log('Current account path:', current?.finale_account_path || 'Not set');
   console.log('Current API key:', current?.finale_api_key ? '***' + current.finale_api_key.slice(-4) : 'Not set');
-  console.log('\n');
-
   // Prompt for credentials
   const apiKey = await prompt('Enter your Finale API Key: ');
   const apiSecret = await prompt('Enter your Finale API Secret: ');
@@ -43,9 +35,6 @@ async function addCredentials() {
   if (changeAccount.toLowerCase() === 'y') {
     accountPath = await prompt('Enter new account path (e.g., buildasoilorganics): ');
   }
-
-  console.log('\nSaving credentials to Supabase...');
-
   try {
     // Prepare the settings data
     const settingsData = {
@@ -70,10 +59,6 @@ async function addCredentials() {
     if (error) {
       console.error('❌ Failed to save:', error.message);
     } else {
-      console.log('\n✅ Credentials saved successfully!');
-      console.log('\nYou can now:');
-      console.log('1. Run "node scripts/run-sync-now.js" to sync inventory');
-      console.log('2. Or visit http://localhost:3000/settings and use the sync button');
     }
 
   } catch (error) {

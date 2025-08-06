@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
       }
     })
   } catch (error) {
-    console.error('Error fetching sync status:', error)
+    logError('Error fetching sync status:', error)
     return NextResponse.json(
       { error: 'Failed to fetch sync status' },
       { status: 500 }

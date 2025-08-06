@@ -7,8 +7,6 @@ const supabase = createClient(
 );
 
 async function runSync() {
-  console.log('🚀 Starting Finale Sync...\n');
-
   // Get credentials from database
   const { data: settings, error } = await supabase
     .from('settings')
@@ -19,12 +17,8 @@ async function runSync() {
     console.error('❌ Could not fetch settings:', error?.message);
     return;
   }
-
-  console.log('✅ Found credentials in database:');
   console.log('  API Key:', settings.finale_api_key ? '***' + settings.finale_api_key.slice(-4) : 'Missing');
   console.log('  API Secret:', settings.finale_api_secret ? '***' + settings.finale_api_secret.slice(-4) : 'Missing');
-  console.log('  Account Path:', settings.finale_account_path);
-
   if (!settings.finale_api_key || !settings.finale_api_secret) {
     console.error('\n❌ API credentials are missing!');
     return;
@@ -42,14 +36,10 @@ async function runSync() {
     .single();
 
   const syncId = syncLog?.id;
-  console.log('\n📋 Sync ID:', syncId);
-
   try {
     // Call the Finale API
     const authHeader = `Basic ${Buffer.from(`${settings.finale_api_key}:${settings.finale_api_secret}`).toString('base64')}`;
     const baseUrl = `https://app.finaleinventory.com/${settings.finale_account_path}/api`;
-    
-    console.log('\n🔄 Fetching products from Finale...');
     const filterYear = new Date().getFullYear() - 1;
     const url = `${baseUrl}/product?limit=500`;
     
@@ -72,21 +62,14 @@ async function runSync() {
     } else if (Array.isArray(data)) {
       products = data;
     }
-
-    console.log(`\n✅ Fetched ${products.length} products from Finale`);
-
     if (products.length === 0) {
-      console.log('⚠️  No products found. Check your Finale account.');
       return;
     }
 
     // Clear existing inventory
-    console.log('\n🗑️  Clearing old inventory...');
     await supabase.from('inventory_items').delete().neq('id', '00000000-0000-0000-0000-000000000000');
 
     // Transform and insert products
-    console.log('💾 Inserting inventory data...\n');
-    
     const inventoryItems = products.map(product => ({
       sku: product.productId || product.sku || product.id,
       product_name: product.productName || product.name || product.description || 'Unknown',
@@ -130,11 +113,6 @@ async function runSync() {
         })
         .eq('id', syncId);
     }
-
-    console.log('\n\n✅ SYNC COMPLETE!');
-    console.log(`📦 ${inserted} inventory items imported`);
-    console.log('\n🎉 Your inventory is now available at http://localhost:3000/inventory');
-
   } catch (error) {
     console.error('\n❌ Sync failed:', error.message);
     

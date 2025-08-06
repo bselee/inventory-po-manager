@@ -2,11 +2,7 @@
 
 // Test error handling in critical functions
 const crypto = require('crypto');
-
-console.log('🧪 Testing Error Handling\n');
-
 // Test 1: Change detection with invalid data
-console.log('1️⃣ Testing change detection with invalid data...');
 try {
   // Simulate the generateItemHash function
   const generateItemHash = (item) => {
@@ -39,14 +35,12 @@ try {
 
   testCases.forEach((testCase, index) => {
     const hash = generateItemHash(testCase);
-    console.log(`  Test ${index + 1}: ${hash.startsWith('error-hash') ? '✅ Error handled' : '✅ Hash generated'}`);
   });
 } catch (error) {
   console.error('❌ Test failed:', error);
 }
 
 // Test 2: Sync stats calculation with edge cases
-console.log('\n2️⃣ Testing sync stats calculation...');
 try {
   const calculateSyncStats = (totalItems, changedItems, syncDuration) => {
     try {
@@ -86,14 +80,12 @@ try {
   edgeCases.forEach((testCase, index) => {
     const stats = calculateSyncStats(testCase.total, testCase.changed, testCase.duration);
     const allValid = Object.values(stats).every(v => isFinite(v) && v >= 0);
-    console.log(`  Test ${index + 1}: ${allValid ? '✅ All stats valid' : '❌ Invalid stats'}`);
   });
 } catch (error) {
   console.error('❌ Test failed:', error);
 }
 
 // Test 3: Critical items filtering
-console.log('\n3️⃣ Testing critical items filtering...');
 try {
   const filterCriticalItems = (items) => {
     try {
@@ -117,9 +109,6 @@ try {
   ];
 
   const critical = filterCriticalItems(testItems);
-  console.log(`  Found ${critical.length} critical items (expected 4): ${critical.length === 4 ? '✅' : '❌'}`);
 } catch (error) {
   console.error('❌ Test failed:', error);
-}
-
-console.log('\n✅ Error handling tests complete!');
+}

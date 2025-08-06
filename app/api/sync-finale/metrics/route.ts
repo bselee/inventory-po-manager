@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
       .rpc('get_sync_metrics', { days_back: days })
     
     if (metricsError) {
-      console.error('Error fetching metrics:', metricsError)
+      logError('Error fetching metrics:', metricsError)
     }
     
     // Get hourly breakdown if requested
@@ -171,7 +171,7 @@ export async function GET(request: NextRequest) {
     
     return NextResponse.json(metrics)
   } catch (error) {
-    console.error('Error generating metrics:', error)
+    logError('Error generating metrics:', error)
     return NextResponse.json(
       { error: 'Failed to generate metrics' },
       { status: 500 }

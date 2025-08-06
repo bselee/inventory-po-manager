@@ -104,7 +104,7 @@ export function useUniversalPageData<T>({
       setData(Array.isArray(processedData) ? processedData : [])
     } catch (err) {
       setError(err instanceof Error ? err.message : 'An error occurred')
-      console.error('Error loading data:', err)
+      logError('Error loading data:', err)
     } finally {
       setLoading(false)
       setRefreshing(false)

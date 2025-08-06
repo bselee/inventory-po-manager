@@ -36,8 +36,6 @@ export class SyncLogger {
     }
     
     this.logs.push(entry)
-    console.log(`[SyncLogger] Starting ${this.syncType} sync`, metadata)
-    
     // Create sync log in database
     try {
       const { data } = await supabase
@@ -55,7 +53,7 @@ export class SyncLogger {
         this.syncId = data.id
       }
     } catch (error) {
-      console.error('[SyncLogger] Failed to create sync log:', error)
+      logError('[SyncLogger] Failed to create sync log:', error)
     }
   }
   
@@ -135,11 +133,6 @@ export class SyncLogger {
     }
     
     this.logs.push(entry)
-    console.log(`[SyncLogger] Completed ${this.syncType} sync:`, {
-      success,
-      ...summary
-    })
-    
     // Update sync log in database
     if (this.syncId) {
       try {
@@ -155,7 +148,7 @@ export class SyncLogger {
           })
           .eq('id', this.syncId)
       } catch (error) {
-        console.error('[SyncLogger] Failed to update sync log:', error)
+        logError('[SyncLogger] Failed to update sync log:', error)
       }
     }
   }
