@@ -1,0 +1,166 @@
+{
+  "deployment": {
+    "enabled": true,
+    "environment": "production",
+    "retryAttempts": 3,
+    "retryDelay": 5000
+  },
+  "timeouts": {
+    "buildTimeout": 300000,
+    "testTimeout": 120000,
+    "deploymentTimeout": 600000,
+    "healthCheckTimeout": 30000,
+    "apiTimeout": 10000
+  },
+  "checks": {
+    "gitStatus": {
+      "enabled": true,
+      "allowUntracked": false,
+      "allowModified": false,
+      "exceptions": [
+        ".deployment/*.log",
+        ".deployment/config.json",
+        "*.tmp",
+        ".env.local"
+      ]
+    },
+    "dependencies": {
+      "enabled": true,
+      "checkOutdated": true,
+      "checkVulnerabilities": true,
+      "autoUpdate": false,
+      "allowedVulnerabilities": [
+        "low"
+      ]
+    },
+    "typescript": {
+      "enabled": true,
+      "strict": true,
+      "autoFix": true,
+      "ignorePaths": [
+        "node_modules/**",
+        ".next/**",
+        "coverage/**"
+      ]
+    },
+    "linting": {
+      "enabled": true,
+      "autoFix": true,
+      "failOnWarning": false,
+      "ignorePaths": [
+        "node_modules/**",
+        ".next/**",
+        "coverage/**"
+      ]
+    },
+    "tests": {
+      "unit": {
+        "enabled": true,
+        "required": true,
+        "coverageThreshold": 70,
+        "parallelJobs": 4
+      },
+      "integration": {
+        "enabled": true,
+        "required": false,
+        "timeout": 60000
+      },
+      "e2e": {
+        "enabled": false,
+        "required": false,
+        "browsers": [
+          "chromium"
+        ],
+        "headless": true
+      }
+    },
+    "build": {
+      "enabled": true,
+      "analyze": true,
+      "bundleSizeLimit": "5MB",
+      "optimizations": {
+        "minify": true,
+        "treeshake": true,
+        "splitChunks": true
+      }
+    },
+    "security": {
+      "enabled": true,
+      "scanDependencies": true,
+      "scanCode": true,
+      "blockHighSeverity": true,
+      "allowedLicenses": [
+        "MIT",
+        "Apache-2.0",
+        "BSD-3-Clause",
+        "ISC"
+      ]
+    },
+    "healthChecks": {
+      "enabled": true,
+      "endpoints": [
+        {
+          "name": "API Health",
+          "url": "/api/health",
+          "expectedStatus": 200,
+          "timeout": 5000
+        },
+        {
+          "name": "Database",
+          "url": "/api/health/db",
+          "expectedStatus": 200,
+          "timeout": 10000
+        }
+      ]
+    }
+  },
+  "autoFix": {
+    "enabled": true,
+    "rules": {
+      "prettier": true,
+      "eslint": true,
+      "typescript": true,
+      "packageJson": true,
+      "lockFile": true
+    },
+    "commitMessage": "fix: Auto-fix deployment issues",
+    "maxAttempts": 3
+  },
+  "notifications": {
+    "enabled": false,
+    "channels": {
+      "console": true,
+      "file": true,
+      "slack": false,
+      "email": false
+    },
+    "events": {
+      "deploymentStart": true,
+      "deploymentSuccess": true,
+      "deploymentFailure": true,
+      "testsFailure": true,
+      "buildFailure": true
+    }
+  },
+  "rollback": {
+    "enabled": true,
+    "automatic": false,
+    "maxVersions": 5,
+    "healthCheckFailures": 3
+  },
+  "features": {
+    "parallelChecks": true,
+    "incrementalBuilds": true,
+    "cacheOptimization": true,
+    "smartRetry": true,
+    "verboseLogging": false,
+    "dryRun": false
+  },
+  "customScripts": {
+    "preDeploy": [],
+    "postDeploy": [],
+    "onFailure": [],
+    "onSuccess": []
+  },
+  "$schema": "./config.schema.json"
+}
