@@ -36,9 +36,6 @@ export default function FinaleDebugPanel({ settings }: { settings: any }) {
       
       // Also log to console for debugging
       data.results?.forEach((r: DebugResult) => {
-        if (r.details) console.log('  Details:', r.details)
-        if (r.error) console.log('  Error:', r.error)
-        if (r.recommendation) console.log('  Fix:', r.recommendation)
       })
       
     } catch (error) {

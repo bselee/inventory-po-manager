@@ -35,7 +35,6 @@ export class OptimizedFinaleSync extends FinaleApiService {
   
   // STRATEGY 1: Inventory-only sync (fastest)
   private async inventoryOnlySync(options: SyncOptions) {
-    console.log('📊 Running inventory-only sync (quantities only)...')
     
     const startTime = Date.now()
     

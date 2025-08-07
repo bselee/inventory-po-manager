@@ -16,6 +16,7 @@ import {
   InventoryFilters,
   SortConfig
 } from '@/app/types'
+import { logError } from '@/app/lib/logger'
 
 /**
  * Main inventory data hook

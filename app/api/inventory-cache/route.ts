@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
-import { kvInventoryService } from '@/lib/kv-inventory-service'
-import { redis } from '@/lib/redis-client'
+import { kvInventoryService } from '@/app/lib/kv-inventory-service'
+import { redis } from '@/app/lib/redis-client'
+import { logError } from '@/app/lib/logger'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'

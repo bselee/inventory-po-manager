@@ -1,4 +1,7 @@
 import { NextResponse } from 'next/server';
+import { supabase } from '@/app/lib/supabase';
+import { POPDFGenerator } from '@/app/lib/pdf-generator';
+import { getSettings } from '@/app/lib/data-access';
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -14,41 +17,88 @@ export async function GET(
     const { searchParams } = new URL(request.url);
     const format = searchParams.get('format') || 'pdf';
     
-    // Placeholder: Generate export based on format
+    // Fetch PO data
+    const { data: purchaseOrder, error } = await supabase
+      .from('purchase_orders')
+      .select('*')
+      .eq('id', id)
+      .single();
+
+    if (error || !purchaseOrder) {
+      return NextResponse.json(
+        { error: 'Purchase order not found' },
+        { status: 404 }
+      );
+    }
+
+    // Get company settings
+    const settings = await getSettings();
+    const companyInfo = {
+      name: settings?.company_name || 'BuildASoil',
+      address: settings?.company_address || '',
+      phone: settings?.company_phone || '',
+      email: settings?.company_email || '',
+      logo: settings?.company_logo || ''
+    };
+    
+    // Generate export based on format
     if (format === 'pdf') {
-      // Placeholder: Generate PDF
-      const pdfBuffer = Buffer.from('Placeholder PDF content');
-      
-      return new NextResponse(pdfBuffer, {
-        status: 200,
-        headers: {
-          'Content-Type': 'application/pdf',
-          'Content-Disposition': `attachment; filename="PO-2024-${id.slice(-3)}.pdf"`
-        }
-      });
+      try {
+        const generator = new POPDFGenerator();
+        const pdfBlob = await generator.generatePO(purchaseOrder, companyInfo);
+        
+        // Convert blob to buffer
+        const buffer = Buffer.from(await pdfBlob.arrayBuffer());
+        
+        // Create audit log
+        await supabase
+          .from('audit_logs')
+          .insert({
+            action: 'EXPORT_PDF',
+            entity_type: 'purchase_order',
+            entity_id: id,
+            user_id: 'system',
+            details: { format, timestamp: new Date().toISOString() }
+          });
+
+        return new NextResponse(buffer, {
+          status: 200,
+          headers: {
+            'Content-Type': 'application/pdf',
+            'Content-Disposition': `attachment; filename="PO-${purchaseOrder.order_number}.pdf"`,
+            'Content-Length': buffer.length.toString()
+          }
+        });
+      } catch (pdfError) {
+        console.error('PDF generation error:', pdfError);
+        return NextResponse.json(
+          { error: 'Failed to generate PDF' },
+          { status: 500 }
+        );
+      }
     } else if (format === 'csv') {
-      // Placeholder: Generate CSV
-      const csvContent = `Order Number,Product,Quantity,Unit Price,Total\nPO-2024-${id.slice(-3)},Sample Product 1,50,20.00,1000.00\nPO-2024-${id.slice(-3)},Sample Product 2,30,15.00,450.00`;
+      // Generate CSV
+      let csvContent = 'Order Number,SKU,Product,Quantity,Unit Price,Total\n';
+      purchaseOrder.items.forEach((item: any) => {
+        csvContent += `${purchaseOrder.order_number},${item.sku},${item.product_name},${item.quantity},${item.unit_cost},${(item.quantity * item.unit_cost).toFixed(2)}\n`;
+      });
+      
+      // Add summary row
+      csvContent += `\nTotal,,,,,${purchaseOrder.total_amount.toFixed(2)}\n`;
       
       return new NextResponse(csvContent, {
         status: 200,
         headers: {
           'Content-Type': 'text/csv',
-          'Content-Disposition': `attachment; filename="PO-2024-${id.slice(-3)}.csv"`
+          'Content-Disposition': `attachment; filename="PO-${purchaseOrder.order_number}.csv"`
         }
       });
     } else if (format === 'json') {
-      // Placeholder: Return JSON data
+      // Return JSON data
       const orderData = {
-        id,
-        orderNumber: `PO-2024-${id.slice(-3)}`,
-        vendor: 'Sample Vendor',
-        items: [
-          { product: 'Sample Product 1', quantity: 50, unitPrice: 20.00, total: 1000.00 },
-          { product: 'Sample Product 2', quantity: 30, unitPrice: 15.00, total: 450.00 }
-        ],
-        totalAmount: 1450.00,
-        exportedAt: new Date().toISOString()
+        ...purchaseOrder,
+        exportedAt: new Date().toISOString(),
+        companyInfo
       };
       
       return NextResponse.json(orderData);
@@ -59,6 +109,7 @@ export async function GET(
       );
     }
   } catch (error) {
+    console.error('Export error:', error);
     return NextResponse.json(
       { error: 'Failed to export purchase order' },
       { status: 500 }

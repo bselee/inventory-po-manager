@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { FinaleApiService, getFinaleConfig } from '@/lib/finale-api'
-import { supabase } from '@/lib/supabase'
-import { kvInventoryService } from '@/lib/kv-inventory-service'
-import { getSettings } from '@/lib/data-access'
-import { createApiHandler, apiResponse } from '@/lib/api-handler'
-import { vendorSchema, paginationSchema } from '@/lib/validation-schemas'
+import { kvVendorsService } from '@/app/lib/kv-vendors-service'
+import { kvInventoryService } from '@/app/lib/kv-inventory-service'
+import { logError } from '@/app/lib/logger'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -25,76 +22,44 @@ interface VendorStats {
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
-    const useCache = searchParams.get('useCache') !== 'false'
     const forceRefresh = searchParams.get('forceRefresh') === 'true'
     
-    // Check if we should use cache
-    const settings = await getSettings()
-    const shouldUseCache = useCache && settings?.inventory_data_source === 'redis-cache'
+    // Get vendors from Redis/Finale
+    const vendors = await kvVendorsService.getVendors(forceRefresh)
     
-    if (shouldUseCache) {
-      // Get vendors from inventory cache
-      const vendors = await kvInventoryService.getVendors()
-      const inventory = await kvInventoryService.getInventory(forceRefresh)
-      
-      // Create vendor objects with stats from cached inventory
-      const vendorMap = new Map<string, VendorStats>()
-      
-      inventory.forEach(item => {
-        if (item.vendor) {
-          if (!vendorMap.has(item.vendor)) {
-            vendorMap.set(item.vendor, {
-              id: item.vendor.toLowerCase().replace(/\s+/g, '-'),
-              name: item.vendor,
-              active: true,
-              totalItems: 0,
-              totalValue: 0,
-              lowStockItems: 0,
-              outOfStockItems: 0
-            })
-          }
-          
-          const vendor = vendorMap.get(item.vendor)
-          if (vendor) {
-            vendor.totalItems++
-            vendor.totalValue += (item.current_stock || 0) * (item.cost || 0)
-            
-            if (item.current_stock === 0) {
-              vendor.outOfStockItems++
-            } else if (item.stock_status_level === 'low' || item.stock_status_level === 'critical') {
-              vendor.lowStockItems++
-            }
-          }
-        }
-      })
-      
-      const vendorData = Array.from(vendorMap.values()).sort((a, b) => a.name.localeCompare(b.name))
-      
-      return NextResponse.json({ 
-        data: vendorData,
-        source: 'cache',
-        totalCount: vendorData.length
-      })
-    }
+    // Get inventory for vendor stats
+    const inventory = await kvInventoryService.getInventory(forceRefresh)
     
-    // Fallback to database
-    const { data, error } = await supabase
-      .from('vendors')
-      .select('*')
-      .order('name', { ascending: true })
-
-    if (error) {
-      logError('Error fetching vendors:', error)
-      return NextResponse.json(
-        { error: 'Failed to fetch vendors' },
-        { status: 500 }
+    // Add statistics to each vendor
+    const vendorsWithStats = vendors.map(vendor => {
+      // Calculate stats from inventory
+      const vendorItems = inventory.filter(item => 
+        item.vendor === vendor.name || 
+        item.vendor === vendor.id
       )
-    }
-
+      
+      const totalItems = vendorItems.length
+      const totalValue = vendorItems.reduce((sum, item) => 
+        sum + ((item.current_stock || 0) * (item.cost || 0)), 0
+      )
+      const outOfStockItems = vendorItems.filter(item => item.current_stock === 0).length
+      const lowStockItems = vendorItems.filter(item => 
+        item.stock_status_level === 'low' || item.stock_status_level === 'critical'
+      ).length
+      
+      return {
+        ...vendor,
+        totalItems,
+        totalValue,
+        outOfStockItems,
+        lowStockItems
+      }
+    })
+    
     return NextResponse.json({ 
-      data: data || [],
-      source: 'database',
-      totalCount: data?.length || 0
+      data: vendorsWithStats,
+      source: 'redis-finale',
+      totalCount: vendorsWithStats.length
     })
   } catch (error) {
     logError('Error in GET /api/vendors:', error)

@@ -1,20 +1,28 @@
 import Redis from 'ioredis'
-import { logError } from '@/app/lib/errors'
+import { logError } from '@/app/lib/logger'
 
-// Redis connection configuration
-const REDIS_CONFIG = {
-  host: process.env.REDIS_HOST || 'localhost',
-  port: parseInt(process.env.REDIS_PORT || '6379'),
-  password: process.env.REDIS_PASSWORD,
-  db: parseInt(process.env.REDIS_DB || '0'),
-  keyPrefix: 'inventory:',
-  retryStrategy: (times: number) => {
-    const delay = Math.min(times * 50, 2000)
-    return delay
-  },
-  enableOfflineQueue: false,
-  maxRetriesPerRequest: 3
+// Use REDIS_URL if available, otherwise fall back to individual settings
+const getRedisConfig = () => {
+  if (process.env.REDIS_URL) {
+    return process.env.REDIS_URL
+  }
+  
+  return {
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT || '6379'),
+    password: process.env.REDIS_PASSWORD,
+    db: parseInt(process.env.REDIS_DB || '0'),
+    keyPrefix: 'inventory:',
+    retryStrategy: (times: number) => {
+      const delay = Math.min(times * 50, 2000)
+      return delay
+    },
+    enableOfflineQueue: false,
+    maxRetriesPerRequest: 3
+  }
 }
+
+const REDIS_CONFIG = getRedisConfig()
 
 // Cache TTL configurations (in seconds)
 export const CACHE_TTL = {
@@ -33,7 +41,7 @@ class CacheService {
 
   constructor() {
     // Only initialize Redis if configured
-    if (process.env.REDIS_HOST || process.env.NODE_ENV === 'development') {
+    if (process.env.REDIS_URL || process.env.REDIS_HOST || process.env.NODE_ENV === 'development') {
       this.connect()
     }
   }
@@ -53,10 +61,7 @@ class CacheService {
         })
 
         this.client.on('error', (error) => {
-          logError(error, {
-            operation: 'REDIS_CONNECTION',
-            metadata: { config: { host: REDIS_CONFIG.host, port: REDIS_CONFIG.port } }
-          })
+          logError('Redis connection error', error, 'REDIS_CONNECTION')
           this.isConnected = false
         })
 
@@ -184,6 +189,14 @@ class CacheService {
 
 // Export singleton instance
 export const cache = new CacheService()
+
+// Export convenience functions
+export const getCachedData = <T = any>(key: string): Promise<T | null> => cache.get<T>(key)
+export const setCachedData = (key: string, value: any, ttl?: number): Promise<boolean> => cache.set(key, value, ttl)
+export const deleteCachedData = (key: string): Promise<boolean> => cache.delete(key)
+export const deleteCachedPattern = (pattern: string): Promise<number> => cache.deletePattern(pattern)
+export const flushCache = (): Promise<boolean> => cache.flush()
+export const isCacheAvailable = (): boolean => cache.isAvailable()
 
 // Export cache key generators
 export const cacheKeys = {

@@ -5,6 +5,7 @@ import { supabase } from '@/lib/supabase'
 import { api } from '@/lib/client-fetch'
 import { Save, TestTube, Check, X, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import FinaleSyncManager from '@/app/components/FinaleSyncManager'
+import EmailQueueManager from '@/app/components/EmailQueueManager'
 import SalesDataUploader from '@/app/components/SalesDataUploader'
 import FinaleDebugPanel from '@/app/components/FinaleDebugPanel'
 import RateLimiterStatus from '@/app/components/RateLimiterStatus'
@@ -176,7 +177,6 @@ export default function SettingsPage() {
           
           // Auto-save if we have credentials
           if (envData.envSettings.finale_api_key) {
-            console.log('Auto-saving environment credentials...')
             
             // Use the API route with CSRF protection to save settings
             const { data: saveResult, error: saveError } = await api.put('/api/settings', initialSettings)
@@ -233,7 +233,6 @@ export default function SettingsPage() {
     }
 
     try {
-      console.log('Saving settings via API:', settings)
 
       // Prepare the settings data for the API
       const settingsData = {
@@ -377,10 +376,8 @@ export default function SettingsPage() {
         
         // Log success details
         if (result.debug) {
-          console.log(`${service} connection debug info:`, result.debug)
         }
         if (result.results) {
-          console.log(`${service} test results:`, result.results)
         }
       }
     } catch (error) {
@@ -1484,6 +1481,9 @@ export default function SettingsPage() {
             </button>
           </div>
         </div>
+
+        {/* Email Queue Manager */}
+        <EmailQueueManager />
 
         {/* General Settings */}
         <div className="bg-white p-6 rounded-lg shadow">

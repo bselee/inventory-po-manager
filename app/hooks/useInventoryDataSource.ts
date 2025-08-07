@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { logError } from '@/app/lib/logger'
 
 export type DataSource = 'supabase' | 'redis-cache' | 'finale-cache' | 'enhanced'
 
@@ -9,7 +10,7 @@ interface UseInventoryDataSourceResult {
 }
 
 export function useInventoryDataSource(): UseInventoryDataSourceResult {
-  const [dataSource, setDataSource] = useState<DataSource>('supabase')
+  const [dataSource, setDataSource] = useState<DataSource>('redis-cache')
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   
@@ -22,13 +23,13 @@ export function useInventoryDataSource(): UseInventoryDataSourceResult {
         }
         
         const data = await response.json()
-        const source = data.data?.inventory_data_source || 'supabase'
+        const source = data.data?.inventory_data_source || 'redis-cache'
         setDataSource(source as DataSource)
       } catch (err) {
         logError('Error fetching data source:', err)
         setError(err instanceof Error ? err.message : 'Unknown error')
-        // Default to supabase on error
-        setDataSource('supabase')
+        // Default to redis-cache on error
+        setDataSource('redis-cache')
       } finally {
         setIsLoading(false)
       }

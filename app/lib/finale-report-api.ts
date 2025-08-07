@@ -1,4 +1,5 @@
 import { rateLimitedFetch } from './finale-rate-limiter'
+import { logError } from './logger'
 
 interface ReportConfig {
   apiKey: string
@@ -45,7 +46,6 @@ export class FinaleReportApiService {
         url.pathname = pathParts.join('.')
       }
       
-      console.log('[Report API] Fetching report:', url.toString().replace(/api\/.*\/doc/, 'api/***/doc'))
       
       const response = await rateLimitedFetch(url.toString(), {
         headers: {

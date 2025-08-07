@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { ShoppingCart, Plus, Send, FileText, Truck, RefreshCw, AlertCircle } from 'lucide-react'
+import { ShoppingCart, Plus, Send, FileText, Truck, RefreshCw, AlertCircle, Download, Eye, Filter, Search } from 'lucide-react'
 import { Toaster, toast } from 'react-hot-toast'
+import PODetailModal from '@/app/components/purchase-orders/PODetailModal'
 
 interface PurchaseOrder {
   id: string
@@ -24,12 +25,21 @@ export default function PurchaseOrdersPage() {
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([])
+  const [filteredPOs, setFilteredPOs] = useState<PurchaseOrder[]>([])
   const [dataSource, setDataSource] = useState<string>('')
   const [error, setError] = useState<string | null>(null)
+  const [selectedPO, setSelectedPO] = useState<string | null>(null)
+  const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [searchTerm, setSearchTerm] = useState<string>('')
+  const [isModalOpen, setIsModalOpen] = useState(false)
 
   useEffect(() => {
     loadPurchaseOrders()
   }, [])
+
+  useEffect(() => {
+    filterPurchaseOrders()
+  }, [purchaseOrders, filterStatus, searchTerm])
 
   const loadPurchaseOrders = async () => {
     try {
@@ -46,7 +56,7 @@ export default function PurchaseOrdersPage() {
         throw new Error(data.error || 'Failed to load purchase orders')
       }
     } catch (error) {
-      logError('Error loading purchase orders:', error)
+      console.error('Error loading purchase orders:', error)
       const errorMessage = error instanceof Error ? error.message : 'Failed to load purchase orders'
       toast.error(errorMessage)
       setError(errorMessage)
@@ -69,18 +79,98 @@ export default function PurchaseOrdersPage() {
   }
 
   // Sample PO data (removed, now using real data)
-  const createPurchaseOrder = async (type: 'out-of-stock' | 'manual') => {
+  const filterPurchaseOrders = () => {
+    let filtered = [...purchaseOrders]
+    
+    // Filter by status
+    if (filterStatus !== 'all') {
+      filtered = filtered.filter(po => po.status === filterStatus)
+    }
+    
+    // Filter by search term
+    if (searchTerm) {
+      filtered = filtered.filter(po => 
+        po.orderNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        po.vendor.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        po.vendor_email?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    }
+    
+    setFilteredPOs(filtered)
+  }
+
+  const createPurchaseOrder = async (type: 'critical' | 'out_of_stock' | 'reorder_point' | 'manual') => {
     setLoading(true)
     try {
-      if (type === 'out-of-stock') {
-        // TODO: Implement auto-generation from out-of-stock items
-        toast.info('Auto-generation from out-of-stock items coming soon!')
+      const response = await fetch('/api/purchase-orders/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ type })
+      })
+      
+      const data = await response.json()
+      
+      if (response.ok) {
+        if (data.purchaseOrders.length > 0) {
+          toast.success(`Generated ${data.purchaseOrders.length} purchase order(s)`)
+          loadPurchaseOrders()
+        } else {
+          toast.info(data.message || 'No items need ordering at this time')
+        }
       } else {
-        // TODO: Open manual PO creation modal
-        toast.info('Manual PO creation coming soon!')
+        toast.error(data.error || 'Failed to generate purchase orders')
       }
+    } catch (error) {
+      toast.error('Failed to generate purchase orders')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const handleViewPO = (poId: string) => {
+    setSelectedPO(poId)
+    setIsModalOpen(true)
+  }
+
+  const handleExportPO = async (poId: string, format: 'pdf' | 'csv' | 'json' = 'pdf') => {
+    try {
+      const response = await fetch(`/api/purchase-orders/${poId}/export?format=${format}`)
+      
+      if (response.ok) {
+        const blob = await response.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `PO-${poId}.${format}`
+        document.body.appendChild(a)
+        a.click()
+        window.URL.revokeObjectURL(url)
+        document.body.removeChild(a)
+        
+        toast.success(`Purchase order exported as ${format.toUpperCase()}`)
+      } else {
+        toast.error('Failed to export purchase order')
+      }
+    } catch (error) {
+      toast.error('Failed to export purchase order')
+    }
+  }
+
+  const handleSendPO = async (poId: string) => {
+    try {
+      const response = await fetch(`/api/purchase-orders/${poId}/send`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      })
+      
+      if (response.ok) {
+        toast.success('Purchase order sent to vendor')
+        loadPurchaseOrders()
+      } else {
+        toast.error('Failed to send purchase order')
+      }
+    } catch (error) {
+      toast.error('Failed to send purchase order')
     }
   }
 
@@ -123,22 +213,43 @@ export default function PurchaseOrdersPage() {
             <RefreshCw className={`h-4 w-4 mr-2 ${refreshing ? 'animate-spin' : ''}`} />
             {refreshing ? 'Refreshing...' : 'Refresh'}
           </button>
-          <button
-            onClick={() => createPurchaseOrder('out-of-stock')}
-            disabled={loading}
-            className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Create from Out-of-Stock
-          </button>
-          <button 
-            onClick={() => createPurchaseOrder('manual')}
-            disabled={loading}
-            className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
-          >
-            <Plus className="h-4 w-4 mr-2" />
-            Create Manual PO
-          </button>
+          <div className="relative">
+            <button
+              className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50 group"
+              disabled={loading}
+            >
+              <Plus className="h-4 w-4 mr-2" />
+              Generate PO
+            </button>
+            <div className="absolute right-0 mt-1 w-56 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 hidden group-hover:block z-10">
+              <div className="py-1">
+                <button
+                  onClick={() => createPurchaseOrder('critical')}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Critical Items (≤7 days)
+                </button>
+                <button
+                  onClick={() => createPurchaseOrder('out_of_stock')}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Out of Stock Items
+                </button>
+                <button
+                  onClick={() => createPurchaseOrder('reorder_point')}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Below Reorder Point
+                </button>
+                <button
+                  onClick={() => createPurchaseOrder('manual')}
+                  className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                >
+                  Manual Selection
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -187,6 +298,42 @@ export default function PurchaseOrdersPage() {
               </p>
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Filters and Search */}
+      <div className="bg-white rounded-lg shadow p-4 flex items-center justify-between">
+        <div className="flex items-center space-x-4">
+          <div className="flex items-center space-x-2">
+            <Filter className="h-5 w-5 text-gray-400" />
+            <select
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+              className="border border-gray-300 rounded-md px-3 py-1.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Status</option>
+              <option value="draft">Draft</option>
+              <option value="pending_approval">Pending Approval</option>
+              <option value="approved">Approved</option>
+              <option value="sent">Sent</option>
+              <option value="partial">Partial</option>
+              <option value="received">Received</option>
+              <option value="cancelled">Cancelled</option>
+            </select>
+          </div>
+          <div className="relative">
+            <Search className="h-5 w-5 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2" />
+            <input
+              type="text"
+              placeholder="Search PO number, vendor..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10 pr-4 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+        </div>
+        <div className="text-sm text-gray-600">
+          Showing {filteredPOs.length} of {purchaseOrders.length} orders
         </div>
       </div>
 
@@ -242,7 +389,7 @@ export default function PurchaseOrdersPage() {
                     </div>
                   </td>
                 </tr>
-              ) : purchaseOrders.length === 0 ? (
+              ) : filteredPOs.length === 0 ? (
                 <tr>
                   <td colSpan={7} className="px-6 py-12 text-center">
                     <div className="text-gray-500">
@@ -252,7 +399,7 @@ export default function PurchaseOrdersPage() {
                   </td>
                 </tr>
               ) : (
-                purchaseOrders.map((po) => (
+                filteredPOs.map((po) => (
                   <tr key={po.id} className="hover:bg-gray-50">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
                       {po.orderNumber}
@@ -278,16 +425,28 @@ export default function PurchaseOrdersPage() {
                     {new Date(po.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium space-x-2">
-                    <button className="text-blue-600 hover:text-blue-900">
+                    <button 
+                      onClick={() => handleViewPO(po.id)}
+                      className="text-blue-600 hover:text-blue-900 inline-flex items-center"
+                    >
+                      <Eye className="h-4 w-4 mr-1" />
                       View
                     </button>
                     {po.status === 'draft' && (
-                      <button className="text-green-600 hover:text-green-900">
+                      <button 
+                        onClick={() => handleSendPO(po.id)}
+                        className="text-green-600 hover:text-green-900 inline-flex items-center"
+                      >
+                        <Send className="h-4 w-4 mr-1" />
                         Send
                       </button>
                     )}
-                    <button className="text-purple-600 hover:text-purple-900">
-                      Export
+                    <button 
+                      onClick={() => handleExportPO(po.id, 'pdf')}
+                      className="text-purple-600 hover:text-purple-900 inline-flex items-center"
+                    >
+                      <Download className="h-4 w-4 mr-1" />
+                      PDF
                     </button>
                   </td>
                 </tr>
@@ -297,6 +456,19 @@ export default function PurchaseOrdersPage() {
           </table>
         </div>
       </div>
+      
+      {/* PO Detail Modal */}
+      {selectedPO && (
+        <PODetailModal
+          poId={selectedPO}
+          isOpen={isModalOpen}
+          onClose={() => {
+            setIsModalOpen(false)
+            setSelectedPO(null)
+          }}
+          onUpdate={loadPurchaseOrders}
+        />
+      )}
     </div>
   )
 }

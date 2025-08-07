@@ -4,7 +4,7 @@ import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Search, RefreshCw, Loader2, Plus, Grid3X3, List, X } from 'lucide-react'
 import { Toaster, toast } from 'react-hot-toast'
-import { Vendor } from '@/lib/data-access/vendors'
+import { Vendor } from '@/app/lib/data-access/vendors'
 import EnhancedVendorCard from '@/app/components/vendors/EnhancedVendorCard'
 import VendorListView from '@/app/components/vendors/VendorListView'
 import ErrorBoundary, { PageErrorFallback } from '@/app/components/common/ErrorBoundary'
@@ -124,7 +124,7 @@ function VendorsPageContent() {
       setVendors(result.data || [])
       setTotalVendors(result.data?.length || 0)
     } catch (error) {
-      logError('Error loading vendors:', error)
+      console.error('Error loading vendors:', error)
       const errorMessage = error instanceof Error ? error.message : 'Failed to load vendors'
       toast.error(errorMessage)
       setVendors([])
@@ -147,7 +147,7 @@ function VendorsPageContent() {
           setVendorStats(prev => ({ ...prev, [vendor.id]: stats }))
         }
       } catch (error) {
-        logError(`Error loading stats for vendor ${vendor.name}:`, error)
+        console.error(`Error loading stats for vendor ${vendor.name}:`, error)
       } finally {
         setLoadingStats(prev => ({ ...prev, [vendor.id]: false }))
       }
@@ -164,7 +164,7 @@ function VendorsPageContent() {
       setVendorStats({})
       toast.success('Vendors refreshed successfully')
     } catch (error) {
-      logError('Error refreshing vendors:', error)
+      console.error('Error refreshing vendors:', error)
       toast.error('Failed to refresh vendors')
     } finally {
       setRefreshing(false)

@@ -14,7 +14,7 @@ import {
   TrendingUp,
   Calendar
 } from 'lucide-react'
-import { Vendor } from '@/lib/data-access/vendors'
+import { Vendor } from '@/app/lib/data-access/vendors'
 
 interface VendorStats {
   vendor: Vendor

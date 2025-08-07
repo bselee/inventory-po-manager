@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { getVendorStats } from '@/lib/data-access/vendors'
+import { getVendorStats } from '@/app/lib/data-access/vendors'
+import { logError } from '@/app/lib/logger'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'

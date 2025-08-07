@@ -1,11 +1,11 @@
 import { z } from 'zod'
-import { createApiHandler, apiResponse } from '@/lib/api-handler'
+import { createApiHandler, apiResponse } from '@/app/lib/api-handler'
 import {
   getSettings,
   upsertSettings,
   getFinaleConfig,
   getEmailConfig
-} from '@/lib/data-access'
+} from '@/app/lib/data-access'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'

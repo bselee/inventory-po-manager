@@ -14,7 +14,7 @@ import { InventoryLoadingFallback } from '@/app/components/common/LoadingFallbac
 import PageHeader from '@/app/components/common/PageHeader'
 import UniversalQuickFilters from '@/app/components/common/UniversalQuickFilters'
 import { useUniversalPageData } from '@/app/hooks/useUniversalPageData'
-import { inventoryQuickFilters } from '@/lib/quickFilters'
+import { inventoryQuickFilters } from '@/app/lib/quickFilters'
 
 interface InventorySummary {
   total_items: number

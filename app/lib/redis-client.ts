@@ -1,4 +1,5 @@
 import { createClient } from 'redis'
+import { logError } from './logger'
 
 // Redis client configuration
 const redisUrl = process.env.REDIS_URL
@@ -73,12 +74,20 @@ export const redis = {
   async get<T>(key: string): Promise<T | null> {
     const client = await getRedisClient()
     const value = await client.get(key)
-    return value ? JSON.parse(value) : null
+    if (!value) return null
+    
+    // Try to parse as JSON, but handle if it's already a string
+    try {
+      return JSON.parse(value)
+    } catch {
+      // If it fails to parse, it might be a plain string
+      return value as T
+    }
   },
   
   async set(key: string, value: any, ttlSeconds?: number): Promise<void> {
     const client = await getRedisClient()
-    const serialized = JSON.stringify(value)
+    const serialized = typeof value === 'string' ? value : JSON.stringify(value)
     
     if (ttlSeconds) {
       await client.setEx(key, ttlSeconds, serialized)
@@ -89,7 +98,8 @@ export const redis = {
   
   async setex(key: string, ttlSeconds: number, value: any): Promise<void> {
     const client = await getRedisClient()
-    await client.setEx(key, ttlSeconds, JSON.stringify(value))
+    const serialized = typeof value === 'string' ? value : JSON.stringify(value)
+    await client.setEx(key, ttlSeconds, serialized)
   },
   
   async del(key: string | string[]): Promise<void> {

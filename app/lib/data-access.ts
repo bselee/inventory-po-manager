@@ -1,4 +1,5 @@
 import { supabase } from './supabase'
+import { logError } from './logger'
 
 export interface InventoryFilters {
   status?: string
@@ -222,10 +223,11 @@ export async function getSettings(): Promise<any> {
   const { data, error } = await supabase
     .from('settings')
     .select('*')
-    .eq('id', 1)
-    .single()
+    .order('id', { ascending: true })
+    .limit(1)
+    .maybeSingle()
 
-  if (error && error.code !== 'PGRST116') { // Not found is ok
+  if (error) {
     logError('Error fetching settings:', error)
     throw error
   }

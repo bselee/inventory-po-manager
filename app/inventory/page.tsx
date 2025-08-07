@@ -19,6 +19,7 @@ import CacheStatusIndicator from '@/app/components/inventory/CacheStatusIndicato
 import { InventoryItem } from '@/app/types'
 import ErrorBoundary, { PageErrorFallback } from '@/app/components/common/ErrorBoundary'
 import { InventoryLoadingFallback } from '@/app/components/common/LoadingFallback'
+import { logError, logWarn } from '@/app/lib/logger'
 
 // Helper functions for sync status
 const isRecentSync = (lastSyncDate: string) => {
@@ -258,11 +259,11 @@ function InventoryPageContent() {
     }
   }
 
-  // Initial load
+  // Initial load and reload when dataSource changes
   useEffect(() => {
     loadInventory()
     loadSummary()
-  }, [])
+  }, [dataSource])
 
   // Handle URL parameter for vendor filtering
   useEffect(() => {

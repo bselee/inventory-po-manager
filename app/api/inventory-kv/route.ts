@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { kvInventoryService } from '@/app/lib/kv-inventory-service'
+import { logError } from '@/app/lib/logger'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'

@@ -1,6 +1,5 @@
 /**
  * Production-safe logging utility
- * Replaces console.log statements with environment-aware logging
  */
 
 type LogLevel = 'debug' | 'info' | 'warn' | 'error'

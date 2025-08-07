@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import { Toaster, toast } from 'react-hot-toast'
-import { Vendor } from '@/lib/data-access/vendors'
+import { Vendor } from '@/app/lib/data-access/vendors'
 import EnhancedVendorCard from '@/app/components/vendors/EnhancedVendorCard'
 import VendorListView from '@/app/components/vendors/VendorListView'
 import ErrorBoundary, { PageErrorFallback } from '@/app/components/common/ErrorBoundary'
@@ -12,7 +12,7 @@ import PaginationControls from '@/app/components/inventory/PaginationControls'
 import PageHeader from '@/app/components/common/PageHeader'
 import UniversalQuickFilters from '@/app/components/common/UniversalQuickFilters'
 import { useUniversalPageData } from '@/app/hooks/useUniversalPageData'
-import { vendorQuickFilters, VendorWithStats } from '@/lib/quickFilters'
+import { vendorQuickFilters, VendorWithStats } from '@/app/lib/quickFilters'
 
 interface VendorStats {
   vendor: Vendor

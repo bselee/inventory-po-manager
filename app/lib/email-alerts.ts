@@ -1,5 +1,7 @@
 import sgMail from '@sendgrid/mail'
 import { supabase } from './supabase'
+import { logError, logInfo, logWarn } from './logger'
+import { queueAlertEmail, initializeEmailQueue, AlertEmailData } from './email-queue'
 
 interface SyncAlert {
   type: 'failure' | 'warning' | 'success' | 'stuck' | 'out-of-stock' | 'reorder-needed'
@@ -16,6 +18,9 @@ export class EmailAlertService {
   
   async initialize() {
     try {
+      // Initialize the email queue first
+      await initializeEmailQueue()
+      
       // Get SendGrid config from settings
       const { data: settings } = await supabase
         .from('settings')
@@ -26,15 +31,28 @@ export class EmailAlertService {
         sgMail.setApiKey(settings.sendgrid_api_key)
         this.alertEmail = settings.alert_email
         this.isConfigured = true
+        logInfo('Email alerts initialized', null, 'EmailAlerts')
       } else {
+        logWarn('SendGrid not configured', null, 'EmailAlerts')
       }
     } catch (error) {
-      logError('Failed to initialize email alerts:', error)
+      logError('Failed to initialize email alerts:', error, 'EmailAlerts')
     }
   }
   
   async sendSyncAlert(alert: SyncAlert) {
+    // Use the new queue system for better reliability
+    try {
+      await queueAlertEmail(alert as AlertEmailData)
+      logInfo(`Alert queued: ${alert.type}`, { type: alert.type }, 'EmailAlerts')
+      return
+    } catch (error) {
+      logError('Failed to queue alert, falling back to direct send', error, 'EmailAlerts')
+    }
+    
+    // Fallback to direct send if queue fails
     if (!this.isConfigured || !this.alertEmail) {
+      logWarn('Email alerts not configured', null, 'EmailAlerts')
       return
     }
     
@@ -222,7 +240,7 @@ export class EmailAlertService {
           })
       }
     } catch (error) {
-      logError('Failed to send alert email:', error)
+      logError('Failed to send alert email:', error, 'EmailAlerts')
       
       // Log the failed alert
       await supabase
@@ -266,7 +284,7 @@ export class EmailAlertService {
         }
       }
     } catch (error) {
-      logError('Error checking for stuck syncs:', error)
+      logError('Error checking for stuck syncs:', error, 'EmailAlerts')
     }
   }
 }

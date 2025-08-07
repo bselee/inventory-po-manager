@@ -14,10 +14,8 @@ export default function FinaleSuccessCheck() {
       // Check localStorage for any saved results
       const keys = Object.keys(localStorage).filter(k => k.includes('finale'));
       keys.forEach(key => {
-        console.log(`localStorage[${key}]:`, localStorage.getItem(key));
       });
       
-      console.log('Run this in console: checkFinaleResults()');
     };
   }, []);
 

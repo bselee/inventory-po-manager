@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { finaleCacheService } from '@/lib/finale-cache-service';
+import { finaleCacheService } from '@/app/lib/finale-cache-service';
+import { logError } from '@/app/lib/logger';
 
 export async function GET(request: NextRequest) {
   try {

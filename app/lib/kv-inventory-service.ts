@@ -2,6 +2,7 @@ import { redis, getRedisClient } from './redis-client'
 import { FinaleReportApiService } from './finale-report-api'
 import { getFinaleConfig } from './finale-api'
 import { withRedisRetry, withApiRetry } from './retry-utils'
+import { logError } from './logger'
 
 // Cache keys
 const CACHE_KEYS = {
@@ -284,7 +285,7 @@ export class KVInventoryService {
         // Prepare batch operations
         const multi = client.multi()
         
-        // Full inventory cache
+        // Full inventory cache (already stringified in setEx)
         multi.setEx(CACHE_KEYS.INVENTORY_FULL, CACHE_TTL.INVENTORY, JSON.stringify(inventory))
         
         // Use hash for individual SKU lookups (much more efficient)
@@ -360,24 +361,22 @@ export class KVInventoryService {
   }
   
   /**
-   * Get settings from KV or Supabase fallback
+   * Get settings from environment variables or KV
    */
   private async getSettings() {
-    // For now, still use Supabase for settings
-    // In a full migration, this would also move to KV
     const { getFinaleConfig } = await import('./finale-api')
     const config = await getFinaleConfig()
     
-    // Get additional settings from Supabase
-    const { supabase } = await import('./supabase')
-    const { data } = await supabase
-      .from('settings')
-      .select('finale_inventory_report_url')
-      .single()
+    // Use environment variable for report URL
+    const inventoryReportUrl = process.env.FINALE_INVENTORY_REPORT_URL
+    
+    if (!inventoryReportUrl) {
+      throw new Error('FINALE_INVENTORY_REPORT_URL environment variable not configured')
+    }
     
     return {
       ...config,
-      finale_inventory_report_url: data?.finale_inventory_report_url
+      finale_inventory_report_url: inventoryReportUrl
     }
   }
   

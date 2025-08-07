@@ -46,7 +46,6 @@ export class SentryMonitoring {
     if (level === 'error') {
       console.error(message)
     } else {
-      console.log(message)
     }
   }
 

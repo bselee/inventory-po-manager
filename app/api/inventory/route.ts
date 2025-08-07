@@ -1,84 +1,105 @@
-import { createApiHandler, apiResponse, apiError } from '@/app/lib/api-handler'
-import { inventoryFilterSchema, inventoryItemSchema, updateInventorySchema } from '@/app/lib/validation-schemas'
-import {
-  getInventoryItems,
-  createInventoryItem,
-  updateInventoryItem,
-  getInventorySummary
-} from '@/app/lib/data-access'
+import { NextRequest, NextResponse } from 'next/server'
+import { kvInventoryService } from '@/app/lib/kv-inventory-service'
+import { logError } from '@/app/lib/logger'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-// GET /api/inventory - Fetch inventory items with enhanced data
-export const GET = createApiHandler(async ({ query }) => {
-  // Parse and validate query parameters
-  const params = inventoryFilterSchema.parse(Object.fromEntries(query || []))
-  
-  // Fetch inventory with filters
-  const result = await getInventoryItems(
-    {
-      status: params.status,
-      vendor: params.vendor,
-      location: params.location,
-      search: params.search
-    },
-    {
-      page: params.page || 1,
-      limit: params.limit || 100,
-      sortBy: params.sortBy as any,
-      sortDirection: params.sortDirection
+// GET /api/inventory - Fetch inventory items from Redis/Finale
+export async function GET(request: NextRequest) {
+  try {
+    const { searchParams } = new URL(request.url)
+    const forceRefresh = searchParams.get('forceRefresh') === 'true'
+    const vendor = searchParams.get('vendor')
+    const search = searchParams.get('search')
+    const status = searchParams.get('status')
+    const page = parseInt(searchParams.get('page') || '1')
+    const limit = parseInt(searchParams.get('limit') || '100')
+    
+    // Get inventory from Redis/Finale
+    const allItems = await kvInventoryService.getInventory(forceRefresh)
+    
+    // Apply filters
+    let filteredItems = allItems
+    
+    if (vendor) {
+      filteredItems = filteredItems.filter(item => 
+        item.vendor?.toLowerCase().includes(vendor.toLowerCase())
+      )
     }
-  )
-  
-  // Get summary statistics
-  const summary = await getInventorySummary()
-
-  return apiResponse({ 
-    inventory: result.items,
-    pagination: {
-      page: result.page,
-      limit: result.limit,
-      total: result.total,
-      totalPages: result.totalPages
-    },
-    summary
-  })
-}, {
-  validateQuery: inventoryFilterSchema
-})
-
-// POST /api/inventory - Create new inventory item
-export const POST = createApiHandler(async ({ body }) => {
-  const item = await createInventoryItem(body)
-  
-  return apiResponse(
-    { item },
-    { 
-      status: 201,
-      message: 'Inventory item created successfully'
+    
+    if (search) {
+      const searchLower = search.toLowerCase()
+      filteredItems = filteredItems.filter(item =>
+        item.sku?.toLowerCase().includes(searchLower) ||
+        item.product_name?.toLowerCase().includes(searchLower)
+      )
     }
-  )
-}, {
-  validateBody: inventoryItemSchema
-})
-
-// PUT /api/inventory/[id] - Update inventory item
-export const PUT = createApiHandler(async ({ request, body }) => {
-  const url = new URL(request.url)
-  const id = url.pathname.split('/').pop()
-  
-  if (!id) {
-    throw new Error('Item ID is required')
+    
+    if (status) {
+      switch (status) {
+        case 'out-of-stock':
+          filteredItems = filteredItems.filter(item => item.current_stock === 0)
+          break
+        case 'critical':
+          filteredItems = filteredItems.filter(item => item.stock_status_level === 'critical')
+          break
+        case 'low-stock':
+          filteredItems = filteredItems.filter(item => item.stock_status_level === 'low')
+          break
+        case 'adequate':
+          filteredItems = filteredItems.filter(item => item.stock_status_level === 'adequate')
+          break
+        case 'overstocked':
+          filteredItems = filteredItems.filter(item => item.stock_status_level === 'overstocked')
+          break
+        case 'in-stock':
+          filteredItems = filteredItems.filter(item => item.current_stock > 0)
+          break
+      }
+    }
+    
+    // Get summary
+    const summary = await kvInventoryService.getSummary()
+    
+    // Apply pagination
+    const startIndex = (page - 1) * limit
+    const endIndex = startIndex + limit
+    const paginatedItems = filteredItems.slice(startIndex, endIndex)
+    
+    return NextResponse.json({
+      inventory: paginatedItems,
+      pagination: {
+        page,
+        limit,
+        total: filteredItems.length,
+        totalPages: Math.ceil(filteredItems.length / limit)
+      },
+      summary,
+      source: 'redis-finale'
+    })
+  } catch (error) {
+    logError('Error in GET /api/inventory:', error)
+    return NextResponse.json(
+      { error: 'Failed to fetch inventory' },
+      { status: 500 }
+    )
   }
-  
-  const item = await updateInventoryItem(id, body)
+}
 
-  return apiResponse({
-    item,
-    message: 'Inventory item updated successfully'
-  })
-}, {
-  validateBody: updateInventorySchema
-})
+// POST /api/inventory - Not implemented for Redis/Finale (read-only)
+export async function POST(request: NextRequest) {
+  return NextResponse.json(
+    { error: 'Creating inventory items is not supported when using Finale as the data source' },
+    { status: 501 }
+  )
+}
+
+// PUT /api/inventory - Not implemented for Redis/Finale (read-only) 
+export async function PUT(request: NextRequest) {
+  return NextResponse.json(
+    { error: 'Updating inventory items is not supported when using Finale as the data source' },
+    { status: 501 }
+  )
+}

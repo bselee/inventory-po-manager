@@ -21,7 +21,6 @@ export default function TestSyncPage() {
         throw new Error('Finale credentials not configured. Please configure in Settings page.')
       }
 
-      console.log('Starting sync with year filter:', new Date().getFullYear() - 1)
       
       // Start the sync
       const response = await fetch('/api/sync-finale-background', {

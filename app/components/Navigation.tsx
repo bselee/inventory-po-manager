@@ -2,12 +2,19 @@
 
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Package, ShoppingCart, Settings, Building2 } from 'lucide-react'
+import { Package, ShoppingCart, Settings, Building2, LayoutDashboard } from 'lucide-react'
 
 export default function Navigation() {
   const pathname = usePathname()
 
   const navItems = [
+    {
+      href: '/dashboard',
+      label: 'Dashboard',
+      icon: LayoutDashboard,
+      description: 'Executive overview and real-time metrics',
+      highlight: true
+    },
     {
       href: '/inventory',
       label: 'Inventory',
@@ -19,6 +26,13 @@ export default function Navigation() {
       label: 'Purchase Orders',
       icon: ShoppingCart,
       description: 'Manage and create purchase orders'
+    },
+    {
+      href: '/purchase-orders/generate',
+      label: 'PO Generation',
+      icon: ShoppingCart,
+      description: 'Intelligent PO suggestions',
+      highlight: true
     },
     {
       href: '/vendors',
