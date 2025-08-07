@@ -19,11 +19,9 @@ export async function POST(request: NextRequest) {
     
     // Sync inventory
     try {
-      console.log('[Sync Redis] Starting inventory sync...')
       const inventory = await kvInventoryService.getInventory(true) // Force refresh
       results.inventory.success = true
       results.inventory.count = inventory.length
-      console.log(`[Sync Redis] Inventory sync complete: ${inventory.length} items`)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       results.inventory.error = errorMessage
@@ -32,11 +30,9 @@ export async function POST(request: NextRequest) {
     
     // Sync vendors
     try {
-      console.log('[Sync Redis] Starting vendors sync...')
       const vendors = await kvVendorsService.getVendors(true) // Force refresh
       results.vendors.success = true
       results.vendors.count = vendors.length
-      console.log(`[Sync Redis] Vendors sync complete: ${vendors.length} vendors`)
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error'
       results.vendors.error = errorMessage
