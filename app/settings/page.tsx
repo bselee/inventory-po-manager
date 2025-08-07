@@ -1,8 +1,8 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { supabase } from '@/lib/supabase'
-import { api } from '@/lib/client-fetch'
+import { supabase } from '@/app/lib/supabase'
+import { api } from '@/app/lib/client-fetch'
 import { Save, TestTube, Check, X, Loader2, CheckCircle, AlertCircle } from 'lucide-react'
 import FinaleSyncManager from '@/app/components/FinaleSyncManager'
 import EmailQueueManager from '@/app/components/EmailQueueManager'
@@ -10,7 +10,7 @@ import SalesDataUploader from '@/app/components/SalesDataUploader'
 import FinaleDebugPanel from '@/app/components/FinaleDebugPanel'
 import RateLimiterStatus from '@/app/components/RateLimiterStatus'
 import SyncProgressIndicator from '@/app/components/SyncProgressIndicator'
-import { validateFinaleCredentials, getValidationErrorMessage } from '@/lib/validation/finale-credentials'
+import { validateFinaleCredentials, getValidationErrorMessage } from '@/app/lib/validation/finale-credentials'
 
 interface Settings {
   id?: string

@@ -38,7 +38,6 @@ class Logger {
       } else if (level === 'warn') {
         logMethod = console.warn
       } else {
-        logMethod = console.log
       }
       
       const prefix = context ? `[${context}]` : ''

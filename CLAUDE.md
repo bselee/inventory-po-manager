@@ -17,12 +17,11 @@ npm run setup      # Run initial setup script
 # Testing - Jest
 npm run test              # Run all Jest tests
 npm run test:watch        # Run tests in watch mode
-npm run test:coverage     # Run tests with coverage report (70% threshold)
+npm run test:coverage     # Run tests with coverage report (60% threshold)
 npm run test:api          # Run API-specific tests
 npm run test:unit         # Run unit tests
 npm run test:integration  # Run integration tests
 npm run test:db           # Run database tests
-npm run test:health       # Run health check script
 
 # Run a single Jest test file
 npm run test -- path/to/test.spec.ts
@@ -33,11 +32,9 @@ npm run test:e2e:ui       # Run with Playwright UI mode
 npm run test:e2e:headed   # Run in headed browser mode
 npm run test:e2e:debug    # Run in debug mode
 npm run test:crawl        # Run application crawler test
-npm run test:health-e2e   # Run E2E health check
 npm run test:inventory    # Test inventory page
 npm run test:inventory:comprehensive  # Comprehensive inventory tests with HTML report
 npm run test:settings     # Test settings page
-npm run test:comprehensive # Run comprehensive test suite
 npm run test:all          # Run Jest + Playwright tests
 
 # Run a single Playwright test file
@@ -54,6 +51,8 @@ npm run db:restore   # Restore database from backup
 # Deployment
 npm run deploy       # Deploy to Vercel (runs scripts/deploy-vercel.sh)
 npm run deploy:check # Check Vercel deployment status
+npm run deploy:summary # Show deployment summary
+npm run deploy:history # Show deployment history
 
 # Cache Management (Redis)
 npm run cache:clear  # Clear inventory cache
@@ -61,11 +60,23 @@ npm run cache:warm   # Warm up cache
 npm run cache:health # Check cache health
 npm run cache:test   # Test cache with force refresh
 npm run redis:test   # Test Redis connection
+
+# Email Testing
+npm run test:email   # Test email alerts functionality
 ```
 
 ## Architecture Overview
 
-Enterprise-grade inventory management system built with Next.js 14 App Router. Features intelligent purchase order automation, real-time analytics, and seamless Finale Inventory integration.
+Enterprise-grade inventory management system built with Next.js 14 App Router, featuring intelligent purchase order automation, real-time analytics, and seamless Finale Inventory integration.
+
+### Tech Stack
+- **Frontend**: Next.js 14 (App Router), TypeScript, Tailwind CSS, React 18
+- **Backend**: Next.js API routes with serverless functions
+- **Database**: Supabase (PostgreSQL) with direct client access
+- **Caching**: Redis for performance optimization
+- **Testing**: Jest (unit/integration, 60% coverage threshold), Playwright (E2E)
+- **External APIs**: Finale Inventory, SendGrid (email), Google Sheets
+- **Deployment**: Vercel with automated CI/CD
 
 ### Core Features
 - **Intelligent Inventory Management**: Real-time tracking with predictive analytics
@@ -73,40 +84,38 @@ Enterprise-grade inventory management system built with Next.js 14 App Router. F
 - **Multi-View Dashboards**: Table view, Planning view (30/60/90 day), Analytics view
 - **Advanced Business Logic**: Sales velocity analysis, stock status classification, demand trend tracking
 
-### Enhanced Inventory Features
-The inventory page (`/app/inventory/page.tsx`) includes sophisticated calculations:
-- **Sales Velocity**: Daily unit movement (30-day average)
-- **Days Until Stockout**: Predictive calculation based on velocity
-- **Stock Status Levels**: Critical (≤7 days), Low (≤30 days), Adequate, Overstocked
-- **Demand Trends**: Increasing/Stable/Decreasing based on 30 vs 90-day comparison
-- **Reorder Recommendations**: Automatic flagging of items needing immediate attention
-- **Advanced Filtering**: By status, vendor, location, price range, sales velocity, stock days
-- **Smart Sorting**: Multi-column sorting with direction indicators
+### Directory Structure
+```
+app/
+├── api/                   # Backend API routes (80+ endpoints)
+│   ├── auth/             # Authentication endpoints
+│   ├── cron/             # Scheduled tasks
+│   ├── dashboard/        # Dashboard metrics
+│   ├── inventory/        # Inventory management
+│   ├── purchase-orders/  # PO management
+│   ├── settings/         # Configuration
+│   ├── sync-finale/      # Finale integration
+│   └── vendors/          # Vendor management
+├── components/           # Reusable React components
+│   ├── common/          # Shared components
+│   ├── dashboard/       # Dashboard-specific
+│   ├── inventory/       # Inventory UI components
+│   └── purchase-orders/ # PO components
+├── hooks/               # Custom React hooks
+├── lib/                 # Core business logic
+│   ├── cache/          # Redis caching strategies
+│   ├── data-access/    # Database operations
+│   └── monitoring/     # Performance tracking
+├── types/              # TypeScript definitions
+└── [pages]/           # Next.js pages
 
-### Key Architectural Decisions
+tests/
+├── e2e/               # Playwright end-to-end tests
+├── creative/          # Advanced business logic tests
+└── setup.ts          # Test configuration
+```
 
-1. **API Routes**: All backend logic is in `/app/api/*` using Next.js route handlers. Each route returns JSON responses with consistent error handling patterns.
-
-2. **Database Access**: Direct Supabase client usage via `/app/lib/supabase.ts`. No ORM or query builder is used.
-
-3. **External Services**: Integration logic is centralized in `/app/lib/finale-api.ts` for Finale, Google Sheets, and SendGrid.
-
-4. **Caching Infrastructure**: Redis caching available via `/app/lib/cache/redis-client.ts` for performance optimization. Cache service patterns in `/app/lib/finale-cache-service.ts` with advanced caching strategies in `/app/lib/cache/caching-strategy.ts`.
-
-5. **Rate Limiting**: Implemented in `/lib/finale-rate-limiter.ts` for external API calls.
-
-6. **Type Safety**: TypeScript strict mode is enabled. Types are defined in `/app/types/*` files.
-
-7. **State Management**: Client-side state uses React hooks. No global state management library.
-
-## Processing Queries
-
-### Claude Code Notes on Queries
-- **Query 1 and #3 Relevance**: 
-  * This context suggests examining API routes or external service integrations
-  * Specific focus on 1 and #3 implies extracting details about API routes and external service patterns
-
-## Important Implementation Notes
+## Key Architectural Patterns
 
 ### API Routes Pattern
 All API routes must include these exports for Vercel deployment:
@@ -117,8 +126,8 @@ export const maxDuration = 60
 
 export async function GET/POST/PUT/DELETE(request: Request) {
   try {
-    // Validate input
-    // Perform database/external service operations
+    // Input validation
+    // Database/external service operations
     return NextResponse.json({ data })
   } catch (error) {
     return NextResponse.json(
@@ -129,4 +138,101 @@ export async function GET/POST/PUT/DELETE(request: Request) {
 }
 ```
 
-[Rest of the existing content remains unchanged]
+### Database Access
+- Direct Supabase client usage via `/app/lib/supabase.ts`
+- No ORM - direct SQL queries through Supabase client
+- All database operations include proper error handling
+- Types are defined in `/app/types/*` files
+
+### External Service Integration
+- **Finale API**: Centralized in `/app/lib/finale-api.ts` with rate limiting
+- **Cache Service**: Redis via `/app/lib/cache/redis-client.ts`
+- **Email**: SendGrid integration for notifications
+- **Google Sheets**: Direct API integration for data export
+
+### Testing Strategy
+- **Jest Configuration**: Tests in `/tests`, `/app`, and `/lib` directories
+- **Coverage Thresholds**: 60% for branches, functions, lines, statements
+- **Playwright**: E2E tests with retry logic for CI environments
+- **Test Timeout**: 30s for Jest, 30-60s for Playwright (longer in CI)
+
+### Performance Optimizations
+- **Redis Caching**: Multi-layer caching strategy for inventory data
+- **Rate Limiting**: Implemented for external API calls (Finale)
+- **Background Jobs**: Async processing for heavy operations
+- **Optimized Queries**: Batch operations and pagination
+
+### State Management
+- Client-side state uses React hooks (no global state library)
+- Server state managed through API routes
+- Cache invalidation strategies for data consistency
+
+## Important Notes
+
+### Type Safety
+- TypeScript strict mode is enabled
+- All API responses should be properly typed
+- Use interfaces for object shapes, types for unions/aliases
+
+### Error Handling
+- Consistent error response format across all APIs
+- Proper HTTP status codes (200, 201, 400, 401, 404, 500)
+- Comprehensive error logging via `/app/lib/logger.ts`
+
+### Security
+- CSRF protection implemented
+- Input validation on all API endpoints
+- Environment variables for sensitive configuration
+- No secrets in code or version control
+
+### Deployment
+- Automatic deployment to Vercel on push to main branch
+- Environment variables configured in Vercel dashboard
+- Pre-push validation via Git hooks
+- Health checks after deployment
+
+## Common Operations
+
+### Running a Single Test
+```bash
+# Jest
+npm run test -- app/api/inventory/__tests__/route.test.ts
+
+# Playwright
+npx playwright test tests/e2e/inventory-page.spec.ts
+```
+
+### Debugging API Routes
+Check logs in Vercel dashboard or use local development:
+```bash
+npm run dev
+# API routes available at http://localhost:3000/api/*
+```
+
+### Cache Operations
+```bash
+# Clear and rebuild cache
+npm run cache:clear && npm run cache:warm
+
+# Check cache health
+npm run cache:health
+```
+
+### Database Migration
+```bash
+# Run migrations
+npm run db:migrate
+
+# Validate schema
+npm run db:validate
+```
+
+## Environment Variables Required
+- `NEXT_PUBLIC_SUPABASE_URL`
+- `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+- `SUPABASE_SERVICE_ROLE_KEY`
+- `FINALE_API_KEY`
+- `FINALE_ACCOUNT_ID`
+- `SENDGRID_API_KEY`
+- `REDIS_URL` (optional, for caching)
+- `JWT_SECRET` (for authentication)
