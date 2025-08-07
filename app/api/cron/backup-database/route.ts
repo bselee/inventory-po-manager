@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { createApiHandler, apiResponse } from '@/app/lib/api-handler'
 import DatabaseBackup from '@/scripts/database-backup'
 import { trackSync } from '@/app/lib/monitoring'
+import { logError, logInfo } from '@/app/lib/logger'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
