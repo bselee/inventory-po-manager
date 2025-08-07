@@ -32,8 +32,14 @@ class Logger {
 
     // In development or debug mode, log everything
     if (this.isDevelopment || this.isDebugEnabled) {
-      const logMethod = level === 'error' ? console.error : 
-                       level === 'warn' ? console.warn : console.log
+      let logMethod
+      if (level === 'error') {
+        logMethod = console.error
+      } else if (level === 'warn') {
+        logMethod = console.warn
+      } else {
+        logMethod = console.log
+      }
       
       const prefix = context ? `[${context}]` : ''
       logMethod(`${prefix} ${message}`, data || '')
