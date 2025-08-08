@@ -30,7 +30,6 @@ export async function GET(request: NextRequest) {
         const cacheData = JSON.parse(cacheContent)
         allItems = cacheData.items || []
       } catch (error) {
-        console.log('Simple cache not available, falling back to KV service')
         allItems = await kvInventoryService.getInventory(forceRefresh)
       }
     } else {

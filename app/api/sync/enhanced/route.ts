@@ -7,6 +7,11 @@ import {
   EnhancedSyncOptions 
 } from '@/app/lib/enhanced-sync-service'
 
+// Required exports for Vercel deployment
+export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
+export const maxDuration = 60
+
 /**
  * Enhanced Sync API Endpoint
  * POST /api/sync/enhanced - Execute enhanced sync with optimizations

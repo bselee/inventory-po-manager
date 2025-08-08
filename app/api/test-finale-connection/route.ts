@@ -33,7 +33,6 @@ export async function POST(request: Request) {
     const testUrl = `https://app.finaleinventory.com/${cleanAccountPath}/api/products?limit=1`
     const authHeader = 'Basic ' + Buffer.from(`${apiKey}:${apiSecret}`).toString('base64')
     
-    console.log('Testing Finale connection to:', testUrl)
     
     const response = await fetch(testUrl, {
       method: 'GET',

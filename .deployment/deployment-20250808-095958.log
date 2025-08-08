@@ -1,0 +1,11 @@
+[0;36m━━━ FAST DEPLOYMENT VALIDATION ━━━[0m
+[1;33m⏱️  Timeout: 25s | Skip with: SKIP_HOOKS=1 git push[0m
+
+[0;34m━━━ PHASE 1: QUICK SAFETY CHECKS ━━━[0m
+🔍 Cleaning console.log statements... [0;32mClean ✓[0m
+
+[0;34m━━━ PHASE 2: BUILD VALIDATION ━━━[0m
+🏗️ Running build test... [0;31mTimeout (15s)[0m
+
+[0;34m━━━ PHASE 3: PARALLEL QUALITY CHECKS ━━━[0m
+⚡ Running type-check and lint in parallel...

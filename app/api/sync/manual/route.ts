@@ -42,7 +42,6 @@ export async function POST(request: Request) {
     const inventoryUrl = `https://app.finaleinventory.com/${cleanAccountPath}/api/products`
     const authHeader = 'Basic ' + Buffer.from(`${settings.finale_api_key}:${settings.finale_api_secret}`).toString('base64')
     
-    console.log('Starting manual sync from:', inventoryUrl)
     
     const response = await fetch(inventoryUrl, {
       method: 'GET',
@@ -71,7 +70,6 @@ export async function POST(request: Request) {
     const data = await response.json()
     const items = Array.isArray(data) ? data : data.products || []
     
-    console.log(`Fetched ${items.length} items from Finale`)
     
     // For now, just update the sync status
     // In a real implementation, you would save this data to your database

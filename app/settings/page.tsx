@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { Save, TestTube, Check, X, Loader2, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react'
+import { logger } from '@/app/lib/logger'
 
 interface Settings {
   finale_api_key: string
@@ -56,7 +57,7 @@ export default function SettingsPage() {
         }
       }
     } catch (error) {
-      console.error('Failed to load settings:', error)
+      logger.error('Failed to load settings', error, 'SettingsPage')
       setMessage({ type: 'error', text: 'Failed to load settings' })
     } finally {
       setLoading(false)
@@ -71,7 +72,7 @@ export default function SettingsPage() {
         setSyncStatus(data)
       }
     } catch (error) {
-      console.error('Failed to load sync status:', error)
+      logger.error('Failed to load sync status', error, 'SettingsPage')
     }
   }
 
@@ -103,7 +104,7 @@ export default function SettingsPage() {
         setMessage({ type: 'error', text: data.error || 'Failed to save settings' })
       }
     } catch (error) {
-      console.error('Error saving settings:', error)
+      logger.error('Error saving settings', error, 'SettingsPage')
       setMessage({ type: 'error', text: 'Failed to save settings' })
     } finally {
       setSaving(false)
@@ -136,7 +137,7 @@ export default function SettingsPage() {
         setMessage({ type: 'error', text: data.error || 'Connection failed' })
       }
     } catch (error) {
-      console.error('Connection test error:', error)
+      logger.error('Connection test error', error, 'SettingsPage')
       setTestResult('error')
       setMessage({ type: 'error', text: 'Failed to test connection' })
     } finally {
@@ -174,7 +175,7 @@ export default function SettingsPage() {
         setMessage({ type: 'error', text: data.error || 'Failed to start sync' })
       }
     } catch (error) {
-      console.error('Manual sync error:', error)
+      logger.error('Manual sync error', error, 'SettingsPage')
       setMessage({ type: 'error', text: 'Failed to trigger manual sync' })
     } finally {
       setSyncing(false)

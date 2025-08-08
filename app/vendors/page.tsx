@@ -12,6 +12,7 @@ import { VendorsLoadingFallback } from '@/app/components/common/LoadingFallback'
 import PaginationControls from '@/app/components/inventory/PaginationControls'
 import { useDebounce } from '@/app/hooks/useDebounce'
 import { VendorPageSkeleton, VendorCardSkeleton, VendorListSkeleton } from '@/app/components/vendors/VendorSkeletons'
+import { logger } from '@/app/lib/logger'
 
 interface VendorStats {
   vendor: Vendor
@@ -124,7 +125,7 @@ function VendorsPageContent() {
       setVendors(result.data || [])
       setTotalVendors(result.data?.length || 0)
     } catch (error) {
-      console.error('Error loading vendors:', error)
+      logger.error('Error loading vendors', error, 'VendorsPage')
       const errorMessage = error instanceof Error ? error.message : 'Failed to load vendors'
       toast.error(errorMessage)
       setVendors([])
@@ -147,7 +148,7 @@ function VendorsPageContent() {
           setVendorStats(prev => ({ ...prev, [vendor.id]: stats }))
         }
       } catch (error) {
-        console.error(`Error loading stats for vendor ${vendor.name}:`, error)
+        logger.error(`Error loading stats for vendor ${vendor.name}`, error, 'VendorsPage')
       } finally {
         setLoadingStats(prev => ({ ...prev, [vendor.id]: false }))
       }
@@ -164,7 +165,7 @@ function VendorsPageContent() {
       setVendorStats({})
       toast.success('Vendors refreshed successfully')
     } catch (error) {
-      console.error('Error refreshing vendors:', error)
+      logger.error('Error refreshing vendors', error, 'VendorsPage')
       toast.error('Failed to refresh vendors')
     } finally {
       setRefreshing(false)
