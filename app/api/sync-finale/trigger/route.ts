@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { FinaleApiService, getFinaleConfig } from '@/app/lib/finale-api'
+import { FinaleSyncService, getFinaleConfig } from '@/app/lib/finale-sync-service'
 import { supabase } from '@/app/lib/supabase'
-import { logError } from '@/app/lib/logger'
+import { logError, logInfo } from '@/app/lib/logger'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -10,7 +10,9 @@ export const maxDuration = 60
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json().catch(() => ({}))
-    const { filterYear, dryRun = false } = body
+    const { filterYear, dryRun = false, syncVendors = true } = body
+    
+    logInfo('[Manual Sync] Starting sync', { filterYear, dryRun, syncVendors })
     
     // Check if a sync is already running
     const { data: runningSync } = await supabase
@@ -47,19 +49,20 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
     
-    // Initialize Finale API service
-    const finaleApi = new FinaleApiService(config)
+    // Initialize Finale Sync service
+    const syncService = new FinaleSyncService(config)
     
     // Test connection first
-    const isConnected = await finaleApi.testConnection()
+    const isConnected = await syncService.testConnection()
     
     if (!isConnected) {
       logError('[Manual Sync] Connection test failed')
       return NextResponse.json({ 
         success: false, 
-        error: 'Failed to connect to Finale API. Please check your credentials.' 
+        error: 'Failed to connect to Finale API. Please check your credentials and report URLs.' 
       }, { status: 500 })
     }
+    
     // Create initial sync log entry
     const { data: syncLog } = await supabase
       .from('sync_logs')
@@ -72,7 +75,7 @@ export async function POST(request: NextRequest) {
         errors: [],
         metadata: {
           source: 'manual',
-          filterYear: filterYear || new Date().getFullYear(),
+          filterYear: filterYear || null,
           dryRun,
           triggeredBy: 'api'
         }
@@ -80,11 +83,42 @@ export async function POST(request: NextRequest) {
       .select()
       .single()
     
-    // Perform sync
-    const result = await finaleApi.syncToSupabase(dryRun, filterYear)
+    // Perform inventory sync
+    const inventoryResult = await syncService.syncInventory({
+      dryRun,
+      syncToSupabase: true,
+      filterYear
+    })
+    
+    // Sync vendors if requested
+    let vendorResult = null
+    if (syncVendors && inventoryResult.success) {
+      vendorResult = await syncService.syncVendors({ dryRun })
+    }
+    
+    // Update sync log with final status
+    if (syncLog) {
+      await supabase
+        .from('sync_logs')
+        .update({
+          status: inventoryResult.success ? 'success' : 'error',
+          items_processed: inventoryResult.itemsProcessed,
+          items_updated: inventoryResult.itemsUpdated,
+          errors: inventoryResult.errors,
+          duration_ms: inventoryResult.duration,
+          metadata: {
+            source: 'manual',
+            filterYear: filterYear || null,
+            dryRun,
+            triggeredBy: 'api',
+            vendorsSynced: vendorResult ? vendorResult.itemsProcessed : 0
+          }
+        })
+        .eq('id', syncLog.id)
+    }
     
     // Update settings last sync time if successful and not dry run
-    if (result.success && !dryRun) {
+    if (inventoryResult.success && !dryRun) {
       await supabase
         .from('settings')
         .update({ last_sync_time: new Date().toISOString() })
@@ -92,7 +126,18 @@ export async function POST(request: NextRequest) {
     }
     
     return NextResponse.json({
-      ...result,
+      success: inventoryResult.success,
+      inventory: {
+        itemsProcessed: inventoryResult.itemsProcessed,
+        itemsUpdated: inventoryResult.itemsUpdated,
+        errors: inventoryResult.errors,
+        duration: inventoryResult.duration
+      },
+      vendors: vendorResult ? {
+        itemsProcessed: vendorResult.itemsProcessed,
+        itemsUpdated: vendorResult.itemsUpdated,
+        errors: vendorResult.errors
+      } : null,
       syncId: syncLog?.id,
       mode: dryRun ? 'dry_run' : 'full_sync'
     })

@@ -112,28 +112,147 @@ security_frameworks:
 ```yaml
 collaboration_pattern:
   architecture_coordination:
-    backend_architect_focus:
+    backend_architect_domain:
       - "Internal system architecture and data modeling"
-      - "Database design and query optimization"
-      - "Business logic implementation"
+      - "Core business logic implementation"
+      - "Database design, migrations, and query optimization"
+      - "Authentication/authorization middleware"
       - "Performance optimization for core services"
+      - "Input validation and business rule enforcement"
     
-    integration_specialist_focus:
+    integration_specialist_domain:
       - "External service connectivity and API design"
       - "Inter-service communication patterns"
       - "Third-party integration architecture"
       - "Event-driven system coordination"
+      - "API gateway and rate limiting strategies"
+      - "Webhook and real-time integration management"
 
-workflow_example:
-  microservices_architecture:
-    - backend_architect: "Designs core business services and data models"
-    - integration_specialist: "Designs service communication patterns and API contracts"
-    - backend_architect: "Implements business logic within services"
-    - integration_specialist: "Implements service mesh, API gateway, and external integrations"
+explicit_handoff_protocols:
+  step_1_requirements_analysis:
+    - backend_architect: "Receives feature requirements from feature-planner"
+    - integration_specialist_agent: "Identifies external integration needs"
+    - handoff: "Integration agent provides external API requirements to backend architect"
+    - deliverable: "Combined internal + external architecture specification"
+  
+  step_2_api_contract_design:
+    - backend_architect: "Designs internal API structure and business logic"
+    - integration_specialist_agent: "Designs external API contracts and integration patterns"
+    - collaboration_point: "Joint session to ensure API compatibility"
+    - deliverable: "Unified API specification with clear internal/external boundaries"
+  
+  step_3_implementation_boundaries:
+    backend_architect_implements:
+      - "Core business APIs (GET /api/inventory, POST /api/purchase-orders)"
+      - "Database operations and transaction management"
+      - "Request validation using Zod schemas"
+      - "Business logic and data transformation"
+      - "Internal service health endpoints"
+    
+    integration_specialist_implements:
+      - "External API clients (Finale inventory, SendGrid email)"
+      - "Webhook receivers and event processors"
+      - "API gateway configuration and routing"
+      - "Circuit breakers and retry mechanisms for external calls"
+      - "Integration monitoring and health checks"
+  
+  step_4_data_flow_coordination:
+    - backend_architect: "Ensures internal data consistency and ACID compliance"
+    - integration_specialist_agent: "Manages external data synchronization"
+    - shared_responsibility: "End-to-end transaction coordination"
+    - monitoring: "Both agents provide metrics to sre-reliability-agent"
 
-distinct_responsibilities:
-  backend_architect: "What services do and how they process data internally"
-  integration_specialist: "How services communicate and integrate with external systems"
+specific_example_finale_integration:
+  requirement: "Sync inventory data with Finale API every 15 minutes + real-time webhooks"
+  
+  backend_architect_responsibilities:
+    database_layer:
+      - "inventory table with finale_sync_status column"
+      - "sync_logs table for tracking integration history"
+      - "Database indexes for efficient finale_id lookups"
+    
+    internal_api_design:
+      - "GET /api/inventory - Internal inventory retrieval with caching"
+      - "PUT /api/inventory/{id}/sync-status - Update sync status"
+      - "POST /api/inventory/batch-update - Bulk updates from Finale"
+    
+    business_logic:
+      - "Inventory validation rules and constraints"
+      - "Conflict resolution for simultaneous updates"
+      - "Audit trail creation for all inventory changes"
+      - "Transaction management for bulk operations"
+  
+  integration_specialist_responsibilities:
+    external_connectivity:
+      - "Finale API client with OAuth2 authentication"
+      - "Rate limiting compliance (respect Finale's API limits)"
+      - "Webhook endpoint setup for real-time notifications"
+      - "Error handling and retry logic for API failures"
+    
+    sync_orchestration:
+      - "Scheduled sync job using Vercel cron functions"
+      - "Event-driven updates via Finale webhooks"
+      - "Data transformation between Finale and internal schemas"
+      - "Conflict detection and resolution strategies"
+    
+    monitoring_and_alerts:
+      - "Integration health monitoring dashboard"
+      - "Alert setup for sync failures or rate limit exceeded"
+      - "Performance metrics for API response times"
+      - "Data consistency validation between systems"
+
+  shared_integration_points:
+    api_gateway_setup:
+      - backend_architect: "Defines internal API rate limits and auth"
+      - integration_specialist: "Configures external API routing and throttling"
+      - result: "Unified API gateway with different policies per endpoint type"
+    
+    error_handling_strategy:
+      - backend_architect: "Internal error responses and validation failures"
+      - integration_specialist: "External service failures and circuit breaker logic"
+      - coordination: "Error correlation and unified logging format"
+    
+    performance_optimization:
+      - backend_architect: "Database query optimization and connection pooling"
+      - integration_specialist: "External API caching and request batching"
+      - monitoring: "End-to-end performance tracking with distributed tracing"
+
+  data_flow_example:
+    normale_flow:
+      1. "Finale webhook → Integration Specialist (webhook handler)"
+      2. "Integration Specialist → Backend Architect (POST /api/inventory/update)"
+      3. "Backend Architect → Database (update with validation)"
+      4. "Backend Architect → Integration Specialist (sync confirmation)"
+      5. "Integration Specialist → Finale (acknowledge webhook)"
+    
+    error_recovery_flow:
+      1. "Finale API timeout → Integration Specialist (circuit breaker open)"
+      2. "Integration Specialist → Backend Architect (mark sync_status = 'pending')"
+      3. "Integration Specialist → SRE Agent (alert: Finale integration degraded)"
+      4. "Retry logic activates → Integration Specialist (exponential backoff)"
+      5. "Success → Backend Architect (update sync_status = 'completed')"
+
+responsibility_boundaries:
+  backend_architect_never_handles:
+    - "Direct external API calls (Finale, SendGrid, etc.)"
+    - "OAuth flows for third-party services"
+    - "Webhook signature validation"
+    - "External service rate limiting"
+    - "Cross-service circuit breaker logic"
+  
+  integration_specialist_never_handles:
+    - "Core business logic or data validation rules"
+    - "Database schema design or migrations"
+    - "Internal authentication/authorization"
+    - "Business-specific error messages"
+    - "Core application performance optimization"
+  
+  shared_responsibilities:
+    - "API contract design and versioning"
+    - "Error response format standardization"
+    - "Performance monitoring and alerting"
+    - "Security implementation at service boundaries"
+    - "Documentation of integration workflows"
 ```
 
 #### 🤝 **With Security-Auditor**

@@ -161,29 +161,163 @@ integration_example:
 #### 🤝 **With Backend-Architect**
 ```yaml
 collaboration_pattern:
-  reliability_architecture:
-    design_collaboration:
-      - "Circuit breaker and bulkhead pattern implementation"
-      - "Service mesh architecture for observability"
-      - "Database resilience and backup strategies"
-      - "API rate limiting and throttling mechanisms"
+  reliability_architecture_coordination:
+    backend_architect_foundation:
+      - "Core API design with performance requirements"
+      - "Database architecture and query optimization"
+      - "Authentication/authorization implementation"
+      - "Business logic error handling and validation"
+      - "Application-level performance monitoring"
+    
+    sre_reliability_enhancement:
+      - "Production reliability patterns (circuit breakers, bulkheads)"
+      - "System-level monitoring and observability"
+      - "SLO/SLI definition and error budget management"
+      - "Incident response automation and runbooks"
+      - "Capacity planning and auto-scaling strategies"
+
+explicit_handoff_workflow:
+  step_1_architecture_review:
+    - backend_architect: "Completes core system architecture design"
+    - sre_reliability_agent: "Reviews architecture for reliability patterns"
+    - collaboration: "Joint session to identify potential failure modes"
+    - deliverable: "Architecture with embedded reliability patterns"
+  
+  step_2_implementation_enhancement:
+    backend_architect_implements:
+      - "Core business APIs with proper error responses"
+      - "Database connections with connection pooling"
+      - "Input validation and business rule enforcement"
+      - "Application logging with structured format"
+    
+    sre_reliability_agent_implements:
+      - "Health check endpoints for all services"
+      - "Circuit breaker middleware for external dependencies"
+      - "Distributed tracing instrumentation"
+      - "Metrics collection and aggregation"
+      - "Alert definitions based on SLO violations"
+  
+  step_3_monitoring_integration:
+    - backend_architect: "Exposes application metrics and health endpoints"
+    - sre_reliability_agent: "Configures monitoring stack and alerting"
+    - shared_responsibility: "Define meaningful SLIs for business operations"
+    - deliverable: "Comprehensive observability for production systems"
+  
+  step_4_production_readiness:
+    - backend_architect: "Validates business logic and performance benchmarks"
+    - sre_reliability_agent: "Validates reliability patterns and monitoring"
+    - collaboration: "Load testing and chaos engineering validation"
+    - sign_off: "Joint approval for production deployment"
+
+specific_example_inventory_api_reliability:
+  requirement: "Inventory API must maintain 99.9% uptime with <200ms response times"
+  
+  backend_architect_responsibilities:
+    core_implementation:
+      - "GET /api/inventory/{id} with database query optimization"
+      - "PUT /api/inventory/{id} with validation and transaction management"
+      - "Connection pooling configuration for PostgreSQL"
+      - "Redis caching implementation for frequently accessed items"
+      - "Error handling with proper HTTP status codes"
     
     performance_optimization:
-      backend_architect_focus:
-        - "Code-level performance optimization"
-        - "Database query optimization"
-        - "API design for scalability"
-      
-      sre_reliability_focus:
-        - "System-level performance monitoring"
-        - "Capacity planning and auto-scaling"
-        - "Performance SLO definition and tracking"
+      - "Database indexes for inventory_id, sku, and status columns"
+      - "Query optimization using EXPLAIN ANALYZE"
+      - "Response compression (gzip) for large inventory lists"
+      - "Pagination implementation for inventory listing APIs"
+    
+    application_instrumentation:
+      - "Structured logging with correlation IDs"
+      - "Application metrics (request count, response time, errors)"
+      - "Health check endpoint returning service dependencies status"
+  
+  sre_reliability_agent_responsibilities:
+    reliability_patterns:
+      - "Circuit breaker for Finale API dependency"
+      - "Bulkhead pattern isolating inventory operations"
+      - "Graceful degradation when external services fail"
+      - "Automatic retry with exponential backoff"
+    
+    monitoring_and_alerting:
+      - "SLI: Inventory API response time p95 < 200ms"
+      - "SLI: Inventory API availability > 99.9%"
+      - "SLI: Database query success rate > 99.95%"
+      - "Alert: Response time SLO violation"
+      - "Alert: Error rate exceeding 0.1%"
+      - "Dashboard: Real-time inventory API health"
+    
+    incident_response:
+      - "Automated runbook for high error rates"
+      - "Escalation policy for SLO violations"
+      - "Automated scaling triggers for high load"
+      - "Integration with PagerDuty for critical alerts"
 
-architecture_review_process:
-  - backend_architect: "Designs system architecture"
-  - sre_reliability_agent: "Reviews for reliability and observability"
-  - backend_architect: "Implements reliability patterns and monitoring"
-  - sre_reliability_agent: "Validates monitoring coverage and SLO feasibility"
+  shared_integration_points:
+    health_check_design:
+      - backend_architect: "Implements /health endpoint checking database connectivity"
+      - sre_reliability_agent: "Configures load balancer health checks and monitoring"
+      - result: "Comprehensive health validation for traffic routing"
+    
+    error_handling_coordination:
+      - backend_architect: "Returns structured error responses with error codes"
+      - sre_reliability_agent: "Monitors error patterns and triggers alerts"
+      - escalation: "Error budget exhaustion triggers deployment freeze"
+    
+    performance_monitoring:
+      - backend_architect: "Instruments application with custom metrics"
+      - sre_reliability_agent: "Aggregates metrics and creates performance dashboards"
+      - action: "Performance degradation triggers automated investigation"
+
+  production_workflow_example:
+    normale_operation:
+      1. "User request → Load Balancer (health check validated)"
+      2. "Load Balancer → Backend Architect API (with circuit breaker)"
+      3. "Backend API → Database (with connection pooling)"
+      4. "Backend API → SRE monitoring (metrics collection)"
+      5. "SRE monitoring → Dashboard (real-time health display)"
+    
+    failure_scenario_handling:
+      1. "Database timeout detected → Backend Architect (error response)"
+      2. "Backend error → SRE monitoring (metric spike detected)"
+      3. "SRE monitoring → Alert system (SLO violation threshold)"
+      4. "Alert system → Incident response (automated runbook execution)"
+      5. "Runbook → Backend scaling (additional database connections)"
+      6. "Recovery validated → SRE monitoring (incident closure)"
+
+responsibility_boundaries:
+  backend_architect_owns:
+    - "Business logic correctness and data validation"
+    - "API contract design and versioning"
+    - "Database schema and query performance"
+    - "Application-level error handling"
+    - "Feature functionality and user experience"
+  
+  sre_reliability_agent_owns:
+    - "System-level reliability patterns"
+    - "Production monitoring and alerting"
+    - "Incident response automation"
+    - "Capacity planning and scaling"
+    - "Service-level objective definition and tracking"
+  
+  shared_responsibilities:
+    - "Performance requirements definition"
+    - "Error response format standardization"
+    - "Logging format and correlation ID strategy"
+    - "Health check endpoint implementation"
+    - "Load testing and performance validation"
+
+coordination_protocols:
+  deployment_process:
+    - backend_architect: "Completes feature implementation and testing"
+    - sre_reliability_agent: "Validates monitoring and reliability patterns"
+    - joint_review: "Performance testing and reliability validation"
+    - deployment_approval: "Both agents must approve production release"
+  
+  incident_response:
+    - sre_reliability_agent: "Leads incident detection and coordination"
+    - backend_architect: "Provides technical expertise for application issues"
+    - collaboration: "Joint investigation and root cause analysis"
+    - follow_up: "Shared responsibility for preventive improvements"
 ```
 
 #### 🤝 **With Test-Automator**

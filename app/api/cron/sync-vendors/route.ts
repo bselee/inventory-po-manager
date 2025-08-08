@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { FinaleSyncService, getFinaleConfig } from '@/app/lib/finale-sync-service'
 import { supabase } from '@/app/lib/supabase'
-import { logError } from '@/app/lib/logger'
+import { logError, logInfo } from '@/app/lib/logger'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -28,25 +29,40 @@ export async function GET(request: NextRequest) {
       })
     }
 
-    // Call the sync endpoint
-    const response = await fetch(`${request.nextUrl.origin}/api/sync-vendors`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ manual: false })
-    })
+    logInfo('[Cron Sync] Starting scheduled vendor sync')
 
-    const result = await response.json()
+    // Get Finale configuration
+    const config = await getFinaleConfig()
+    if (!config) {
+      return NextResponse.json({ 
+        success: false, 
+        error: 'Finale API not configured' 
+      }, { status: 500 })
+    }
+
+    // Initialize sync service
+    const syncService = new FinaleSyncService(config)
+
+    // Perform vendor sync
+    const result = await syncService.syncVendors({
+      dryRun: false
+    })
 
     return NextResponse.json({
       success: result.success,
       message: result.success 
-        ? `Synced ${result.processed || 0} vendors`
-        : `Sync failed: ${result.error}`,
-      details: result
+        ? `Synced ${result.itemsProcessed} vendors`
+        : `Sync failed: ${result.errors.join(', ')}`,
+      details: {
+        itemsProcessed: result.itemsProcessed,
+        itemsUpdated: result.itemsUpdated,
+        duration: result.duration,
+        errors: result.errors
+      }
     })
 
   } catch (error) {
-    logError('Cron vendor sync error:', error)
+    logError('[Cron Sync] Vendor sync error:', error)
     return NextResponse.json({ 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error' 

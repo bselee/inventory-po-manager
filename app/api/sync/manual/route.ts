@@ -6,6 +6,12 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
+// GET /api/sync/manual - Trigger manual inventory sync (GET for easy browser access)
+export async function GET(request: Request) {
+  // Call the POST function logic
+  return POST(request)
+}
+
 // POST /api/sync/manual - Trigger manual inventory sync
 export async function POST(request: Request) {
   try {
