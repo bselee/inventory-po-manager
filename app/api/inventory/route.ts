@@ -1,12 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { kvInventoryService } from '@/app/lib/kv-inventory-service'
 import { logError } from '@/app/lib/logger'
+import fs from 'fs/promises'
+import path from 'path'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
-// GET /api/inventory - Fetch inventory items from Redis/Finale
+// GET /api/inventory - Fetch inventory items from cache or Finale
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url)
@@ -16,9 +18,25 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status')
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '100')
+    const useSimpleCache = searchParams.get('source') === 'simple'
     
-    // Get inventory from Redis/Finale
-    const allItems = await kvInventoryService.getInventory(forceRefresh)
+    let allItems = []
+    
+    // Check if we should use the simple file-based cache
+    if (useSimpleCache) {
+      try {
+        const cacheFile = path.join(process.cwd(), '.inventory-cache.json')
+        const cacheContent = await fs.readFile(cacheFile, 'utf-8')
+        const cacheData = JSON.parse(cacheContent)
+        allItems = cacheData.items || []
+      } catch (error) {
+        console.log('Simple cache not available, falling back to KV service')
+        allItems = await kvInventoryService.getInventory(forceRefresh)
+      }
+    } else {
+      // Get inventory from Redis/Finale (existing behavior)
+      allItems = await kvInventoryService.getInventory(forceRefresh)
+    }
     
     // Apply filters
     let filteredItems = allItems

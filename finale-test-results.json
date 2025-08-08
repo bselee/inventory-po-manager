@@ -1,0 +1,254 @@
+{
+  "timestamp": "2025-08-08T14:59:52.973Z",
+  "results": [
+    {
+      "endpoint": "product",
+      "success": true,
+      "data": {
+        "productId": [
+          "BC101"
+        ],
+        "internalName": [
+          "Bio Char (Raw Bio-Char - Small Bag)"
+        ],
+        "productTypeId": [
+          "GOOD"
+        ],
+        "statusId": [
+          "PRODUCT_INACTIVE"
+        ],
+        "productUrl": [
+          "/buildasoilorganics/api/product/BC101"
+        ],
+        "lastUpdatedDate": [
+          "2016-11-28T16:48:23"
+        ],
+        "createdDate": [
+          "2016-11-22T19:53:52"
+        ],
+        "weightUomId": [
+          "WT_lb"
+        ],
+        "distanceUomId": [
+          "LEN_ft"
+        ],
+        "actionUrlActivate": [
+          "/buildasoilorganics/api/product/BC101/activate"
+        ],
+        "priceList": [
+          [
+            {
+              "productPriceTypeId": "##user2",
+              "currencyUomId": "USD"
+            },
+            {
+              "productPriceTypeId": "##user3",
+              "currencyUomId": "USD"
+            },
+            {
+              "productPriceTypeId": "##user4",
+              "currencyUomId": "USD"
+            },
+            {
+              "productPriceTypeId": "##user5",
+              "price": 0,
+              "currencyUomId": "USD"
+            },
+            {
+              "productPriceTypeId": "##user6",
+              "price": 11.69,
+              "currencyUomId": "USD"
+            }
+          ]
+        ],
+        "supplierList": [
+          []
+        ],
+        "productStoreList": [
+          []
+        ],
+        "reorderGuidelineList": [
+          []
+        ],
+        "glAccountList": [
+          []
+        ],
+        "contentList": [
+          []
+        ],
+        "userFieldDataList": [
+          [
+            {
+              "attrName": "user_10001",
+              "attrValue": "1.1993"
+            }
+          ]
+        ],
+        "productAssocList": [
+          []
+        ]
+      }
+    },
+    {
+      "endpoint": "inventoryitem",
+      "success": false,
+      "error": "<html><title> Not Found </title>\r\n<body><h2> Not Found </h2>\r\n<p>The requested URL &#47;&#98;&#117;&#105;&#108;&#100;&#97;&#115;&#111;&#105;&#108;&#111;&#114;&#103;&#97;&#110;&#105;&#99;&#115;&#47;&#97;&#112;&#105;&#47;&#105;&#110;&#118;&#101;&#110;&#116;&#111;&#114;&#121;&#105;&#116;&#101;&#109; was not found on the server.</p>\r\n</body></html>\r\n"
+    },
+    {
+      "endpoint": "vendors",
+      "success": false,
+      "error": "No working vendor endpoint found"
+    },
+    {
+      "endpoint": "product-full",
+      "success": true,
+      "data": [
+        {
+          "productId": "BC101",
+          "internalName": "Bio Char (Raw Bio-Char - Small Bag)",
+          "productTypeId": "GOOD",
+          "statusId": "PRODUCT_INACTIVE",
+          "productUrl": "/buildasoilorganics/api/product/BC101",
+          "lastUpdatedDate": "2016-11-28T16:48:23",
+          "createdDate": "2016-11-22T19:53:52",
+          "weightUomId": "WT_lb",
+          "distanceUomId": "LEN_ft",
+          "actionUrlActivate": "/buildasoilorganics/api/product/BC101/activate",
+          "priceList": [
+            {
+              "productPriceTypeId": "##user2",
+              "currencyUomId": "USD"
+            },
+            {
+              "productPriceTypeId": "##user3",
+              "currencyUomId": "USD"
+            },
+            {
+              "productPriceTypeId": "##user4",
+              "currencyUomId": "USD"
+            },
+            {
+              "productPriceTypeId": "##user5",
+              "price": 0,
+              "currencyUomId": "USD"
+            },
+            {
+              "productPriceTypeId": "##user6",
+              "price": 11.69,
+              "currencyUomId": "USD"
+            }
+          ],
+          "supplierList": [],
+          "productStoreList": [],
+          "reorderGuidelineList": [],
+          "glAccountList": [],
+          "contentList": [],
+          "userFieldDataList": [
+            {
+              "attrName": "user_10001",
+              "attrValue": "1.1993"
+            }
+          ],
+          "productAssocList": []
+        },
+        {
+          "productId": "BC101C",
+          "internalName": "Bio Char (Charged Bio-Char - Small Bag)",
+          "productTypeId": "GOOD",
+          "statusId": "PRODUCT_INACTIVE",
+          "productUrl": "/buildasoilorganics/api/product/BC101C",
+          "lastUpdatedDate": "2016-11-28T16:48:30",
+          "createdDate": "2016-11-22T19:53:53",
+          "weightUomId": "WT_lb",
+          "distanceUomId": "LEN_ft",
+          "actionUrlActivate": "/buildasoilorganics/api/product/BC101C/activate",
+          "priceList": [
+            {
+              "productPriceTypeId": "##user2",
+              "currencyUomId": "USD"
+            },
+            {
+              "productPriceTypeId": "##user3",
+              "currencyUomId": "USD"
+            },
+            {
+              "productPriceTypeId": "##user4",
+              "currencyUomId": "USD"
+            },
+            {
+              "productPriceTypeId": "##user5",
+              "price": 0,
+              "currencyUomId": "USD"
+            },
+            {
+              "productPriceTypeId": "##user6",
+              "price": 16.69,
+              "currencyUomId": "USD"
+            }
+          ],
+          "supplierList": [],
+          "productStoreList": [],
+          "reorderGuidelineList": [],
+          "glAccountList": [],
+          "contentList": [],
+          "userFieldDataList": [
+            {
+              "attrName": "user_10001",
+              "attrValue": "2.2002"
+            }
+          ],
+          "productAssocList": []
+        },
+        {
+          "productId": "BC106",
+          "internalName": "Bio Char (1 Yard Tote)",
+          "productTypeId": "GOOD",
+          "statusId": "PRODUCT_INACTIVE",
+          "productUrl": "/buildasoilorganics/api/product/BC106",
+          "lastUpdatedDate": "2016-11-28T16:48:37",
+          "createdDate": "2016-11-22T19:53:57",
+          "weightUomId": "WT_lb",
+          "distanceUomId": "LEN_ft",
+          "actionUrlActivate": "/buildasoilorganics/api/product/BC106/activate",
+          "priceList": [
+            {
+              "productPriceTypeId": "##user2",
+              "price": 225,
+              "currencyUomId": "USD"
+            },
+            {
+              "productPriceTypeId": "##user3",
+              "price": 256.32,
+              "currencyUomId": "USD"
+            },
+            {
+              "productPriceTypeId": "##user4",
+              "currencyUomId": "USD"
+            },
+            {
+              "productPriceTypeId": "##user5",
+              "price": 294.77,
+              "currencyUomId": "USD"
+            },
+            {
+              "productPriceTypeId": "##user6",
+              "currencyUomId": "USD"
+            }
+          ],
+          "supplierList": [],
+          "productStoreList": [],
+          "reorderGuidelineList": [],
+          "glAccountList": [],
+          "contentList": [],
+          "userFieldDataList": [
+            {
+              "attrName": "user_10001",
+              "attrValue": "590"
+            }
+          ],
+          "productAssocList": []
+        }
+      ]
+    }
+  ]
+}

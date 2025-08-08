@@ -2,8 +2,8 @@
 > inventory-po-manager@0.1.0 build
 > next build
 
- ⚠ Disabling SWC Minifer will not be an option in the next major version. Please report any issues you may be experiencing to https://github.com/vercel/next.js/issues
   ▲ Next.js 14.2.30
   - Environments: .env.local, .env
 
    Creating an optimized production build ...
+[1;33m⏱️  Command timed out after 15s[0m

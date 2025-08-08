@@ -86,7 +86,9 @@
       "Bash(for:*)",
       "Bash(mv:*)",
       "Bash(do echo \"=== $file ===\")",
-      "Bash(head:*)"
+      "Bash(head:*)",
+      "Bash(kill:*)",
+      "Bash(pgrep:*)"
     ],
     "deny": []
   }

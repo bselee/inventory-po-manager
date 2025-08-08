@@ -24,7 +24,7 @@ npm run test:integration  # Run integration tests
 npm run test:db           # Run database tests
 
 # Run a single Jest test file
-npm run test -- path/to/test.spec.ts
+npm run test -- app/api/inventory/__tests__/route.test.ts
 
 # Testing - Playwright
 npm run test:e2e          # Run all Playwright tests

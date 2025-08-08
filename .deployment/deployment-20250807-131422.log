@@ -1,0 +1,21 @@
+[1;33m📅 Deployment Date: 2025-08-07 13:14:22[0m
+[1;33m📦 Branch: master[0m
+[1;33m👤 User: bselee[0m
+
+[0;34m━━━ PHASE 1: PRE-FLIGHT CHECKS ━━━[0m
+🔍 Checking for console.log statements... [1;33mFound 1[0m
+   Auto-removing console.log statements...
+
+[0;34m━━━ PHASE 2: BUILD VALIDATION ━━━[0m
+🏗️  Running build test...
+[0;31m❌ Build failed[0m
+[1;33m   Attempt 2 of 3...[0m
+[0;31m❌ Build failed[0m
+[1;33m   Attempt 3 of 3...[0m
+[0;31m❌ Build failed[0m
+[0;31m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+[0;31m❌ DEPLOYMENT BLOCKED: Build failures could not be auto-resolved[0m
+[0;31m━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━[0m
+
+📋 Please review the build log at: .deployment/build.log
+💡 Run 'npm run build' locally to see detailed errors

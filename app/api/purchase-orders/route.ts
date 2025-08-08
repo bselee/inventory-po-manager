@@ -4,6 +4,7 @@ import { getSettings, getFinaleConfig } from '@/app/lib/data-access';
 import { FinaleReportApiService } from '@/app/lib/finale-report-api';
 import { purchaseOrderSchema, paginationSchema } from '@/app/lib/validation-schemas';
 import { createApiHandler, apiResponse } from '@/app/lib/api-handler';
+import { logError, logWarn } from '@/app/lib/logger';
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'

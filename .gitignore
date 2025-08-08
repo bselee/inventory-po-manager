@@ -38,3 +38,8 @@ next-env.d.ts
 # MCP servers (separate git repos)
 /context7/
 /serena/
+
+# Local settings and cache files
+.settings.json
+.sync-status.json
+.inventory-cache.json

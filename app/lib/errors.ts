@@ -335,7 +335,7 @@ export function logError(
     } : error
   }
   
-  logError('Application Error:', JSON.stringify(errorInfo, null, 2))
+  console.error('Application Error:', JSON.stringify(errorInfo, null, 2))
   
   // In production, send to error tracking service
   // e.g., Sentry, LogRocket, etc.
