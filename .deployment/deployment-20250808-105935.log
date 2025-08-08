@@ -1,0 +1,26 @@
+[0;36m━━━ FAST DEPLOYMENT VALIDATION ━━━[0m
+[1;33m⏱️  Timeout: 25s | Skip with: SKIP_HOOKS=1 git push[0m
+
+[0;34m━━━ PHASE 1: QUICK SAFETY CHECKS ━━━[0m
+🔍 Cleaning console.log statements... [0;32mClean ✓[0m
+
+[0;34m━━━ PHASE 2: BUILD VALIDATION ━━━[0m
+🏗️ Running build test... [0;31mTimeout (15s)[0m
+
+[0;34m━━━ PHASE 3: PARALLEL QUALITY CHECKS ━━━[0m
+⚡ Running type-check and lint in parallel...
+📝 TypeScript: [1;33mWarnings[0m
+🧹 Linting: [1;33mIssues/Timeout[0m
+
+[0;34m━━━ PHASE 4: OPTIONAL TEST VALIDATION ━━━[0m
+🧪 Running tests (non-blocking)... [1;33mTimeout[0m
+
+[0;34m━━━ COMMIT SUMMARY ━━━[0m
+📊 Commits: 2 | ⏱️ Time: 37s
+
+[0;36m━━━ VALIDATION COMPLETE ━━━[0m
+[1;33m⚡ Good to deploy (76%)[0m
+⏱️  Completed in 37s
+
+[0;32m🚀 Proceeding with git push...[0m
+

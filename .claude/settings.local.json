@@ -88,7 +88,8 @@
       "Bash(do echo \"=== $file ===\")",
       "Bash(head:*)",
       "Bash(kill:*)",
-      "Bash(pgrep:*)"
+      "Bash(pgrep:*)",
+      "Bash(SKIP_HOOKS=1 git push origin master)"
     ],
     "deny": []
   }
